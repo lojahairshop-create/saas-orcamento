@@ -1,0 +1,842 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import AppLayout from "@/components/layout/AppLayout";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Table, TableRow, TableCell } from "@/components/ui/Table";
+import DxfUploader from "@/components/orcamento/DxfUploader";
+import { api } from "@/lib/api";
+import { DXFResult, Material } from "@/types";
+import {
+  calcularArea,
+  calcularPesoUnitario,
+  calcularPesoChapa,
+  calcularPecasPorChapa,
+  calcularQtdChapas,
+  calcularSobra,
+  calcularCustoMP,
+  calcularTempoCorteLaser,
+  calcularTotalFabricacao,
+  calcularCustoBasico,
+  calcularValorVendaSemImp,
+  calcularPrecoComImpostos,
+} from "@/lib/calculo";
+import {
+  User,
+  Plus,
+  Trash2,
+  ChevronRight,
+  ChevronLeft,
+  DollarSign,
+  Layers,
+  Sparkles,
+  CheckCircle,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+
+export default function NovoOrcamentoWizard() {
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  // --- Step 1: Cliente Info ---
+  const [cliente, setCliente] = useState({
+    nome: "",
+    email: "",
+    telefone: "",
+    cnpj: "",
+    endereco: "",
+    cidade: "",
+    estado: "SP",
+  });
+  const [tipoVenda, setTipoVenda] = useState("pecas");
+  const [ipiRate, setIpiRate] = useState(0.05);
+  const [taxaComissao, setTaxaComissao] = useState(0.03);
+  const [condicaoPagamento, setCondicaoPagamento] = useState("30 dias");
+  const [prazoEntrega, setPrazoEntrega] = useState("15 dias úteis");
+  const [validade, setValidade] = useState(30);
+  const [observacoes, setObservacoes] = useState("");
+
+  // --- Step 2: Lista de Peças ---
+  const [itens, setItens] = useState<any[]>([]);
+  const [materiais, setMateriais] = useState<Material[]>([]);
+  const [custosOperacao, setCustosOperacao] = useState<{ [key: string]: number }>({});
+  
+  // Peça que está sendo editada/adicionada no form manual
+  const [novaPeca, setNovaPeca] = useState({
+    descricao: "",
+    num_desenho: "",
+    material: "AÇO CARBONO",
+    tipo_material: "S 1020",
+    espessura: 3.18,
+    largura: 0.0,
+    comprimento: 0.0,
+    perimetro: 0.0,
+    num_entradas: 1,
+    quantidade: 1,
+    chapa_l: 1200,
+    chapa_c: 2400,
+    preco_kg: 2.00,
+    margem_lucro: 0.30,
+    
+    // Tempos das operações (minutos)
+    tempo_setup: 6.0,
+    tempo_dobra: 6.0,
+    tempo_caldeiraria: 6.0,
+    tempo_solda: 6.0,
+    tempo_guilhotina: 6.0,
+    tempo_usinagem: 6.0,
+    tempo_montagem: 6.0,
+    
+    observacoes: "",
+  });
+
+  // Carregar materiais e custos padrão do backend no início
+  useEffect(() => {
+    async function loadMateriais() {
+      try {
+        const list = await api.getMateriais();
+        if (list && list.length > 0) {
+          setMateriais(list);
+          const firstMat = list[0];
+          setNovaPeca(prev => ({
+            ...prev,
+            material: firstMat.nome,
+            tipo_material: firstMat.tipo,
+            preco_kg: firstMat.preco_kg
+          }));
+        }
+      } catch (err) {
+        console.error("Erro ao carregar materiais, usando backup local:", err);
+      }
+    }
+    async function loadCustos() {
+      try {
+        const list = await api.getCustosOperacao();
+        const map: { [key: string]: number } = {};
+        list.forEach(c => {
+          map[c.operacao] = parseFloat(c.custo_hora.toString());
+        });
+        setCustosOperacao(map);
+      } catch (err) {
+        console.error("Erro ao carregar custos operacionais:", err);
+      }
+    }
+    loadMateriais();
+    loadCustos();
+  }, []);
+
+  const handleAddPeca = () => {
+    if (!novaPeca.descricao) {
+      alert("Informe pelo menos a descrição da peça.");
+      return;
+    }
+    
+    setItens([...itens, { ...novaPeca, id: Date.now().toString() }]);
+    
+    // Reset form peça mantendo material/configurações anteriores
+    setNovaPeca(prev => ({
+      ...prev,
+      descricao: "",
+      num_desenho: "",
+      largura: 0,
+      comprimento: 0,
+      perimetro: 0,
+      num_entradas: 1,
+      quantidade: 1,
+      observacoes: ""
+    }));
+  };
+
+  const handleRemovePeca = (id: string) => {
+    setItens(itens.filter(it => it.id !== id));
+  };
+
+  const handleDxfSuccess = (dxf: DXFResult) => {
+    // Tenta achar preço_kg adequado se material atual for selecionado
+    setNovaPeca(prev => ({
+      ...prev,
+      descricao: dxf.filename ? dxf.filename.replace(".dxf", "") : "Peça DXF",
+      largura: dxf.largura,
+      comprimento: dxf.comprimento,
+      perimetro: dxf.perimetro,
+      num_entradas: dxf.num_entradas
+    }));
+  };
+
+  // --- Step 3: Cálculos e Revisão ---
+  const [calculado, setCalculado] = useState<any>(null);
+
+  const processarCalculoLocal = () => {
+    // Simular o cálculo do backend localmente para pré-visualização instantânea.
+    // Impostos dependendo do Estado e Tipo de Venda
+    // 7% ICMS se AC, AL, AP, AM, BA, CE, ES, GO, MA, MT, MS, PA, PB, PE, PI, RN, RO, RR, SE, TO, ZFM
+    // 12% se MG, PR, RJ, RS, SC, SP(equipamento)
+    // 18% se SP(peças)
+    
+    let icmsRate = 0.18;
+    const est7 = ["AC", "AL", "AP", "AM", "BA", "CE", "ES", "GO", "MA", "MT", "MS", "PA", "PB", "PE", "PI", "RN", "RO", "RR", "SE", "TO", "ZFM"];
+    const est12 = ["MG", "PR", "RJ", "RS", "SC"];
+    
+    if (est7.includes(cliente.estado)) {
+      icmsRate = 0.07;
+    } else if (est12.includes(cliente.estado) || (cliente.estado === "SP" && tipoVenda === "equipamento")) {
+      icmsRate = 0.12;
+    }
+
+    const totalImpostos = icmsRate + 0.0065 + 0.03 + 0.0108 + 0.012; // ICMS + PIS + COFINS + CSLL + IRPJ
+    const fatorCalculo = 1.0 - totalImpostos;
+
+    let totalPreco = 0.0;
+    let totalCustoMp = 0.0;
+    let totalFabricacao = 0.0;
+    let totalPeso = 0.0;
+
+    const itensCalculados = itens.map((item) => {
+      // 1. Velocidade de avanço baseada em material e espessura
+      let avanco = 3528.0;
+      let peck = 1.0;
+      if (item.material === "INOX") {
+        if (item.espessura <= 1.0) { avanco = 7800; }
+        else if (item.espessura <= 2.0) { avanco = 5300; }
+        else { avanco = 3528; }
+      } else if (item.material === "ALUMÍNIO") {
+        avanco = 2450;
+      }
+
+      // 2. Tempo corte laser
+      const tempoLaser = calcularTempoCorteLaser(item.perimetro, avanco, item.num_entradas, peck);
+
+      // 3. Área e Peso
+      const densidade = item.material === "ALUMÍNIO" ? 2.71 : 7.86;
+      const area = calcularArea(item.largura, item.comprimento);
+      const pesoUnit = calcularPesoUnitario(area, item.espessura, densidade);
+      const pesoTotal = pesoUnit * item.quantidade;
+
+      // 4. Aproveitamento de chapa
+      const pecasChapa = calcularPecasPorChapa(item.chapa_l, item.chapa_c, item.largura, item.comprimento, 5.0);
+      const qtdChapas = calcularQtdChapas(item.quantidade, pecasChapa);
+      const sobra = calcularSobra(pecasChapa, qtdChapas, item.quantidade);
+      const retalho = sobra * pesoUnit;
+
+      // 5. Custo Matéria Prima
+      const custoMp = calcularCustoMP(pesoTotal, item.preco_kg);
+
+      // 6. Fabricação (tempos e custos de hora reais ou default R$ 10.00/h)
+      const getCusto = (nome: string) => custosOperacao[nome] ?? 10.00;
+
+      const operacoes = [
+        { tempo_min: tempoLaser * item.quantidade, custo_hora: getCusto("CORTE LASER") },
+        { tempo_min: item.tempo_setup, custo_hora: getCusto("SET-UP") },
+        { tempo_min: item.tempo_dobra * item.quantidade, custo_hora: getCusto("DOBRA") },
+        { tempo_min: item.tempo_caldeiraria * item.quantidade, custo_hora: getCusto("CALDEIRARIA") },
+        { tempo_min: item.tempo_solda * item.quantidade, custo_hora: getCusto("SOLDA") },
+        { tempo_min: item.tempo_guilhotina * item.quantidade, custo_hora: getCusto("GUILHOTINA") },
+        { tempo_min: item.tempo_usinagem * item.quantidade, custo_hora: getCusto("USINAGEM INTERNA") },
+        { tempo_min: item.tempo_montagem * item.quantidade, custo_hora: getCusto("MONTAGEM") },
+      ];
+      const totalFab = calcularTotalFabricacao(operacoes);
+
+      // 7. Pricing
+      const custoBasico = calcularCustoBasico(totalFab, custoMp);
+      const vendaSemImp = calcularValorVendaSemImp(custoBasico, item.margem_lucro);
+      const vendaSemImpUnit = item.quantidade > 0 ? vendaSemImp / item.quantidade : 0;
+      const precoUnitComImp = calcularPrecoComImpostos(vendaSemImpUnit, totalImpostos);
+      const precoTotalItem = precoUnitComImp * item.quantidade;
+
+      totalPreco += precoTotalItem;
+      totalCustoMp += custoMp;
+      totalFabricacao += totalFab;
+      totalPeso += pesoTotal;
+
+      return {
+        ...item,
+        peso_total: pesoTotal,
+        preco_unitario_com_imp: precoUnitComImp,
+        preco_total: precoTotalItem,
+        custo_mp: custoMp,
+        total_fabricacao: totalFab,
+      };
+    });
+
+    const valorIpi = totalPreco * ipiRate;
+    const totalNf = totalPreco + valorIpi;
+    const totalTributos = totalPreco * totalImpostos;
+    const totalComissao = (totalPreco * fatorCalculo) * taxaComissao;
+
+    setCalculado({
+      itens: itensCalculados,
+      total_preco: totalPreco,
+      total_custo_mp: totalCustoMp,
+      total_fabricacao: totalFabricacao,
+      total_peso: totalPeso,
+      total_tributos: totalTributos,
+      total_nf: totalNf,
+      total_comissao: totalComissao,
+    });
+  };
+
+  useEffect(() => {
+    if (step === 3 && itens.length > 0) {
+      processarCalculoLocal();
+    }
+  }, [step, ipiRate, taxaComissao]);
+
+  const handleSave = async (status: string) => {
+    setLoading(true);
+    try {
+      const payload = {
+        cliente,
+        tipo_venda: tipoVenda,
+        ipi_rate: ipiRate,
+        taxa_comissao: taxaComissao,
+        condicao_pagamento: condicaoPagamento,
+        prazo_entrega: prazoEntrega,
+        validade,
+        observacoes,
+        itens: itens.map(it => ({
+          descricao: it.descricao,
+          material: it.material,
+          tipo_material: it.tipo_material,
+          espessura: it.espessura,
+          largura: it.largura,
+          comprimento: it.comprimento,
+          perimetro: it.perimetro,
+          num_entradas: it.num_entradas,
+          quantidade: it.quantidade,
+          chapa_l: it.chapa_l,
+          chapa_c: it.chapa_c,
+          preco_kg: it.preco_kg,
+          margem_lucro: it.margem_lucro,
+          operacoes: [
+            { nome: "SET-UP", tempo_min: it.tempo_setup },
+            { nome: "DOBRA", tempo_min: it.tempo_dobra },
+            { nome: "CALDEIRARIA", tempo_min: it.tempo_caldeiraria },
+            { nome: "SOLDA", tempo_min: it.tempo_solda },
+            { nome: "GUILHOTINA", tempo_min: it.tempo_guilhotina },
+            { nome: "USINAGEM INTERNA", tempo_min: it.tempo_usinagem },
+            { nome: "MONTAGEM", tempo_min: it.tempo_montagem },
+          ]
+        }))
+      };
+
+      const result = await api.createOrcamento(payload);
+      if (status !== "rascunho") {
+        await api.updateStatus(result.id, status);
+      }
+      
+      router.push(`/orcamentos/${result.id}`);
+    } catch (err) {
+      alert("Erro ao salvar orçamento.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (val: number | undefined | null) => {
+    if (val === undefined || val === null || isNaN(val)) return "R$ 0,00";
+    return val.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  };
+
+  return (
+    <AppLayout>
+      <div className="flex flex-col gap-6">
+        {/* Title */}
+        <div>
+          <h1 className="text-xl font-bold text-slate-100">Criar Novo Orçamento</h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Preencha os dados do cliente, importe peças via DXF e revise impostos por margem por dentro
+          </p>
+        </div>
+
+        {/* Wizard Steps Indicator */}
+        <div className="flex items-center gap-4 bg-white/[0.01] border border-white/5 rounded-xl p-4">
+          <div className="flex items-center gap-2">
+            <span className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold ${
+              step >= 1 ? "bg-blue-600 text-white" : "bg-white/5 text-slate-500"
+            }`}>1</span>
+            <span className={`text-xs font-semibold ${step >= 1 ? "text-slate-200" : "text-slate-500"}`}>
+              Dados do Cliente
+            </span>
+          </div>
+          <ChevronRight className="h-4 w-4 text-slate-600" />
+          <div className="flex items-center gap-2">
+            <span className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold ${
+              step >= 2 ? "bg-blue-600 text-white" : "bg-white/5 text-slate-500"
+            }`}>2</span>
+            <span className={`text-xs font-semibold ${step >= 2 ? "text-slate-200" : "text-slate-500"}`}>
+              Peças & Operações
+            </span>
+          </div>
+          <ChevronRight className="h-4 w-4 text-slate-600" />
+          <div className="flex items-center gap-2">
+            <span className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold ${
+              step >= 3 ? "bg-blue-600 text-white" : "bg-white/5 text-slate-500"
+            }`}>3</span>
+            <span className={`text-xs font-semibold ${step >= 3 ? "text-slate-200" : "text-slate-500"}`}>
+              Revisão & Cálculo
+            </span>
+          </div>
+        </div>
+
+        {/* Step 1: Cliente */}
+        {step === 1 && (
+          <Card header="1. Identificação do Cliente">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Nome do Cliente/Empresa"
+                placeholder="Ex: Indústrias Metalúrgicas Alfa LTDA"
+                value={cliente.nome}
+                onChange={e => setCliente({ ...cliente, nome: e.target.value })}
+              />
+              <Input
+                label="CNPJ / CPF"
+                placeholder="00.000.000/0000-00"
+                value={cliente.cnpj}
+                onChange={e => setCliente({ ...cliente, cnpj: e.target.value })}
+              />
+              <Input
+                label="E-mail"
+                type="email"
+                placeholder="compras@cliente.com.br"
+                value={cliente.email}
+                onChange={e => setCliente({ ...cliente, email: e.target.value })}
+              />
+              <Input
+                label="Telefone"
+                placeholder="(11) 98888-7777"
+                value={cliente.telefone}
+                onChange={e => setCliente({ ...cliente, telefone: e.target.value })}
+              />
+              <Input
+                label="Endereço de Faturamento"
+                placeholder="Rua das Indústrias, 450 - Bairro Industrial"
+                value={cliente.endereco}
+                onChange={e => setCliente({ ...cliente, endereco: e.target.value })}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Cidade"
+                  placeholder="Sorocaba"
+                  value={cliente.cidade}
+                  onChange={e => setCliente({ ...cliente, cidade: e.target.value })}
+                />
+                <Select
+                  label="Estado (Destino)"
+                  value={cliente.estado}
+                  onChange={e => setCliente({ ...cliente, estado: e.target.value })}
+                  options={[
+                    { value: "SP", label: "São Paulo (SP)" },
+                    { value: "MG", label: "Minas Gerais (MG)" },
+                    { value: "RJ", label: "Rio de Janeiro (RJ)" },
+                    { value: "PR", label: "Paraná (PR)" },
+                    { value: "SC", label: "Santa Catarina (SC)" },
+                    { value: "RS", label: "Rio Grande do Sul (RS)" },
+                    { value: "GO", label: "Goiás (GO)" },
+                    { value: "BA", label: "Bahia (BA)" },
+                    { value: "PE", label: "Pernambuco (PE)" },
+                    { value: "CE", label: "Ceará (CE)" },
+                    { value: "DF", label: "Distrito Federal (DF)" },
+                    { value: "AM", label: "Amazonas (AM)" },
+                    { value: "ZFM", label: "Zona Franca (ZFM)" },
+                  ]}
+                />
+              </div>
+            </div>
+
+            <div className="border-t border-white/5 pt-6 mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Select
+                label="Tipo de Venda"
+                value={tipoVenda}
+                onChange={e => setTipoVenda(e.target.value)}
+                options={[
+                  { value: "pecas", label: "Peças Industriais (18% ICMS base SP)" },
+                  { value: "equipamento", label: "Equipamento/Máquina (12% ICMS base SP)" },
+                ]}
+              />
+              <Input
+                label="IPI (%)"
+                type="number"
+                step="0.01"
+                value={ipiRate * 100}
+                onChange={e => setIpiRate(parseFloat(e.target.value) / 100)}
+              />
+              <Input
+                label="Comissão Operador (%)"
+                type="number"
+                step="0.1"
+                value={taxaComissao * 100}
+                onChange={e => setTaxaComissao(parseFloat(e.target.value) / 100)}
+              />
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <Button
+                onClick={() => {
+                  if (!cliente.nome) {
+                    alert("Por favor, informe o nome do cliente.");
+                    return;
+                  }
+                  setStep(2);
+                }}
+                className="flex items-center gap-2"
+              >
+                Próximo <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {/* Step 2: Peças */}
+        {step === 2 && (
+          <div className="flex flex-col gap-6">
+            {/* DXF Drag and Drop Zone */}
+            <Card header="Importação Automática via DXF/CAD">
+              <DxfUploader onSuccess={handleDxfSuccess} />
+            </Card>
+
+            {/* Manual item form */}
+            <Card header="Adicionar/Editar Item">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="md:col-span-2">
+                  <Input
+                    label="Descrição da Peça"
+                    placeholder="Ex: Suporte de fixação dobrado"
+                    value={novaPeca.descricao}
+                    onChange={e => setNovaPeca({ ...novaPeca, descricao: e.target.value })}
+                  />
+                </div>
+                <Input
+                  label="Número do Desenho"
+                  placeholder="Ex: DES-9821-A"
+                  value={novaPeca.num_desenho}
+                  onChange={e => setNovaPeca({ ...novaPeca, num_desenho: e.target.value })}
+                />
+                <Input
+                  label="Quantidade"
+                  type="number"
+                  value={novaPeca.quantidade}
+                  onChange={e => setNovaPeca({ ...novaPeca, quantidade: parseInt(e.target.value) || 1 })}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                <Select
+                  label="Material"
+                  value={novaPeca.material}
+                  onChange={e => {
+                    const matched = materiais.find(m => m.nome === e.target.value);
+                    setNovaPeca({
+                      ...novaPeca,
+                      material: e.target.value,
+                      tipo_material: matched ? matched.tipo : "",
+                      preco_kg: matched ? matched.preco_kg : 2.00
+                    });
+                  }}
+                  options={[
+                    { value: "AÇO CARBONO", label: "AÇO CARBONO" },
+                    { value: "INOX", label: "INOX" },
+                    { value: "ALUMÍNIO", label: "ALUMÍNIO" },
+                  ]}
+                />
+                <Input
+                  label="Espessura (mm)"
+                  type="number"
+                  step="0.01"
+                  value={novaPeca.espessura}
+                  onChange={e => setNovaPeca({ ...novaPeca, espessura: parseFloat(e.target.value) || 1.0 })}
+                />
+                <Input
+                  label="Largura Peça (mm)"
+                  type="number"
+                  value={novaPeca.largura}
+                  onChange={e => setNovaPeca({ ...novaPeca, largura: parseFloat(e.target.value) || 0 })}
+                />
+                <Input
+                  label="Comprimento Peça (mm)"
+                  type="number"
+                  value={novaPeca.comprimento}
+                  onChange={e => setNovaPeca({ ...novaPeca, comprimento: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                <Input
+                  label="Perímetro de Corte (mm)"
+                  type="number"
+                  value={novaPeca.perimetro}
+                  onChange={e => setNovaPeca({ ...novaPeca, perimetro: parseFloat(e.target.value) || 0 })}
+                />
+                <Input
+                  label="Furos (Num Entradas)"
+                  type="number"
+                  value={novaPeca.num_entradas}
+                  onChange={e => setNovaPeca({ ...novaPeca, num_entradas: parseInt(e.target.value) || 1 })}
+                />
+                <Input
+                  label="Preço Material (R$/Kg)"
+                  type="number"
+                  step="0.01"
+                  value={novaPeca.preco_kg}
+                  onChange={e => setNovaPeca({ ...novaPeca, preco_kg: parseFloat(e.target.value) || 0 })}
+                />
+                <Input
+                  label="Margem de Lucro (%)"
+                  type="number"
+                  value={novaPeca.margem_lucro * 100}
+                  onChange={e => setNovaPeca({ ...novaPeca, margem_lucro: parseFloat(e.target.value) / 100 })}
+                />
+              </div>
+
+              {/* Tempos operacionais */}
+              <div className="border-t border-white/5 pt-4 mt-4">
+                <h4 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">
+                  Tempos de Operação Adicionais (minutos)
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
+                  <Input
+                    label="SET-UP"
+                    type="number"
+                    value={novaPeca.tempo_setup}
+                    onChange={e => setNovaPeca({ ...novaPeca, tempo_setup: parseFloat(e.target.value) || 0 })}
+                  />
+                  <Input
+                    label="DOBRA"
+                    type="number"
+                    value={novaPeca.tempo_dobra}
+                    onChange={e => setNovaPeca({ ...novaPeca, tempo_dobra: parseFloat(e.target.value) || 0 })}
+                  />
+                  <Input
+                    label="CALDEIRARIA"
+                    type="number"
+                    value={novaPeca.tempo_caldeiraria}
+                    onChange={e => setNovaPeca({ ...novaPeca, tempo_caldeiraria: parseFloat(e.target.value) || 0 })}
+                  />
+                  <Input
+                    label="SOLDA"
+                    type="number"
+                    value={novaPeca.tempo_solda}
+                    onChange={e => setNovaPeca({ ...novaPeca, tempo_solda: parseFloat(e.target.value) || 0 })}
+                  />
+                  <Input
+                    label="GUILHOTINA"
+                    type="number"
+                    value={novaPeca.tempo_guilhotina}
+                    onChange={e => setNovaPeca({ ...novaPeca, tempo_guilhotina: parseFloat(e.target.value) || 0 })}
+                  />
+                  <Input
+                    label="USINAGEM"
+                    type="number"
+                    value={novaPeca.tempo_usinagem}
+                    onChange={e => setNovaPeca({ ...novaPeca, tempo_usinagem: parseFloat(e.target.value) || 0 })}
+                  />
+                  <Input
+                    label="MONTAGEM"
+                    type="number"
+                    value={novaPeca.tempo_montagem}
+                    onChange={e => setNovaPeca({ ...novaPeca, tempo_montagem: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end mt-5">
+                <Button variant="secondary" onClick={handleAddPeca} className="flex items-center gap-1">
+                  <Plus className="h-4 w-4" /> Adicionar à Lista
+                </Button>
+              </div>
+            </Card>
+
+            {/* List of added pieces */}
+            <Card header={`Peças Adicionadas (${itens.length})`}>
+              {itens.length > 0 ? (
+                <div className="flex flex-col gap-4">
+                  <Table headers={["Item", "Descrição", "Material / Esp.", "Qtd", "Dimensões", "Perímetro", "Ações"]}>
+                    {itens.map((item, idx) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-bold">{idx + 1}</TableCell>
+                        <TableCell>{item.descricao}</TableCell>
+                        <TableCell>{item.material} {item.espessura}mm</TableCell>
+                        <TableCell className="text-center">{item.quantidade}</TableCell>
+                        <TableCell>{item.largura} x {item.comprimento} mm</TableCell>
+                        <TableCell>{item.perimetro} mm</TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleRemovePeca(item.id)}
+                            className="p-1 text-red-400 hover:bg-red-950/20"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </Table>
+
+                  <div className="flex justify-between mt-6">
+                    <Button variant="secondary" onClick={() => setStep(1)} className="flex items-center gap-1">
+                      <ChevronLeft className="h-4 w-4" /> Voltar
+                    </Button>
+                    <Button onClick={() => setStep(3)} className="flex items-center gap-1">
+                      Calcular e Revisar <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-12 flex flex-col items-center justify-center text-slate-500 gap-2">
+                  <Layers className="h-8 w-8 text-slate-700" />
+                  <span className="text-sm">Nenhuma peça adicionada ao orçamento.</span>
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
+
+        {/* Step 3: Revisão */}
+        {step === 3 && calculado && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Detailed summary of items */}
+            <div className="lg:col-span-2 flex flex-col gap-6">
+              <Card header="Revisão das Peças Calculadas">
+                <Table headers={["Descrição", "Qtd", "Peso Total", "Custo MP", "Fabricação", "Preço s/ Imp", "Total c/ Imp"]}>
+                  {calculado.itens.map((item: any, idx: number) => (
+                    <TableRow key={idx}>
+                      <TableCell className="font-semibold text-slate-100">{item.descricao}</TableCell>
+                      <TableCell className="text-center">{item.quantidade}</TableCell>
+                      <TableCell>{item.peso_total.toFixed(2)} kg</TableCell>
+                      <TableCell>{formatCurrency(item.custo_mp)}</TableCell>
+                      <TableCell>{formatCurrency(item.total_fabricacao)}</TableCell>
+                      <TableCell>{formatCurrency(item.preco_unitario_com_imp * (1 - 0.2393) * item.quantidade)}</TableCell>
+                      <TableCell className="font-bold text-slate-100">{formatCurrency(item.preco_total)}</TableCell>
+                    </TableRow>
+                  ))}
+                </Table>
+              </Card>
+
+              <Card header="Informações Adicionais e Observações">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Input
+                    label="Condição de Pagamento"
+                    value={condicaoPagamento}
+                    onChange={e => setCondicaoPagamento(e.target.value)}
+                  />
+                  <Input
+                    label="Prazo de Entrega"
+                    value={prazoEntrega}
+                    onChange={e => setPrazoEntrega(e.target.value)}
+                  />
+                  <Input
+                    label="Validade da Proposta (dias)"
+                    type="number"
+                    value={validade}
+                    onChange={e => setValidade(parseInt(e.target.value) || 30)}
+                  />
+                </div>
+                <div className="mt-4">
+                  <Input
+                    label="Observações do Orçamento"
+                    placeholder="Condições especiais de frete, impostos diferenciados ou observações de desenho..."
+                    value={observacoes}
+                    onChange={e => setObservacoes(e.target.value)}
+                  />
+                </div>
+              </Card>
+            </div>
+
+            {/* Calculations Breakdown Sidebar */}
+            <div className="flex flex-col gap-6">
+              <Card
+                header={
+                  <div className="flex items-center gap-1.5 text-blue-400">
+                    <Sparkles className="h-4.5 w-4.5" />
+                    <span>Resumo Financeiro (NF)</span>
+                  </div>
+                }
+              >
+                <div className="space-y-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Total Matéria-Prima:</span>
+                    <span className="font-medium text-slate-200">{formatCurrency(calculado.total_custo_mp)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Total Fabricação:</span>
+                    <span className="font-medium text-slate-200">{formatCurrency(calculado.total_fabricacao)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Peso Total Orçado:</span>
+                    <span className="font-medium text-slate-200">{calculado.total_peso.toFixed(2)} kg</span>
+                  </div>
+
+                  <div className="border-t border-white/5 my-3" />
+
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Total Impostos (Embutidos):</span>
+                    <span className="font-medium text-red-400">{formatCurrency(calculado.total_tributos)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Comissão Vendedor (3%):</span>
+                    <span className="font-medium text-amber-500">{formatCurrency(calculado.total_comissao)}</span>
+                  </div>
+
+                  <div className="border-t border-white/5 my-3" />
+
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-xs font-bold text-slate-300">VALOR PRODUTOS:</span>
+                    <span className="text-lg font-bold text-blue-400">{formatCurrency(calculado.total_preco)}</span>
+                  </div>
+                  
+                  {ipiRate > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-400">IPI ({ipiRate * 100}% por fora):</span>
+                      <span className="font-medium text-slate-200">{formatCurrency(calculado.total_nf - calculado.total_preco)}</span>
+                    </div>
+                  )}
+
+                  <div className="bg-blue-600/10 border border-blue-500/20 rounded-xl p-4 mt-4 flex flex-col gap-1">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      TOTAL NOTA FISCAL (c/ IPI)
+                    </span>
+                    <span className="text-2xl font-black text-slate-100">
+                      {formatCurrency(calculado.total_nf)}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-2 mt-6">
+                    <Button
+                      className="w-full flex items-center justify-center gap-2"
+                      loading={loading}
+                      onClick={() => handleSave("pendente")}
+                    >
+                      <CheckCircle className="h-4.5 w-4.5" /> Enviar para Aprovação
+                    </Button>
+                    
+                    <Button
+                      variant="secondary"
+                      className="w-full"
+                      loading={loading}
+                      onClick={() => handleSave("rascunho")}
+                    >
+                      Salvar Rascunho
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      className="w-full text-xs text-slate-500 hover:text-slate-300"
+                      onClick={() => setStep(2)}
+                    >
+                      Voltar e Editar Peças
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
+      </div>
+    </AppLayout>
+  );
+}

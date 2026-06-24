@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Proposta Comercial - Orçamento {{ orcamento.numero }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin-top: 15mm;
+            margin-left: 15mm;
+            margin-right: 15mm;
+            margin-bottom: 20mm;
+            @bottom-left {
+                content: "";
+                border-top: 1px solid #cbd5e1;
+                margin-bottom: 10px;
+            }
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                font-size: 8pt;
+                color: #64748b;
+                border-top: 1px solid #cbd5e1;
+                margin-bottom: 10px;
+                padding-top: 5px;
+            }
+        }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #0f172a;
+            font-size: 9.5pt;
+            line-height: 1.4;
+            background-color: #ffffff;
+        }
+        .header {
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        .header table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .header td {
+            vertical-align: middle;
+        }
+        .logo-box {
+            width: 150px;
+            height: 75px;
+        }
+        .logo-placeholder {
+            width: 100%;
+            height: 100%;
+            border: 2px dashed #cbd5e1;
+            background-color: #f8fafc;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .logo-placeholder-dot {
+            padding: 8px;
+        }
+        .logo-plus {
+            font-size: 14pt;
+            color: #94a3b8;
+            display: block;
+            margin-bottom: 2px;
+            line-height: 1;
+        }
+        .logo-text-ph {
+            font-size: 7.5pt;
+            font-weight: bold;
+            color: #94a3b8;
+            letter-spacing: 0.5px;
+            display: block;
+        }
+        .budget-number {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #0f172a;
+            text-align: right;
+        }
+        .parties-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        .party-box {
+            vertical-align: top;
+            font-size: 9pt;
+            color: #334155;
+            line-height: 1.4;
+        }
+        .party-box strong {
+            color: #0f172a;
+        }
+        .section-title {
+            font-size: 10pt;
+            font-weight: bold;
+            color: #0f172a;
+            margin-bottom: 4px;
+            display: inline-block;
+        }
+        .party-name {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #0f172a;
+            margin-bottom: 2px;
+            display: inline-block;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .dates-block {
+            font-size: 9pt;
+            margin-bottom: 15px;
+            color: #334155;
+        }
+        .dates-block strong {
+            color: #0f172a;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            border-bottom: 1.5px solid #0f172a;
+        }
+        .items-table th {
+            border-top: 1.5px solid #0f172a;
+            border-bottom: 1.5px solid #0f172a;
+            color: #0f172a;
+            font-weight: bold;
+            text-align: left;
+            padding: 8px 4px;
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .items-table td {
+            padding: 8px 4px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 9pt;
+            vertical-align: middle;
+        }
+        .dim-cell {
+            text-align: center;
+            vertical-align: middle;
+            padding: 5px;
+            width: 70px;
+        }
+        .dim-box {
+            width: 32px;
+            height: 32px;
+            border: 1px solid #cbd5e1;
+            margin: 0 auto 3px auto;
+            background-color: #f8fafc;
+        }
+        .dim-text {
+            font-size: 7pt;
+            font-weight: bold;
+            color: #475569;
+            white-space: nowrap;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            page-break-inside: avoid;
+        }
+        .comments-box {
+            vertical-align: top;
+            border: 1.5px solid #0f172a;
+            padding: 10px;
+            font-size: 8.5pt;
+        }
+        .totals-box {
+            vertical-align: top;
+            border: 1.5px solid #0f172a;
+            padding: 10px;
+            background-color: #f8fafc;
+        }
+        .grand-total-label {
+            font-size: 10pt;
+            font-weight: bold;
+            color: #0f172a;
+            text-transform: uppercase;
+        }
+        .grand-total-val {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #0f172a;
+            margin-top: 2px;
+        }
+        .tax-info {
+            font-size: 7.5pt;
+            font-weight: bold;
+            color: #475569;
+            margin-top: 2px;
+        }
+        .summary-line {
+            font-size: 8.5pt;
+            color: #334155;
+            margin-top: 4px;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+        .terms-section {
+            border: 1.5px solid #0f172a;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        .terms-title {
+            font-weight: bold;
+            font-size: 10.5pt;
+            color: #0f172a;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 4px;
+        }
+        .terms-list {
+            list-style-type: decimal;
+            padding-left: 20px;
+            margin: 0 0 15px 0;
+        }
+        .terms-list li {
+            font-size: 8pt;
+            color: #334155;
+            margin-bottom: 6px;
+            line-height: 1.35;
+        }
+        .terms-sublist {
+            list-style-type: disc;
+            padding-left: 15px;
+            margin-top: 4px;
+        }
+        .terms-sublist li {
+            font-size: 8pt;
+            color: #334155;
+            margin-bottom: 3px;
+        }
+        .terms-details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .terms-details-table td {
+            padding: 5px 0;
+            font-size: 8.5pt;
+            line-height: 1.4;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .terms-label {
+            font-weight: bold;
+            color: #0f172a;
+        }
+        .terms-value {
+            color: #334155;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ================= PÁGINA 1: DETALHES DO ORÇAMENTO ================= -->
+    <div class="header">
+        <table>
+            <tr>
+                <td>
+                    <div class="logo-box">
+                        {% if configs_globais and configs_globais.logo_base64 %}
+                            <img src="{{ configs_globais.logo_base64 }}" alt="Logo" style="max-height: 75px; max-width: 150px; object-fit: contain;" />
+                        {% else %}
+                            <div class="logo-placeholder">
+                                <div class="logo-placeholder-dot">
+                                    <span class="logo-plus">+</span>
+                                    <span class="logo-text-ph">INSERIR LOGO</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </td>
+                <td style="text-align: right; vertical-align: middle;">
+                    <div class="budget-number">Nº Orçamento : {{ orcamento.numero }}</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <table class="parties-table">
+        <tr>
+            <td class="party-box" style="width: 50%;">
+                <span class="section-title">Cliente:</span><br>
+                <span class="party-name">{{ orcamento.cliente.nome }}</span><br>
+                {{ orcamento.cliente.endereco or '' }}<br>
+                {{ orcamento.cliente.cidade or '' }} - {{ orcamento.cliente.estado }}<br>
+                Telefone: {{ orcamento.cliente.telefone or '' }}
+            </td>
+            <td class="party-box" style="width: 50%; padding-left: 20px;">
+                <span class="section-title">Preparado Por:</span><br>
+                <span class="party-name">
+                    {%- if configs_globais and configs_globais.empresa_nome -%}
+                        {{ configs_globais.empresa_nome }}
+                    {%- else -%}
+                        MetalCut Pro Admin
+                    {%- endif -%}
+                </span><br>
+                {% if configs_globais and configs_globais.empresa_cnpj %}CNPJ: {{ configs_globais.empresa_cnpj }}<br>{% endif %}
+                {% if configs_globais and configs_globais.empresa_endereco -%}
+                    {{ configs_globais.empresa_endereco }}
+                {%- else -%}
+                    Sorocaba/SP
+                {%- endif -%}<br>
+                Email: {% if configs_globais and configs_globais.empresa_email %}{{ configs_globais.empresa_email }}{% else %}contato@metalcut.com.br{% endif %} | Tel: {% if configs_globais and configs_globais.empresa_telefone %}{{ configs_globais.empresa_telefone }}{% else %}(15) 99999-9999{% endif %}
+            </td>
+        </tr>
+    </table>
+
+    <div class="dates-block">
+        <strong>Data de Criação:</strong> 
+        {% if orcamento.created_at is string %}
+            {{ orcamento.created_at[:10] }}
+        {% elif orcamento.created_at %}
+            {{ orcamento.created_at.strftime("%d/%m/%Y") }}
+        {% else %}
+            {{ datetime.now().strftime("%d/%m/%Y") }}
+        {% endif %}<br>
+        <strong>Data de Vencimento:</strong> {{ validade_data }}
+    </div>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width: 5%;" class="text-center">Item</th>
+                <th style="width: 12%;" class="text-center">Dimensão</th>
+                <th style="width: 32%;">Produto / Descrição</th>
+                <th style="width: 10%;" class="text-right">Peso (Kg)</th>
+                <th style="width: 18%;">Material</th>
+                <th style="width: 6%;" class="text-center">Qtde.</th>
+                <th style="width: 8%;" class="text-right">Valor Unit.</th>
+                <th style="width: 9%;" class="text-right">Valor Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in orcamento.itens %}
+            <tr>
+                <td class="text-center">{{ loop.index }}</td>
+                <td class="dim-cell">
+                    <div class="dim-box"></div>
+                    <div class="dim-text">{{ "%.2f"|format(item.largura) }} X {{ "%.2f"|format(item.comprimento) }}</div>
+                </td>
+                <td>
+                    <strong>{{ item.descricao }}</strong><br>
+                    <span style="font-size: 7.5pt; color: #64748b;">
+                        Processos: 
+                        {%- set ns = namespace(primeiro=true) -%}
+                        {%- if item.tempo_corte_laser > 0 -%}
+                            Laser
+                            {%- set ns.primeiro = false -%}
+                        {%- endif -%}
+                        {%- for op in item.operacoes -%}
+                            {%- if op.tempo_min > 0 -%}
+                                {%- if not ns.primeiro -%}, {% endif -%}
+                                {{- op.nome|capitalize -}}
+                                {%- set ns.primeiro = false -%}
+                            {%- endif -%}
+                        {%- endfor -%}
+                    </span>
+                </td>
+                <td class="text-right">{{ "%.2f"|format(item.peso_total) }}</td>
+                <td>
+                    {% if item.tipo_material %}
+                        {{ item.tipo_material }}
+                    {% else %}
+                        {{ item.material }}
+                    {% endif %}
+                    {{ "%.2f"|format(item.espessura) }}mm
+                </td>
+                <td class="text-center">{{ item.quantidade }}</td>
+                <td class="text-right">R$ {{ "%.2f"|format(item.preco_unitario_com_imp) }}</td>
+                <td class="text-right">R$ {{ "%.2f"|format(item.preco_total) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="summary-table">
+        <tr>
+            <td class="comments-box" style="width: 55%;">
+                <strong>Comentários:</strong><br>
+                <div style="margin-top: 5px; color: #475569; line-height: 1.4;">
+                    {{ orcamento.observacoes or 'Proposta comercial de corte a laser.' }}
+                </div>
+            </td>
+            <td style="width: 5%;"></td>
+            <td class="totals-box" style="width: 40%;">
+                <div class="grand-total-label">VALOR TOTAL :</div>
+                <div class="grand-total-val">R$ {{ "%.2f"|format(orcamento.total_preco) }}</div>
+                <div class="tax-info">
+                    (Venda IPI - {{ "%.2f"|format(orcamento.ipi_rate * 100) }}% / Benef. Isento)
+                </div>
+                <div class="summary-line" style="margin-top: 10px;">
+                    Total de {{ orcamento.itens|length }} peças
+                </div>
+                <div class="summary-line">
+                    Peso total do orçamento {{ "%.2f"|format(orcamento.total_peso) }} Kg
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- ================= PÁGINA 2: CONDIÇÕES DE FORNECIMENTO ================= -->
+    <div class="page-break"></div>
+
+    <div class="header">
+        <table>
+            <tr>
+                <td>
+                    <div class="logo-box">
+                        {% if configs_globais and configs_globais.logo_base64 %}
+                            <img src="{{ configs_globais.logo_base64 }}" alt="Logo" style="max-height: 75px; max-width: 150px; object-fit: contain;" />
+                        {% else %}
+                            <div class="logo-placeholder">
+                                <div class="logo-placeholder-dot">
+                                    <span class="logo-plus">+</span>
+                                    <span class="logo-text-ph">INSERIR LOGO</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </td>
+                <td style="text-align: right; vertical-align: middle;">
+                    <div class="budget-number">Nº Orçamento : {{ orcamento.numero }}</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="terms-section">
+        <div class="terms-title">CONDIÇÕES GERAIS DE FORNECIMENTO</div>
+        <ol class="terms-list">
+            <li>Os desenhos deverão ser fornecidos no formato .DXF ou .DWG em escala 1:1 com a respectiva indicação de revisão. Peças cortadas fora da sua verdadeira grandeza serão de responsabilidade do cliente.</li>
+            <li>TOLERANCIA CORTE &lt;=0,2mm e &lt;=1,00mm | TOLERÂNCIA DOBRA: +/- 1,5mm.</li>
+            <li>Furos com diâmetro menor que a espessura da chapa serão somente marcados.</li>
+            <li>A produção somente será iniciada quando:
+                <ul class="terms-sublist">
+                    <li>Recebido pedido do cliente E / OU recebimento da matéria-prima (no caso de beneficiamento).</li>
+                    <li>Recebido a confirmação por e-mail aprovando a proposta comercial.</li>
+                </ul>
+            </li>
+            <li>Horário para entrega e retirada de mercadorias: 08h às 12h | 14h às 17h.</li>
+            <li>No processo de corte pode haver empenamento das peças (algo normal devida a alta temperatura). O cliente deve especificar no ato da cotação a necessidade de mantê-las planas.</li>
+            <li>Prezados clientes, concluído o pedido de BENEFICIAMENTO, a sucata gerada será mantida em até, no máximo, 4 dias úteis. Após este período será descartada junto com outras sucatas pelo motivo de logística e espaço. Dessa forma, tornando-se de propriedade da contratada/fabricante.</li>
+        </ol>
+        
+        <table class="terms-details-table">
+            <tr>
+                <td class="terms-label" style="width: 25%;">Prazo de Entrega:</td>
+                <td class="terms-value" style="width: 75%;">{{ orcamento.prazo_entrega or '7 Dias úteis após recebimento do pedido de compra' }}</td>
+            </tr>
+            <tr>
+                <td class="terms-label">Forma de Pagamento:</td>
+                <td class="terms-value">{{ orcamento.condicao_pagamento or 'A Combinar' }}</td>
+            </tr>
+            <tr>
+                <td class="terms-label">Pedido Mínimo:</td>
+                <td class="terms-value">R$ 500,00</td>
+            </tr>
+            <tr>
+                <td class="terms-label">Frete:</td>
+                <td class="terms-value">FOB</td>
+            </tr>
+            <tr>
+                <td class="terms-label">Impostos:</td>
+                <td class="terms-value">
+                    ICMS INCLUSO - PIS/COFINS INCLUSO<br>
+                    IPI: {{ "%.2f"|format(orcamento.ipi_rate * 100) }}% A INCLUIR
+                </td>
+            </tr>
+        </table>
+    </div>
+
+</body>
+</html>

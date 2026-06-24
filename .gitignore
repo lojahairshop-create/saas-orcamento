@@ -1,0 +1,42 @@
+# Python / Backend
+backend/venv/
+backend/.env
+backend/.pytest_cache/
+backend/__pycache__/
+backend/app/__pycache__/
+backend/app/auth/__pycache__/
+backend/app/calculo/__pycache__/
+backend/app/configuracoes/__pycache__/
+backend/app/dashboard/__pycache__/
+backend/app/engenharia/__pycache__/
+backend/app/orcamentos/__pycache__/
+backend/app/pdf/__pycache__/
+backend/app/pdf/templates/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node / Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/tsconfig.tsbuildinfo
+.npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS / IDEs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
