@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function NovoOrcamentoWizard() {
+function NovoOrcamentoWizardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("id");
@@ -1197,5 +1197,19 @@ export default function NovoOrcamentoWizard() {
         )}
       </div>
     </AppLayout>
+  );
+}
+
+export default function NovoOrcamentoWizard() {
+  return (
+    <Suspense fallback={
+      <AppLayout>
+        <div className="h-96 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-blue-500 border-t-transparent" />
+        </div>
+      </AppLayout>
+    }>
+      <NovoOrcamentoWizardContent />
+    </Suspense>
   );
 }
