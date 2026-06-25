@@ -10,6 +10,7 @@ from app.orcamentos.router import router as orcamentos_router
 from app.configuracoes.router import router as configuracoes_router
 from app.dashboard.router import router as dashboard_router
 from app.engenharia.router import router as engenharia_router
+from app.estoque.router import router as estoque_router
 
 app = FastAPI(
     title="SaaS Orçamentos Metalúrgicos - API",
@@ -39,6 +40,7 @@ app.include_router(orcamentos_router, prefix="/orcamentos", tags=["Orçamentos"]
 app.include_router(configuracoes_router, prefix="/configuracoes", tags=["Configurações"])
 app.include_router(dashboard_router, prefix="/dashboard", tags=["Dashboard"])
 app.include_router(engenharia_router, prefix="/engenharia", tags=["Engenharia"])
+app.include_router(estoque_router, prefix="/estoque", tags=["Estoque"])
 
 
 # ---------------------------------------------------------------------------

@@ -50,6 +50,7 @@ class ItemCreate(BaseModel):
     margem_lucro: float = 0.30
     operacoes: List[OperacaoItem] = []
     observacoes: Optional[str] = None
+    origem_material: Optional[str] = "chapa_inteira"
 
 
 class ItemUpdate(BaseModel):
@@ -68,6 +69,7 @@ class ItemUpdate(BaseModel):
     margem_lucro: Optional[float] = None
     operacoes: Optional[List[OperacaoItem]] = None
     observacoes: Optional[str] = None
+    origem_material: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -89,6 +91,7 @@ class ItemCalculadoResponse(BaseModel):
     chapa_c: float = 2400.0
     preco_kg: float = 0.0
     margem_lucro: float = 0.30
+    origem_material: str = "chapa_inteira"
 
     # Valores calculados
     velocidade: float = 0.0

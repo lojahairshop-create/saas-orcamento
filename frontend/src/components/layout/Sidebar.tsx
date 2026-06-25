@@ -13,6 +13,7 @@ import {
   LogOut,
   Cpu,
   User as UserIcon,
+  Database,
 } from "lucide-react";
 
 export const Sidebar: React.FC = () => {
@@ -39,6 +40,11 @@ export const Sidebar: React.FC = () => {
       label: "Arranjo de Chapas",
       href: "/arranjo-chapas",
       icon: Layers,
+    },
+    {
+      label: "Estoque de Chapas",
+      href: "/estoque",
+      icon: Database,
     },
     {
       label: "Configurações",

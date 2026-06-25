@@ -324,6 +324,53 @@ class ApiClient {
   }
 
   // -------------------------------------------------------------------------
+  // Estoque
+  // -------------------------------------------------------------------------
+
+  async getEstoque(): Promise<any[]> {
+    const res = await fetch(`${API_BASE_URL}/estoque/`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    return this.handleResponse<any[]>(res);
+  }
+
+  async createEstoque(data: any): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/estoque/`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+    return this.handleResponse<any>(res);
+  }
+
+  async updateEstoque(id: string, data: any): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/estoque/${id}`, {
+      method: "PUT",
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+    return this.handleResponse<any>(res);
+  }
+
+  async deleteEstoque(id: string): Promise<void> {
+    const res = await fetch(`${API_BASE_URL}/estoque/${id}`, {
+      method: "DELETE",
+      headers: this.getHeaders(),
+    });
+    return this.handleResponse<void>(res);
+  }
+
+  async obterSugestaoEstoque(data: any): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/estoque/sugestao`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+    return this.handleResponse<any>(res);
+  }
+
+  // -------------------------------------------------------------------------
   // Engenharia
   // -------------------------------------------------------------------------
 

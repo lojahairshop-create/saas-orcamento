@@ -88,6 +88,7 @@ function NovoOrcamentoWizardContent() {
     chapa_c: 2400,
     preco_kg: 2.00,
     margem_lucro: 0.30,
+    origem_material: "chapa_inteira",
     
     // Tempos das operações (minutos)
     tempo_setup: 6.0,
@@ -100,6 +101,8 @@ function NovoOrcamentoWizardContent() {
     
     observacoes: "",
   });
+
+  const [sugestaoEstoque, setSugestaoEstoque] = useState<any>(null);
 
   // Carregar materiais e custos padrão do backend no início
   useEffect(() => {
@@ -135,6 +138,41 @@ function NovoOrcamentoWizardContent() {
     loadMateriais();
     loadCustos();
   }, []);
+
+  // Buscar sugestões de chapa/retalho no estoque
+  useEffect(() => {
+    async function fetchSugestao() {
+      if (
+        novaPeca.largura > 0 &&
+        novaPeca.comprimento > 0 &&
+        novaPeca.espessura > 0 &&
+        novaPeca.quantidade > 0
+      ) {
+        try {
+          const res = await api.obterSugestaoEstoque({
+            material: novaPeca.material,
+            espessura: novaPeca.espessura,
+            largura: novaPeca.largura,
+            comprimento: novaPeca.comprimento,
+            quantidade: novaPeca.quantidade,
+          });
+          setSugestaoEstoque(res);
+        } catch (err) {
+          console.error("Erro ao buscar sugestão de estoque:", err);
+          setSugestaoEstoque(null);
+        }
+      } else {
+        setSugestaoEstoque(null);
+      }
+    }
+    fetchSugestao();
+  }, [
+    novaPeca.material,
+    novaPeca.espessura,
+    novaPeca.largura,
+    novaPeca.comprimento,
+    novaPeca.quantidade,
+  ]);
 
   // Carregar orçamento se estiver no modo edição
   useEffect(() => {
@@ -185,6 +223,7 @@ function NovoOrcamentoWizardContent() {
           chapa_c: it.chapa_c || 2400,
           preco_kg: it.preco_kg || 0,
           margem_lucro: it.margem_lucro || 0.3,
+          origem_material: it.origem_material || "chapa_inteira",
           tempo_setup: getTempo(it.operacoes || [], "SET-UP"),
           tempo_dobra: getTempo(it.operacoes || [], "DOBRA"),
           tempo_caldeiraria: getTempo(it.operacoes || [], "CALDEIRARIA"),
@@ -229,6 +268,7 @@ function NovoOrcamentoWizardContent() {
       perimetro: 0,
       num_entradas: 1,
       quantidade: 1,
+      origem_material: "chapa_inteira",
       tempo_setup: 6.0,
       tempo_dobra: 6.0,
       tempo_caldeiraria: 6.0,
@@ -263,6 +303,7 @@ function NovoOrcamentoWizardContent() {
       chapa_c: item.chapa_c ?? 2400,
       preco_kg: item.preco_kg ?? 2.00,
       margem_lucro: item.margem_lucro ?? 0.30,
+      origem_material: item.origem_material || "chapa_inteira",
       tempo_setup: item.tempo_setup ?? 0,
       tempo_dobra: item.tempo_dobra ?? 0,
       tempo_caldeiraria: item.tempo_caldeiraria ?? 0,
@@ -300,6 +341,7 @@ function NovoOrcamentoWizardContent() {
         chapa_c: 2400,
         preco_kg: defaultMaterial ? defaultMaterial.preco_kg : 2.00,
         margem_lucro: 0.30,
+        origem_material: "chapa_inteira",
         
         // Tempos padrão (iniciam em 0 para peças importadas por DXF)
         tempo_setup: 0.0,
@@ -460,6 +502,7 @@ function NovoOrcamentoWizardContent() {
           chapa_c: it.chapa_c,
           preco_kg: it.preco_kg,
           margem_lucro: it.margem_lucro,
+          origem_material: it.origem_material || "chapa_inteira",
           operacoes: [
             { nome: "SET-UP", tempo_min: it.tempo_setup },
             { nome: "DOBRA", tempo_min: it.tempo_dobra },
@@ -984,6 +1027,76 @@ function NovoOrcamentoWizardContent() {
                 />
               </div>
 
+              {/* Origem de Chapa e Estoque */}
+              <div className="border-t border-white/5 pt-4 mt-4">
+                <h4 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">
+                  Configuração de Material e Origem
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input
+                      label="Largura Chapa (mm)"
+                      type="number"
+                      value={novaPeca.chapa_l}
+                      onChange={e => setNovaPeca({ ...novaPeca, chapa_l: parseFloat(e.target.value) || 1200 })}
+                    />
+                    <Input
+                      label="Comprimento Chapa (mm)"
+                      type="number"
+                      value={novaPeca.chapa_c}
+                      onChange={e => setNovaPeca({ ...novaPeca, chapa_c: parseFloat(e.target.value) || 2400 })}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <Select
+                      label="Origem do Material"
+                      value={novaPeca.origem_material || "chapa_inteira"}
+                      onChange={e => setNovaPeca({ ...novaPeca, origem_material: e.target.value })}
+                      options={(() => {
+                        const opts = [
+                          { value: "chapa_inteira", label: "Chapa Inteira (Do Estoque)" },
+                          { value: "cliente", label: "Material do Cliente" },
+                        ];
+                        if (sugestaoEstoque?.retalhos_disponiveis) {
+                          sugestaoEstoque.retalhos_disponiveis.forEach((r: any) => {
+                            opts.push({
+                              value: `retalho_${r.id}`,
+                              label: `Retalho ${r.largura}x${r.comprimento} mm (Disponível no Estoque - Qtd: ${r.quantidade})`,
+                            });
+                          });
+                        }
+                        if (novaPeca.origem_material && novaPeca.origem_material.startsWith("retalho_")) {
+                          if (!opts.some(o => o.value === novaPeca.origem_material)) {
+                            opts.push({
+                              value: novaPeca.origem_material,
+                              label: "Retalho Atual (Selecionado)",
+                            });
+                          }
+                        }
+                        return opts;
+                      })()}
+                    />
+
+                    {sugestaoEstoque?.sugestao && (
+                      <div className="mt-2 text-[11px] text-blue-400 font-semibold flex items-center gap-1.5 bg-blue-500/5 border border-blue-500/10 px-3 py-2 rounded-lg">
+                        <Sparkles className="h-3.5 w-3.5 text-blue-400 animate-pulse shrink-0" />
+                        <span>{sugestaoEstoque.sugestao}</span>
+                        {sugestaoEstoque.opcao_sugerida && novaPeca.origem_material !== sugestaoEstoque.opcao_sugerida && (
+                          <button
+                            type="button"
+                            onClick={() => setNovaPeca({ ...novaPeca, origem_material: sugestaoEstoque.opcao_sugerida })}
+                            className="ml-auto text-blue-300 hover:text-blue-200 underline cursor-pointer text-[10px]"
+                          >
+                            Aplicar Sugestão
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Tempos operacionais */}
               <div className="border-t border-white/5 pt-4 mt-4">
                 <h4 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">
@@ -1056,6 +1169,7 @@ function NovoOrcamentoWizardContent() {
                         chapa_c: 2400,
                         preco_kg: 2.00,
                         margem_lucro: 0.30,
+                        origem_material: "chapa_inteira",
                         tempo_setup: 6.0,
                         tempo_dobra: 6.0,
                         tempo_caldeiraria: 6.0,
@@ -1086,13 +1200,22 @@ function NovoOrcamentoWizardContent() {
             <Card header={`Peças Adicionadas (${itens.length})`}>
               {itens.length > 0 ? (
                 <div className="flex flex-col gap-4">
-                  <Table headers={["Item", "Descrição", "Material / Esp.", "Qtd", "Dimensões", "Perímetro", "Ações"]}>
+                  <Table headers={["Item", "Descrição", "Material / Esp.", "Qtd", "Origem", "Dimensões", "Perímetro", "Ações"]}>
                     {itens.map((item, idx) => (
                       <TableRow key={item.id}>
                         <TableCell className="font-bold">{idx + 1}</TableCell>
                         <TableCell>{item.descricao}</TableCell>
                         <TableCell>{item.material} {item.espessura}mm</TableCell>
                         <TableCell className="text-center">{item.quantidade}</TableCell>
+                        <TableCell>
+                          <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-white/5 border border-white/5 text-slate-300">
+                            {item.origem_material === "cliente"
+                              ? "Cliente"
+                              : item.origem_material?.startsWith("retalho_")
+                              ? "Retalho"
+                              : "Chapa Inteira"}
+                          </span>
+                        </TableCell>
                         <TableCell>{item.largura} x {item.comprimento} mm</TableCell>
                         <TableCell>{item.perimetro} mm</TableCell>
                         <TableCell>

@@ -67,6 +67,7 @@ def _build_item_response(
         chapa_c=item_input.get("chapa_c", 2400),
         preco_kg=item_input.get("preco_kg", 0),
         margem_lucro=item_input.get("margem_lucro", 0.30),
+        origem_material=item_input.get("origem_material", "chapa_inteira"),
         velocidade=calc_result.get("velocidade", 0),
         peck=calc_result.get("peck", 0),
         tempo_corte_laser=calc_result.get("tempo_corte_laser", 0),
@@ -194,6 +195,7 @@ async def create_orcamento(
             "chapa_c": item_input.get("chapa_c", 2400),
             "preco_kg": item_input.get("preco_kg", 0),
             "margem_lucro": item_input.get("margem_lucro", 0.30),
+            "origem_material": item_input.get("origem_material", "chapa_inteira"),
             "velocidade": calc.get("velocidade", 0),
             "peck": calc.get("peck", 0),
             "tempo_corte_laser": calc.get("tempo_corte_laser", 0),
@@ -305,6 +307,7 @@ async def get_orcamento(orcamento_id: str, user_id: str) -> OrcamentoResponse:
                 chapa_c=item_db.get("chapa_c", 2400),
                 preco_kg=item_db.get("preco_kg", 0),
                 margem_lucro=item_db.get("margem_lucro", 0.30),
+                origem_material=item_db.get("origem_material", "chapa_inteira"),
                 velocidade=item_db.get("velocidade", 0),
                 peck=item_db.get("peck", 0),
                 tempo_corte_laser=item_db.get("tempo_corte_laser", 0),
@@ -549,6 +552,7 @@ async def update_orcamento(
                 "chapa_c": item_input.get("chapa_c", 2400),
                 "preco_kg": item_input.get("preco_kg", 0),
                 "margem_lucro": item_input.get("margem_lucro", 0.30),
+                "origem_material": item_input.get("origem_material", "chapa_inteira"),
                 "velocidade": calc.get("velocidade", 0),
                 "peck": calc.get("peck", 0),
                 "tempo_corte_laser": calc.get("tempo_corte_laser", 0),
@@ -591,12 +595,133 @@ async def update_status(
     status: str,
     user_id: str,
 ) -> OrcamentoResponse:
-    """Atualiza apenas o status do orçamento."""
+    """Atualiza apenas o status do orçamento, processando estoque se aprovado."""
     supabase = get_supabase_service_client()
 
+    # Buscar status atual do orçamento
+    orc_res = (
+        supabase.table("orcamentos")
+        .select("status")
+        .eq("id", orcamento_id)
+        .eq("created_by", user_id)
+        .single()
+        .execute()
+    )
+    
+    if not orc_res.data:
+        raise ValueError("Orçamento não encontrado ou acesso negado.")
+        
+    old_status = orc_res.data["status"]
+
+    # Atualizar o status
     supabase.table("orcamentos").update({"status": status}).eq(
         "id", orcamento_id
     ).eq("created_by", user_id).execute()
+
+    # Lógica de estoque ao aprovar o orçamento
+    if old_status != "aprovado" and status == "aprovado":
+        # Buscar itens do orçamento
+        items_res = (
+            supabase.table("orcamento_itens")
+            .select("*")
+            .eq("orcamento_id", orcamento_id)
+            .execute()
+        )
+        items = items_res.data or []
+
+        from app.engenharia.nesting import NestingEngine
+
+        for item in items:
+            origem = item.get("origem_material", "chapa_inteira")
+            
+            if origem == "cliente":
+                # Material do cliente: não altera o estoque
+                continue
+
+            elif origem == "chapa_inteira":
+                # 1. Subtrair chapas inteiras do estoque
+                qtd_chapas_necessarias = int(item.get("qtd_chapas", 0))
+                if qtd_chapas_necessarias > 0:
+                    full_sheets = (
+                        supabase.table("estoque_chapas")
+                        .select("*")
+                        .eq("material", item["material"])
+                        .eq("espessura", item["espessura"])
+                        .eq("tipo_registro", "inteira")
+                        .eq("created_by", user_id)
+                        .gt("quantidade", 0)
+                        .execute()
+                    )
+                    
+                    qtd_restante = qtd_chapas_necessarias
+                    for sheet in (full_sheets.data or []):
+                        if qtd_restante <= 0:
+                            break
+                        deduct = min(qtd_restante, sheet["quantidade"])
+                        new_qty = sheet["quantidade"] - deduct
+                        supabase.table("estoque_chapas").update({"quantidade": new_qty}).eq("id", sheet["id"]).execute()
+                        qtd_restante -= deduct
+
+                # 2. Calcular e gerar retalho se houver sobra útil
+                try:
+                    itens_nesting = [{
+                        "id": str(item["id"]),
+                        "largura": float(item["largura"]),
+                        "comprimento": float(item["comprimento"]),
+                        "quantidade": int(item["quantidade"])
+                    }]
+                    chapa_l = float(item.get("chapa_l", 1200))
+                    chapa_c = float(item.get("chapa_c", 2400))
+                    
+                    result_nesting = NestingEngine.nested_rectangles(
+                        itens=itens_nesting,
+                        chapa_l=chapa_l,
+                        chapa_c=chapa_c,
+                        gap=5.0
+                    )
+                    
+                    for ch in result_nesting.get("chapas", []):
+                        pecas_chapa = ch.get("pecas", [])
+                        if not pecas_chapa:
+                            continue
+                        
+                        max_y = max(p["y"] + p["h"] for p in pecas_chapa)
+                        comprimento_sobra = chapa_c - max_y
+                        
+                        if comprimento_sobra >= 200.0:
+                            db_retalho = {
+                                "material": item["material"],
+                                "tipo_material": item.get("tipo_material"),
+                                "espessura": item["espessura"],
+                                "largura": chapa_l,
+                                "comprimento": comprimento_sobra,
+                                "quantidade": 1,
+                                "tipo_registro": "retalho",
+                                "created_by": user_id,
+                            }
+                            supabase.table("estoque_chapas").insert(db_retalho).execute()
+                except Exception as e:
+                    # Log ou print do erro de nesting/retalho, sem travar aprovação
+                    print(f"Erro ao processar retalho para item {item['id']}: {e}")
+
+            elif origem.startswith("retalho_"):
+                # Subtrair/consumir o retalho específico do estoque
+                remnant_id = origem.replace("retalho_", "")
+                rem_res = (
+                    supabase.table("estoque_chapas")
+                    .select("*")
+                    .eq("id", remnant_id)
+                    .eq("created_by", user_id)
+                    .execute()
+                )
+                
+                if rem_res.data:
+                    rem = rem_res.data[0]
+                    new_qty = max(0, rem["quantidade"] - 1)
+                    if new_qty == 0:
+                        supabase.table("estoque_chapas").delete().eq("id", remnant_id).execute()
+                    else:
+                        supabase.table("estoque_chapas").update({"quantidade": new_qty}).eq("id", remnant_id).execute()
 
     return await get_orcamento(orcamento_id, user_id)
 
