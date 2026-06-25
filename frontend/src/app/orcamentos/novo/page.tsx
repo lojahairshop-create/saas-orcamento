@@ -177,14 +177,14 @@ export default function NovoOrcamentoWizard() {
         preco_kg: defaultMaterial ? defaultMaterial.preco_kg : 2.00,
         margem_lucro: 0.30,
         
-        // Tempos padrão
-        tempo_setup: 6.0,
-        tempo_dobra: 6.0,
-        tempo_caldeiraria: 6.0,
-        tempo_solda: 6.0,
-        tempo_guilhotina: 6.0,
-        tempo_usinagem: 6.0,
-        tempo_montagem: 6.0,
+        // Tempos padrão (iniciam em 0 para peças importadas por DXF)
+        tempo_setup: 0.0,
+        tempo_dobra: 0.0,
+        tempo_caldeiraria: 0.0,
+        tempo_solda: 0.0,
+        tempo_guilhotina: 0.0,
+        tempo_usinagem: 0.0,
+        tempo_montagem: 0.0,
         
         observacoes: "",
       };
@@ -532,20 +532,44 @@ export default function NovoOrcamentoWizard() {
               size="xl"
             >
               {dxfItemsToConfigure && (
-                <div className="flex flex-col gap-6 max-h-[70vh]">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    setItens((prev) => [...prev, ...dxfItemsToConfigure]);
+                    setDxfItemsToConfigure(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      if (
+                        e.target instanceof HTMLInputElement &&
+                        e.target.type !== "button" &&
+                        e.target.type !== "submit"
+                      ) {
+                        e.preventDefault();
+                        setItens((prev) => [...prev, ...dxfItemsToConfigure]);
+                        setDxfItemsToConfigure(null);
+                      }
+                    }
+                  }}
+                  className="flex flex-col gap-6 max-h-[70vh]"
+                >
                   <div className="overflow-y-auto max-h-[50vh] pr-2">
-                    <table className="w-full text-left border-collapse min-w-[900px]">
+                    <table className="w-full text-left border-collapse min-w-[1200px]">
                       <thead>
                         <tr className="border-b border-white/10 text-xs font-semibold text-slate-400">
                           <th className="py-3 px-2">Desenho / Descrição</th>
                           <th className="py-3 px-2">Dimensões (mm)</th>
                           <th className="py-3 px-2">Material</th>
-                          <th className="py-3 px-2 w-20">Esp. (mm)</th>
-                          <th className="py-3 px-2 w-20">Qtd</th>
-                          <th className="py-3 px-2 w-24">Preço Kg</th>
-                          <th className="py-3 px-2 w-24">Margem %</th>
+                          <th className="py-3 px-2 w-16">Esp. (mm)</th>
+                          <th className="py-3 px-2 w-16">Qtd</th>
+                          <th className="py-3 px-2 w-20">Preço Kg</th>
+                          <th className="py-3 px-2 w-20">Margem %</th>
+                          <th className="py-3 px-2 w-20">Dobra (min)</th>
+                          <th className="py-3 px-2 w-20">Solda (min)</th>
+                          <th className="py-3 px-2 w-20">Usinagem (min)</th>
+                          <th className="py-3 px-2 w-20">Custo Extra (min)</th>
                           <th className="py-3 px-2 w-24">Perímetro (mm)</th>
-                          <th className="py-3 px-2 w-20">Entradas</th>
+                          <th className="py-3 px-2 w-16">Entradas</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5 text-xs text-slate-200">
@@ -643,6 +667,58 @@ export default function NovoOrcamentoWizard() {
                             <td className="py-3 px-2">
                               <input
                                 type="number"
+                                step="0.1"
+                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                value={item.tempo_dobra}
+                                onChange={(e) => {
+                                  const updated = [...dxfItemsToConfigure];
+                                  updated[idx].tempo_dobra = parseFloat(e.target.value) || 0.0;
+                                  setDxfItemsToConfigure(updated);
+                                }}
+                              />
+                            </td>
+                            <td className="py-3 px-2">
+                              <input
+                                type="number"
+                                step="0.1"
+                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                value={item.tempo_solda}
+                                onChange={(e) => {
+                                  const updated = [...dxfItemsToConfigure];
+                                  updated[idx].tempo_solda = parseFloat(e.target.value) || 0.0;
+                                  setDxfItemsToConfigure(updated);
+                                }}
+                              />
+                            </td>
+                            <td className="py-3 px-2">
+                              <input
+                                type="number"
+                                step="0.1"
+                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                value={item.tempo_usinagem}
+                                onChange={(e) => {
+                                  const updated = [...dxfItemsToConfigure];
+                                  updated[idx].tempo_usinagem = parseFloat(e.target.value) || 0.0;
+                                  setDxfItemsToConfigure(updated);
+                                }}
+                              />
+                            </td>
+                            <td className="py-3 px-2">
+                              <input
+                                type="number"
+                                step="0.1"
+                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                value={item.tempo_setup}
+                                onChange={(e) => {
+                                  const updated = [...dxfItemsToConfigure];
+                                  updated[idx].tempo_setup = parseFloat(e.target.value) || 0.0;
+                                  setDxfItemsToConfigure(updated);
+                                }}
+                              />
+                            </td>
+                            <td className="py-3 px-2">
+                              <input
+                                type="number"
                                 className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
                                 value={item.perimetro}
                                 onChange={(e) => {
@@ -672,19 +748,14 @@ export default function NovoOrcamentoWizard() {
 
                   {/* Botões de Ação */}
                   <div className="flex justify-end gap-3 border-t border-white/5 pt-4 mt-2">
-                    <Button variant="secondary" onClick={() => setDxfItemsToConfigure(null)}>
+                    <Button type="button" variant="secondary" onClick={() => setDxfItemsToConfigure(null)}>
                       Cancelar
                     </Button>
-                    <Button
-                      onClick={() => {
-                        setItens((prev) => [...prev, ...dxfItemsToConfigure]);
-                        setDxfItemsToConfigure(null);
-                      }}
-                    >
+                    <Button type="submit">
                       Adicionar Peças ao Orçamento
                     </Button>
                   </div>
-                </div>
+                </form>
               )}
             </Modal>
 
