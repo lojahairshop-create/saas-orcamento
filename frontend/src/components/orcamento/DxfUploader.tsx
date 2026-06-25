@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { DXFResult } from "@/types";
 
 interface DxfUploaderProps {
-  onSuccess: (result: DXFResult) => void;
+  onSuccess: (results: DXFResult[]) => void;
 }
 
 export const DxfUploader: React.FC<DxfUploaderProps> = ({ onSuccess }) => {
@@ -16,8 +16,9 @@ export const DxfUploader: React.FC<DxfUploaderProps> = ({ onSuccess }) => {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const processFile = async (file: File) => {
-    if (!file.name.toLowerCase().endsWith(".dxf")) {
+  const processFiles = async (files: FileList | File[]) => {
+    const dxfFiles = Array.from(files).filter(file => file.name.toLowerCase().endsWith(".dxf"));
+    if (dxfFiles.length === 0) {
       setError("Apenas arquivos .DXF são aceitos.");
       setFileName(null);
       return;
@@ -25,12 +26,20 @@ export const DxfUploader: React.FC<DxfUploaderProps> = ({ onSuccess }) => {
 
     setError(null);
     setLoading(true);
-    setFileName(file.name);
+    
+    if (dxfFiles.length === 1) {
+      setFileName(dxfFiles[0].name);
+    } else {
+      setFileName(`${dxfFiles[0].name} e mais ${dxfFiles.length - 1} arquivos`);
+    }
+
     try {
-      const data = await api.processarDxf(file);
-      onSuccess(data);
+      const promises = dxfFiles.map(file => api.processarDxf(file));
+      const results = await Promise.all(promises);
+      onSuccess(results);
+      setFileName(null); // Limpa após sucesso para permitir novos uploads
     } catch (err: any) {
-      setError(err.message || "Erro ao ler metadados do DXF.");
+      setError(err.message || "Erro ao ler metadados dos arquivos DXF.");
       setFileName(null);
     } finally {
       setLoading(false);
@@ -52,14 +61,14 @@ export const DxfUploader: React.FC<DxfUploaderProps> = ({ onSuccess }) => {
     e.stopPropagation();
     setIsDragActive(false);
     
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      processFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files);
     }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      processFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      processFiles(e.target.files);
     }
   };
 
@@ -88,6 +97,7 @@ export const DxfUploader: React.FC<DxfUploaderProps> = ({ onSuccess }) => {
           accept=".dxf"
           onChange={handleFileInput}
           disabled={loading}
+          multiple
         />
 
         {loading ? (

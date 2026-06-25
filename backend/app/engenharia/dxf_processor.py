@@ -3,9 +3,11 @@ Módulo para processamento de arquivos DXF/CAD usando a biblioteca ezdxf.
 Extrai perímetro total de corte, quantidade de furos, bounding box (largura e comprimento) e área aproximada.
 """
 
+import os
 import math
+import tempfile
 import ezdxf
-from typing import Dict, Any, Tuple
+from typing import Dict, Any
 
 
 class DXFProcessor:
@@ -21,41 +23,108 @@ class DXFProcessor:
         - largura: float (em mm)
         - comprimento: float (em mm)
         - area: float (área do bounding box em m²)
+        - furos: int (número de círculos encontrados)
         """
+        # Escreve os bytes em um arquivo temporário físico para ezdxf.readfile rodar de forma robusta
+        with tempfile.NamedTemporaryFile(suffix=".dxf", delete=False) as temp_file:
+            temp_file.write(file_bytes)
+            temp_path = temp_file.name
+
         try:
-            # 1. Verifica se é um arquivo binário pelo sentinel
-            if file_bytes.startswith(b"AutoCAD Binary DXF\r\n\x1a\x00"):
-                from ezdxf.lldxf.tagger import binary_tags_loader
-                from ezdxf.document import Drawing
-                loader = binary_tags_loader(file_bytes, errors="surrogateescape")
-                doc = Drawing.load(loader)
-            else:
-                # 2. Se for ASCII, tentamos decodificar e ler com ezdxf.read()
-                import io
-                try:
-                    text_stream = io.StringIO(file_bytes.decode("utf-8", errors="surrogateescape"))
-                    doc = ezdxf.read(text_stream)
-                except Exception:
-                    # Se falhar com UTF-8, tentamos CP1252/latin-1
-                    text_stream = io.StringIO(file_bytes.decode("cp1252", errors="ignore"))
-                    doc = ezdxf.read(text_stream)
+            # Tenta carregar com readfile para detecção de codificação e parsing automático
+            doc = ezdxf.readfile(temp_path)
         except Exception as exc:
-            # 3. Se falhar, tentamos recuperar usando o recover module que aceita BytesIO diretamente
+            # Fallback para modo recover
             try:
-                import io
                 from ezdxf import recover
-                binary_stream = io.BytesIO(file_bytes)
-                doc, auditor = recover.read(binary_stream)
+                doc, auditor = recover.readfile(temp_path)
             except Exception as rec_exc:
-                raise ValueError(f"Falha ao ler arquivo DXF: {str(exc)} (Recuperação também falhou: {str(rec_exc)})")
+                raise ValueError(
+                    f"Falha ao ler arquivo DXF: {str(exc)} (Recuperação também falhou: {str(rec_exc)})"
+                )
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
 
         msp = doc.modelspace()
-        
+
+        # Função auxiliar recursiva para decompor blocos (INSERT), polilinhas e splines em primitivas básicas
+        def decompose(entity) -> list:
+            dxftype = entity.dxftype()
+            
+            # Decompõe referências de blocos ou polilinhas em suas primitivas correspondentes (LINE, ARC, etc.)
+            if dxftype in ("INSERT", "LWPOLYLINE", "POLYLINE"):
+                prims = []
+                try:
+                    for sub_entity in entity.virtual_entities():
+                        prims.extend(decompose(sub_entity))
+                except Exception:
+                    pass
+                return prims
+            
+            # Decompõe splines suavizadas aproximando-as por pequenos segmentos de linha (tolerância 0.1 mm)
+            elif dxftype == "SPLINE":
+                prims = []
+                try:
+                    points = list(entity.flattening(0.1))
+                    for i in range(len(points) - 1):
+                        prims.append({
+                            "type": "LINE",
+                            "start": (points[i][0], points[i][1]),
+                            "end": (points[i+1][0], points[i+1][1])
+                        })
+                except Exception:
+                    pass
+                return prims
+            
+            # Primitivas nativas
+            elif dxftype == "LINE":
+                return [{
+                    "type": "LINE",
+                    "start": (entity.dxf.start.x, entity.dxf.start.y),
+                    "end": (entity.dxf.end.x, entity.dxf.end.y)
+                }]
+            elif dxftype == "ARC":
+                center = entity.dxf.center
+                radius = entity.dxf.radius
+                start_angle = entity.dxf.start_angle
+                end_angle = entity.dxf.end_angle
+                
+                # Calcula coordenadas globais de início e fim do arco
+                x_start = center.x + radius * math.cos(math.radians(start_angle))
+                y_start = center.y + radius * math.sin(math.radians(start_angle))
+                x_end = center.x + radius * math.cos(math.radians(end_angle))
+                y_end = center.y + radius * math.sin(math.radians(end_angle))
+                
+                return [{
+                    "type": "ARC",
+                    "center": (center.x, center.y),
+                    "radius": radius,
+                    "start_angle": start_angle,
+                    "end_angle": end_angle,
+                    "start": (x_start, y_start),
+                    "end": (x_end, y_end)
+                }]
+            elif dxftype == "CIRCLE":
+                center = entity.dxf.center
+                return [{
+                    "type": "CIRCLE",
+                    "center": (center.x, center.y),
+                    "radius": entity.dxf.radius
+                }]
+            return []
+
+        # Extrai todas as primitivas geométricas
+        primitives = []
+        for entity in msp:
+            primitives.extend(decompose(entity))
+
+        # Inicializadores dos cálculos
         perimetro_total = 0.0
         furos = 0
-        entradas = 0
+        circles_count = 0
 
-        # Para cálculo do Bounding Box
+        # Bounding box limits
         min_x, max_x = float("inf"), float("-inf")
         min_y, max_y = float("inf"), float("-inf")
 
@@ -66,107 +135,108 @@ class DXFProcessor:
             if y < min_y: min_y = y
             if y > max_y: max_y = y
 
-        # Iterar sobre entidades geométricas
-        for entity in msp:
-            dxftype = entity.dxftype()
+        # Estrutura DSU (Disjoint Set Union) para contar caminhos contínuos de corte (entradas)
+        parent = {}
 
-            if dxftype == "LINE":
-                start = entity.dxf.start
-                end = entity.dxf.end
-                length = math.hypot(end.x - start.x, end.y - start.y)
+        def find(p):
+            if parent[p] != p:
+                parent[p] = find(parent[p])
+            return parent[p]
+
+        def union(p1, p2):
+            r1 = find(p1)
+            r2 = find(p2)
+            if r1 != r2:
+                parent[r1] = r2
+
+        # Arredondamento para tolerar imperfeições geométricas comuns no CAD (limite de 0.1 mm)
+        def round_point(pt, tolerance=0.1):
+            return (round(pt[0] / tolerance) * tolerance, round(pt[1] / tolerance) * tolerance)
+
+        # Processamento geométrico das primitivas
+        for prim in primitives:
+            ptype = prim["type"]
+            
+            if ptype == "LINE":
+                start = prim["start"]
+                end = prim["end"]
+                length = math.hypot(end[0] - start[0], end[1] - start[1])
                 perimetro_total += length
-                update_bounds(start.x, start.y)
-                update_bounds(end.x, end.y)
-
-            elif dxftype == "CIRCLE":
-                radius = entity.dxf.radius
-                center = entity.dxf.center
-                length = 2 * math.pi * radius
-                perimetro_total += length
-                furos += 1
-                entradas += 1  # Cada círculo é um furo que precisa de uma entrada/peck
-                # Bounds do círculo
-                update_bounds(center.x - radius, center.y - radius)
-                update_bounds(center.x + radius, center.y + radius)
-
-            elif dxftype == "ARC":
-                radius = entity.dxf.radius
-                start_angle = entity.dxf.start_angle
-                end_angle = entity.dxf.end_angle
-                center = entity.dxf.center
                 
-                # Delta angle em graus
+                update_bounds(start[0], start[1])
+                update_bounds(end[0], end[1])
+                
+                # Union endpoints in DSU
+                p1 = round_point(start)
+                p2 = round_point(end)
+                if p1 not in parent: parent[p1] = p1
+                if p2 not in parent: parent[p2] = p2
+                union(p1, p2)
+
+            elif ptype == "ARC":
+                start = prim["start"]
+                end = prim["end"]
+                center = prim["center"]
+                radius = prim["radius"]
+                start_angle = prim["start_angle"]
+                end_angle = prim["end_angle"]
+                
+                # Calcula comprimento do arco
                 delta_angle = end_angle - start_angle
                 if delta_angle < 0:
                     delta_angle += 360
-                
                 length = (delta_angle / 360.0) * (2 * math.pi * radius)
                 perimetro_total += length
                 
-                # Para limites simplificados do ARC, usamos o centro +/- raio e pontos iniciais/finais
-                update_bounds(center.x, center.y)  # Apenas para garantir que esteja mapeado
-                # Calcular pontas do arco
-                x_start = center.x + radius * math.cos(math.radians(start_angle))
-                y_start = center.y + radius * math.sin(math.radians(start_angle))
-                x_end = center.x + radius * math.cos(math.radians(end_angle))
-                y_end = center.y + radius * math.sin(math.radians(end_angle))
-                update_bounds(x_start, y_start)
-                update_bounds(x_end, y_end)
-
-            elif dxftype in ("LWPOLYLINE", "POLYLINE"):
-                points = []
-                # lwpolyline vértices
-                for vertex in entity.get_points(format="xy"):
-                    points.append(vertex)
-                    update_bounds(vertex[0], vertex[1])
+                update_bounds(start[0], start[1])
+                update_bounds(end[0], end[1])
                 
-                if len(points) > 1:
-                    poly_len = 0.0
-                    for i in range(len(points) - 1):
-                        p1 = points[i]
-                        p2 = points[i+1]
-                        poly_len += math.hypot(p2[0] - p1[0], p2[1] - p1[1])
-                    
-                    if entity.is_closed:
-                        p1 = points[-1]
-                        p2 = points[0]
-                        poly_len += math.hypot(p2[0] - p1[0], p2[1] - p1[1])
-                        entradas += 1  # Caminho fechado é uma entrada de corte
-                    
-                    perimetro_total += poly_len
+                # Atualiza limites para os quadrantes que o arco intercepta
+                def angle_in_arc(a, s, e):
+                    if s <= e:
+                        return s <= a <= e
+                    else:
+                        return a >= s or a <= e
+                for angle in [0, 90, 180, 270]:
+                    if angle_in_arc(angle, start_angle, end_angle):
+                        x = center[0] + radius * math.cos(math.radians(angle))
+                        y = center[1] + radius * math.sin(math.radians(angle))
+                        update_bounds(x, y)
 
-            elif dxftype == "SPLINE":
-                # Splines podem ser avaliadas usando pontos de controle como aproximação
-                control_points = list(entity.control_points)
-                if control_points:
-                    spline_len = 0.0
-                    for i in range(len(control_points) - 1):
-                        p1 = control_points[i]
-                        p2 = control_points[i+1]
-                        spline_len += math.hypot(p2[0] - p1[0], p2[1] - p1[1])
-                        update_bounds(p1[0], p1[1])
-                    update_bounds(control_points[-1][0], control_points[-1][1])
-                    
-                    if entity.is_closed:
-                        p1 = control_points[-1]
-                        p2 = control_points[0]
-                        spline_len += math.hypot(p2[0] - p1[0], p2[1] - p1[1])
-                        entradas += 1
-                        
-                    perimetro_total += spline_len
+                # Union endpoints in DSU
+                p1 = round_point(start)
+                p2 = round_point(end)
+                if p1 not in parent: parent[p1] = p1
+                if p2 not in parent: parent[p2] = p2
+                union(p1, p2)
 
-        # Caso não tenhamos nenhuma geometria cadastrada
+            elif ptype == "CIRCLE":
+                center = prim["center"]
+                radius = prim["radius"]
+                length = 2 * math.pi * radius
+                perimetro_total += length
+                circles_count += 1
+                furos += 1
+                
+                update_bounds(center[0] - radius, center[1] - radius)
+                update_bounds(center[0] + radius, center[1] + radius)
+
+        # Encontra a quantidade de contornos/caminhos conectados no DSU
+        roots = set()
+        for p in parent:
+            roots.add(find(p))
+        
+        unique_components = len(roots)
+        
+        # O total de entradas/peckings é o número de contornos de linhas/arcos conectados + número de círculos
+        entradas = unique_components + circles_count
+
+        # Tratamento de desenho vazio
         if min_x == float("inf"):
             min_x, max_x, min_y, max_y = 0.0, 0.0, 0.0, 0.0
 
         largura = max_x - min_x
         comprimento = max_y - min_y
-
-        # Se não houver entradas computadas mas houver perímetro, assumimos pelo menos 1 entrada (a peça externa)
-        if entradas == 0 and perimetro_total > 0:
-            entradas = 1
-
-        # Conversão de área de bounding box (mm² para m²)
         area_m2 = (largura / 1000.0) * (comprimento / 1000.0)
 
         return {

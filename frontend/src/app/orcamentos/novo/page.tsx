@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Table, TableRow, TableCell } from "@/components/ui/Table";
 import DxfUploader from "@/components/orcamento/DxfUploader";
+import { Modal } from "@/components/ui/Modal";
 import { api } from "@/lib/api";
 import { DXFResult, Material } from "@/types";
 import {
@@ -64,6 +65,7 @@ export default function NovoOrcamentoWizard() {
   const [itens, setItens] = useState<any[]>([]);
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [custosOperacao, setCustosOperacao] = useState<{ [key: string]: number }>({});
+  const [dxfItemsToConfigure, setDxfItemsToConfigure] = useState<any[] | null>(null);
   
   // Peça que está sendo editada/adicionada no form manual
   const [novaPeca, setNovaPeca] = useState({
@@ -155,16 +157,39 @@ export default function NovoOrcamentoWizard() {
     setItens(itens.filter(it => it.id !== id));
   };
 
-  const handleDxfSuccess = (dxf: DXFResult) => {
-    // Tenta achar preço_kg adequado se material atual for selecionado
-    setNovaPeca(prev => ({
-      ...prev,
-      descricao: dxf.filename ? dxf.filename.replace(".dxf", "") : "Peça DXF",
-      largura: dxf.largura,
-      comprimento: dxf.comprimento,
-      perimetro: dxf.perimetro,
-      num_entradas: dxf.num_entradas
-    }));
+  const handleDxfSuccess = (dxfs: DXFResult[]) => {
+    const mapped = dxfs.map((dxf, index) => {
+      const defaultMaterial = materiais.find(m => m.nome === "AÇO CARBONO") || materiais[0];
+      return {
+        id: `dxf-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`,
+        descricao: dxf.filename ? dxf.filename.replace(/\.dxf$/i, "") : `Peça DXF ${index + 1}`,
+        num_desenho: "",
+        material: defaultMaterial ? defaultMaterial.nome : "AÇO CARBONO",
+        tipo_material: defaultMaterial ? defaultMaterial.tipo : "S 1020",
+        espessura: 3.18,
+        largura: dxf.largura,
+        comprimento: dxf.comprimento,
+        perimetro: dxf.perimetro,
+        num_entradas: dxf.num_entradas,
+        quantidade: 1,
+        chapa_l: 1200,
+        chapa_c: 2400,
+        preco_kg: defaultMaterial ? defaultMaterial.preco_kg : 2.00,
+        margem_lucro: 0.30,
+        
+        // Tempos padrão
+        tempo_setup: 6.0,
+        tempo_dobra: 6.0,
+        tempo_caldeiraria: 6.0,
+        tempo_solda: 6.0,
+        tempo_guilhotina: 6.0,
+        tempo_usinagem: 6.0,
+        tempo_montagem: 6.0,
+        
+        observacoes: "",
+      };
+    });
+    setDxfItemsToConfigure(mapped);
   };
 
   // --- Step 3: Cálculos e Revisão ---
@@ -498,6 +523,170 @@ export default function NovoOrcamentoWizard() {
             <Card header="Importação Automática via DXF/CAD">
               <DxfUploader onSuccess={handleDxfSuccess} />
             </Card>
+
+            {/* Modal de Configuração de Peças DXF Múltiplas */}
+            <Modal
+              isOpen={dxfItemsToConfigure !== null}
+              onClose={() => setDxfItemsToConfigure(null)}
+              title="Configurar Peças DXF Importadas"
+              size="xl"
+            >
+              {dxfItemsToConfigure && (
+                <div className="flex flex-col gap-6 max-h-[70vh]">
+                  <div className="overflow-y-auto max-h-[50vh] pr-2">
+                    <table className="w-full text-left border-collapse min-w-[900px]">
+                      <thead>
+                        <tr className="border-b border-white/10 text-xs font-semibold text-slate-400">
+                          <th className="py-3 px-2">Desenho / Descrição</th>
+                          <th className="py-3 px-2">Dimensões (mm)</th>
+                          <th className="py-3 px-2">Material</th>
+                          <th className="py-3 px-2 w-20">Esp. (mm)</th>
+                          <th className="py-3 px-2 w-20">Qtd</th>
+                          <th className="py-3 px-2 w-24">Preço Kg</th>
+                          <th className="py-3 px-2 w-24">Margem %</th>
+                          <th className="py-3 px-2 w-24">Perímetro (mm)</th>
+                          <th className="py-3 px-2 w-20">Entradas</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5 text-xs text-slate-200">
+                        {dxfItemsToConfigure.map((item, idx) => (
+                          <tr key={item.id}>
+                            <td className="py-3 px-2">
+                              <div className="flex flex-col gap-1 w-full max-w-[180px]">
+                                <span className="font-semibold text-xs text-blue-400 truncate block" title={item.descricao}>
+                                  {item.descricao}
+                                </span>
+                                <input
+                                  type="text"
+                                  className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                  placeholder="Descrição amigável"
+                                  value={item.descricao}
+                                  onChange={(e) => {
+                                    const updated = [...dxfItemsToConfigure];
+                                    updated[idx].descricao = e.target.value;
+                                    setDxfItemsToConfigure(updated);
+                                  }}
+                                />
+                              </div>
+                            </td>
+                            <td className="py-3 px-2 text-xs font-medium text-slate-400">
+                              {item.largura} x {item.comprimento}
+                            </td>
+                            <td className="py-3 px-2">
+                              <select
+                                className="bg-[#12121e] border border-white/10 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-blue-500 w-full"
+                                value={item.material}
+                                onChange={(e) => {
+                                  const matched = materiais.find(m => m.nome === e.target.value);
+                                  const updated = [...dxfItemsToConfigure];
+                                  updated[idx].material = e.target.value;
+                                  updated[idx].tipo_material = matched ? matched.tipo : "";
+                                  updated[idx].preco_kg = matched ? matched.preco_kg : 2.00;
+                                  setDxfItemsToConfigure(updated);
+                                }}
+                              >
+                                <option value="AÇO CARBONO">AÇO CARBONO</option>
+                                <option value="INOX">INOX</option>
+                                <option value="ALUMÍNIO">ALUMÍNIO</option>
+                              </select>
+                            </td>
+                            <td className="py-3 px-2">
+                              <input
+                                type="number"
+                                step="0.01"
+                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                value={item.espessura}
+                                onChange={(e) => {
+                                  const updated = [...dxfItemsToConfigure];
+                                  updated[idx].espessura = parseFloat(e.target.value) || 0.0;
+                                  setDxfItemsToConfigure(updated);
+                                }}
+                              />
+                            </td>
+                            <td className="py-3 px-2">
+                              <input
+                                type="number"
+                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                value={item.quantidade}
+                                onChange={(e) => {
+                                  const updated = [...dxfItemsToConfigure];
+                                  updated[idx].quantidade = parseInt(e.target.value) || 1;
+                                  setDxfItemsToConfigure(updated);
+                                }}
+                              />
+                            </td>
+                            <td className="py-3 px-2">
+                              <input
+                                type="number"
+                                step="0.01"
+                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                value={item.preco_kg}
+                                onChange={(e) => {
+                                  const updated = [...dxfItemsToConfigure];
+                                  updated[idx].preco_kg = parseFloat(e.target.value) || 0.0;
+                                  setDxfItemsToConfigure(updated);
+                                }}
+                              />
+                            </td>
+                            <td className="py-3 px-2">
+                              <input
+                                type="number"
+                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                value={item.margem_lucro * 100}
+                                onChange={(e) => {
+                                  const updated = [...dxfItemsToConfigure];
+                                  updated[idx].margem_lucro = (parseFloat(e.target.value) || 0.0) / 100;
+                                  setDxfItemsToConfigure(updated);
+                                }}
+                              />
+                            </td>
+                            <td className="py-3 px-2">
+                              <input
+                                type="number"
+                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                value={item.perimetro}
+                                onChange={(e) => {
+                                  const updated = [...dxfItemsToConfigure];
+                                  updated[idx].perimetro = parseFloat(e.target.value) || 0.0;
+                                  setDxfItemsToConfigure(updated);
+                                }}
+                              />
+                            </td>
+                            <td className="py-3 px-2">
+                              <input
+                                type="number"
+                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                value={item.num_entradas}
+                                onChange={(e) => {
+                                  const updated = [...dxfItemsToConfigure];
+                                  updated[idx].num_entradas = parseInt(e.target.value) || 1;
+                                  setDxfItemsToConfigure(updated);
+                                }}
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Botões de Ação */}
+                  <div className="flex justify-end gap-3 border-t border-white/5 pt-4 mt-2">
+                    <Button variant="secondary" onClick={() => setDxfItemsToConfigure(null)}>
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setItens((prev) => [...prev, ...dxfItemsToConfigure]);
+                        setDxfItemsToConfigure(null);
+                      }}
+                    >
+                      Adicionar Peças ao Orçamento
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </Modal>
 
             {/* Manual item form */}
             <Card header="Adicionar/Editar Item">
