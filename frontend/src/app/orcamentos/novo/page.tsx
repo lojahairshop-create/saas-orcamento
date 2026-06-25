@@ -36,6 +36,7 @@ import {
   Sparkles,
   CheckCircle,
   X,
+  Edit,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -69,6 +70,7 @@ function NovoOrcamentoWizardContent() {
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [custosOperacao, setCustosOperacao] = useState<{ [key: string]: number }>({});
   const [dxfItemsToConfigure, setDxfItemsToConfigure] = useState<any[] | null>(null);
+  const [editingPecaId, setEditingPecaId] = useState<string | null>(null);
   
   // Peça que está sendo editada/adicionada no form manual
   const [novaPeca, setNovaPeca] = useState({
@@ -210,7 +212,12 @@ function NovoOrcamentoWizardContent() {
       return;
     }
     
-    setItens([...itens, { ...novaPeca, id: Date.now().toString() }]);
+    if (editingPecaId) {
+      setItens(itens.map(it => it.id === editingPecaId ? { ...novaPeca, id: editingPecaId } : it));
+      setEditingPecaId(null);
+    } else {
+      setItens([...itens, { ...novaPeca, id: Date.now().toString() + Math.random().toString(36).substr(2, 9) }]);
+    }
     
     // Reset form peça mantendo material/configurações anteriores
     setNovaPeca(prev => ({
@@ -222,12 +229,56 @@ function NovoOrcamentoWizardContent() {
       perimetro: 0,
       num_entradas: 1,
       quantidade: 1,
+      tempo_setup: 6.0,
+      tempo_dobra: 6.0,
+      tempo_caldeiraria: 6.0,
+      tempo_solda: 6.0,
+      tempo_guilhotina: 6.0,
+      tempo_usinagem: 6.0,
+      tempo_montagem: 6.0,
       observacoes: ""
     }));
   };
 
   const handleRemovePeca = (id: string) => {
     setItens(itens.filter(it => it.id !== id));
+    if (editingPecaId === id) {
+      setEditingPecaId(null);
+    }
+  };
+
+  const handleEditPeca = (item: any) => {
+    setNovaPeca({
+      descricao: item.descricao || "",
+      num_desenho: item.num_desenho || "",
+      material: item.material || "AÇO CARBONO",
+      tipo_material: item.tipo_material || "",
+      espessura: item.espessura ?? 3.18,
+      largura: item.largura ?? 0,
+      comprimento: item.comprimento ?? 0,
+      perimetro: item.perimetro ?? 0,
+      num_entradas: item.num_entradas ?? 1,
+      quantidade: item.quantidade ?? 1,
+      chapa_l: item.chapa_l ?? 1200,
+      chapa_c: item.chapa_c ?? 2400,
+      preco_kg: item.preco_kg ?? 2.00,
+      margem_lucro: item.margem_lucro ?? 0.30,
+      tempo_setup: item.tempo_setup ?? 0,
+      tempo_dobra: item.tempo_dobra ?? 0,
+      tempo_caldeiraria: item.tempo_caldeiraria ?? 0,
+      tempo_solda: item.tempo_solda ?? 0,
+      tempo_guilhotina: item.tempo_guilhotina ?? 0,
+      tempo_usinagem: item.tempo_usinagem ?? 0,
+      tempo_montagem: item.tempo_montagem ?? 0,
+      observacoes: item.observacoes || ""
+    });
+    setEditingPecaId(item.id);
+    
+    // Rolar a tela suavemente para o formulário de peças
+    const element = document.getElementById("peca-form-card");
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   const handleDxfSuccess = (dxfs: DXFResult[]) => {
@@ -841,7 +892,7 @@ function NovoOrcamentoWizardContent() {
             </Modal>
 
             {/* Manual item form */}
-            <Card header="Adicionar/Editar Item">
+            <Card header={editingPecaId ? "Editar Peça Selecionada" : "Adicionar Peça"} id="peca-form-card">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="md:col-span-2">
                   <Input
@@ -984,9 +1035,49 @@ function NovoOrcamentoWizardContent() {
                 </div>
               </div>
 
-              <div className="flex justify-end mt-5">
-                <Button variant="secondary" onClick={handleAddPeca} className="flex items-center gap-1">
-                  <Plus className="h-4 w-4" /> Adicionar à Lista
+              <div className="flex justify-end gap-3 mt-5">
+                {editingPecaId && (
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => {
+                      setEditingPecaId(null);
+                      setNovaPeca({
+                        descricao: "",
+                        num_desenho: "",
+                        material: "AÇO CARBONO",
+                        tipo_material: "S 1020",
+                        espessura: 3.18,
+                        largura: 0.0,
+                        comprimento: 0.0,
+                        perimetro: 0.0,
+                        num_entradas: 1,
+                        quantidade: 1,
+                        chapa_l: 1200,
+                        chapa_c: 2400,
+                        preco_kg: 2.00,
+                        margem_lucro: 0.30,
+                        tempo_setup: 6.0,
+                        tempo_dobra: 6.0,
+                        tempo_caldeiraria: 6.0,
+                        tempo_solda: 6.0,
+                        tempo_guilhotina: 6.0,
+                        tempo_usinagem: 6.0,
+                        tempo_montagem: 6.0,
+                        observacoes: "",
+                      });
+                    }} 
+                    className="text-slate-400 hover:text-slate-200 select-none cursor-pointer"
+                  >
+                    Cancelar Edição
+                  </Button>
+                )}
+                <Button 
+                  variant={editingPecaId ? "primary" : "secondary"} 
+                  onClick={handleAddPeca} 
+                  className={`flex items-center gap-1 select-none cursor-pointer ${editingPecaId ? "bg-blue-600 hover:bg-blue-700 text-white border-none shadow-[0_0_15px_rgba(59,130,246,0.15)]" : ""}`}
+                >
+                  {editingPecaId ? <CheckCircle className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                  {editingPecaId ? "Salvar Alterações" : "Adicionar à Lista"}
                 </Button>
               </div>
             </Card>
@@ -1005,14 +1096,26 @@ function NovoOrcamentoWizardContent() {
                         <TableCell>{item.largura} x {item.comprimento} mm</TableCell>
                         <TableCell>{item.perimetro} mm</TableCell>
                         <TableCell>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleRemovePeca(item.id)}
-                            className="p-1 text-red-400 hover:bg-red-950/20"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleEditPeca(item)}
+                              className="p-1 text-blue-400 hover:bg-blue-950/20 select-none cursor-pointer"
+                              title="Editar Peça"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleRemovePeca(item.id)}
+                              className="p-1 text-red-400 hover:bg-red-950/20 select-none cursor-pointer"
+                              title="Excluir Peça"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

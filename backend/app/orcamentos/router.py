@@ -229,3 +229,99 @@ async def exportar_html(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Erro ao gerar visualização HTML: {str(exc)}"
         )
+
+
+@router.get("/{orcamento_id}/nesting-html")
+async def exportar_nesting_html(
+    orcamento_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Gera e retorna o relatório de arranjo de chapas em HTML com script de impressão automática."""
+    try:
+        orc = await service.get_orcamento(orcamento_id, current_user["id"])
+        
+        # Agrupar itens por material e espessura
+        groups = {}
+        for item in orc.itens:
+            key = f"{item.material} - {item.espessura}mm"
+            if key not in groups:
+                groups[key] = []
+            groups[key].append(item)
+            
+        # Calcular Nesting para cada grupo
+        from app.engenharia.nesting import NestingEngine
+        results = []
+        for key, items in groups.items():
+            valid_items = [it for it in items if it.largura > 0 and it.comprimento > 0]
+            if not valid_items:
+                continue
+                
+            chapa_l = valid_items[0].chapa_l or 1200.0
+            chapa_c = valid_items[0].chapa_c or 2400.0
+            
+            payload_items = []
+            for idx, it in enumerate(valid_items):
+                payload_items.append({
+                    "id": it.descricao or f"P{idx + 1}",
+                    "largura": it.largura,
+                    "comprimento": it.comprimento,
+                    "quantidade": it.quantidade
+                })
+                
+            res = NestingEngine.nested_rectangles(
+                itens=payload_items,
+                chapa_l=chapa_l,
+                chapa_c=chapa_c,
+                gap=5.0
+            )
+            
+            results.append({
+                "key": key,
+                "chapa_l": chapa_l,
+                "chapa_c": chapa_c,
+                "aproveitamento_medio": res.get("aproveitamento_medio", 0),
+                "total_chapas": res.get("total_chapas", 0),
+                "chapas": res.get("chapas", [])
+            })
+            
+        # Obter o caminho do template HTML
+        import os
+        from jinja2 import Environment, FileSystemLoader
+        from datetime import datetime
+        
+        template_dir = os.path.join(os.path.dirname(__file__), "..", "pdf", "templates")
+        env = Environment(loader=FileSystemLoader(template_dir))
+        template = env.get_template("nesting_print.html")
+        
+        # Carregar as configurações gerais do banco
+        from app.database import get_supabase_service_client
+        try:
+            supabase = get_supabase_service_client()
+            configs_res = supabase.table("configuracoes").select("*").limit(1).execute()
+            configs_globais = configs_res.data[0] if configs_res.data else None
+        except Exception as err:
+            print(f"Erro ao carregar configuracoes gerais para o nesting HTML: {err}")
+            configs_globais = None
+            
+        html_rendered = template.render(
+            orcamento=orc,
+            results=results,
+            datetime=datetime,
+            configs_globais=configs_globais
+        )
+        
+        # Script de impressão automática
+        html_with_print = html_rendered.replace(
+            "</body>",
+            "<script>window.onload = function() { window.print(); }</script></body>"
+        )
+        
+        return Response(
+            content=html_with_print,
+            media_type="text/html"
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Erro ao gerar relatório de arranjo: {str(exc)}"
+        )

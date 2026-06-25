@@ -75,6 +75,14 @@ export default function OrcamentoDetailPage() {
     window.open(printUrl, "_blank");
   };
 
+  const handleDownloadNestingPdf = () => {
+    if (!orcamento) return;
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const token = localStorage.getItem("token") || "";
+    const printUrl = `${apiBaseUrl}/orcamentos/${orcamento.id}/nesting-html?token=${encodeURIComponent(token)}`;
+    window.open(printUrl, "_blank");
+  };
+
   const runNestingAnalysis = async () => {
     if (!orcamento || orcamento.itens.length === 0) return;
     setNestingLoading(true);
@@ -174,6 +182,16 @@ export default function OrcamentoDetailPage() {
             >
               <FileDown className="h-4 w-4" /> Exportar PDF
             </Button>
+
+            {activeTab === "nesting" && (
+              <Button
+                variant="secondary"
+                onClick={handleDownloadNestingPdf}
+                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+              >
+                <FileDown className="h-4 w-4" /> PDF do Arranjo
+              </Button>
+            )}
             
             {(orcamento.status === OrcamentoStatus.PENDENTE || orcamento.status === OrcamentoStatus.RASCUNHO) && (
               <React.Fragment>

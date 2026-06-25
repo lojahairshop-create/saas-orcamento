@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Arranjo de Chapas - Orçamento {{ orcamento.numero }}</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 12mm;
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                font-size: 8pt;
+                color: #64748b;
+            }
+        }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #0f172a;
+            font-size: 9.5pt;
+            line-height: 1.4;
+            background-color: #ffffff;
+        }
+        .header {
+            margin-bottom: 15px;
+            width: 100%;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 8px;
+        }
+        .header table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .header td {
+            vertical-align: middle;
+        }
+        .title {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #0f172a;
+        }
+        .subtitle {
+            font-size: 10pt;
+            color: #475569;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .meta-table td {
+            padding: 4px 0;
+            font-size: 9pt;
+        }
+        .group-section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+        .group-title {
+            font-size: 12pt;
+            font-weight: bold;
+            color: #0f172a;
+            border-bottom: 1.5px solid #cbd5e1;
+            padding-bottom: 4px;
+            margin-bottom: 10px;
+        }
+        .stats-grid {
+            display: table;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        .stats-col {
+            display: table-cell;
+            width: 25%;
+            font-size: 8.5pt;
+        }
+        .stats-col strong {
+            color: #0f172a;
+        }
+        .chapa-container {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+        .chapa-header {
+            font-size: 9.5pt;
+            font-weight: bold;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+        .cad-view {
+            border: 1px dashed #475569;
+            background-color: #f8fafc;
+            position: relative;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+        .cad-piece {
+            position: absolute;
+            background-color: rgba(59, 130, 246, 0.08);
+            border: 1px solid #2563eb;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 2px;
+            border-radius: 2px;
+        }
+        .cad-piece-rotated {
+            background-color: rgba(245, 158, 11, 0.08);
+            border: 1px solid #d97706;
+        }
+        .piece-label {
+            font-size: 7.5pt;
+            font-weight: bold;
+            color: #1e3a8a;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+        .piece-label-rotated {
+            color: #78350f;
+        }
+        .piece-dims {
+            font-size: 6.5pt;
+            color: #475569;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <table>
+            <tr>
+                <td>
+                    <div class="title">Relatório de Otimização de Arranjo (Nesting)</div>
+                    <div class="subtitle">Orçamento Nº: {{ orcamento.numero }} | Cliente: {{ orcamento.cliente.nome }}</div>
+                </td>
+                <td style="text-align: right; font-size: 9pt; color: #475569;">
+                    Data de Geração: {{ datetime.now().strftime("%d/%m/%Y %H:%M") }}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    {% for res in results %}
+    <div class="group-section">
+        <div class="group-title">{{ res.key }}</div>
+        
+        <div class="stats-grid">
+            <div class="stats-col">
+                <strong>Chapa Padrão:</strong> {{ "%.0f"|format(res.chapa_c) }} x {{ "%.0f"|format(res.chapa_l) }} mm
+            </div>
+            <div class="stats-col">
+                <strong>Total de Chapas:</strong> {{ res.total_chapas }}
+            </div>
+            <div class="stats-col">
+                <strong>Aproveitamento Médio:</strong> {{ "%.2f"|format(res.aproveitamento_medio) }}%
+            </div>
+            <div class="stats-col">
+                <strong>Espaçamento (Gap):</strong> 5,0 mm
+            </div>
+        </div>
+
+        {% for chapa in res.chapas %}
+        <div class="chapa-container">
+            <div class="chapa-header">
+                Layout da Chapa #{{ loop.index }} (Aproveitamento: {{ "%.2f"|format(chapa.aproveitamento) }}%)
+            </div>
+            
+            <!-- CAD View (escala proporcional para caber na página A4 Landscape - max width 850px) -->
+            {% set aspect_ratio = res.chapa_l / res.chapa_c %}
+            {% set max_width = 850 %}
+            {% set height = max_width * aspect_ratio %}
+            
+            <div class="cad-view" style="width: {{ max_width }}px; height: {{ height }}px;">
+                {% for peca in chapa.pecas %}
+                    {% set left_pct = (peca.y / res.chapa_c) * 100 %}
+                    {% set top_pct = (peca.x / res.chapa_l) * 100 %}
+                    {% set width_pct = (peca.h / res.chapa_c) * 100 %}
+                    {% set height_pct = (peca.w / res.chapa_l) * 100 %}
+                    
+                    <div class="cad-piece {% if peca.rotacionado %}cad-piece-rotated{% endif %}" 
+                         style="left: {{ left_pct }}%; top: {{ top_pct }}%; width: {{ width_pct }}%; height: {{ height_pct }}%;">
+                        <span class="piece-label {% if peca.rotacionado %}piece-label-rotated{% endif %}">
+                            {{ peca.id }}
+                        </span>
+                        <span class="piece-dims">
+                            {{ "%.0f"|format(peca.w) }}x{{ "%.0f"|format(peca.h) }}
+                        </span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+
+</body>
+</html>
