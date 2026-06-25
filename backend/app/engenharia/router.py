@@ -38,6 +38,7 @@ class NestingRequest(BaseModel):
 @router.post("/processar-dxf")
 async def processar_dxf(
     file: UploadFile = File(...),
+    split_parts: bool = False,
     current_user: dict = Depends(get_current_user),
 ):
     """
@@ -56,9 +57,16 @@ async def processar_dxf(
 
     try:
         content = await file.read()
-        resultado = DXFProcessor.process_file_content(content)
-        resultado["filename"] = file.filename
-        return resultado
+        if split_parts:
+            resultados = DXFProcessor.process_file_content_split(content)
+            base_name = file.filename.replace(".dxf", "").replace(".DXF", "")
+            for idx, res in enumerate(resultados):
+                res["filename"] = f"{base_name} - Peça {idx + 1}"
+            return resultados
+        else:
+            resultado = DXFProcessor.process_file_content(content)
+            resultado["filename"] = file.filename
+            return resultado
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

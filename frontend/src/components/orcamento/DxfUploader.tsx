@@ -14,6 +14,7 @@ export const DxfUploader: React.FC<DxfUploaderProps> = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [splitParts, setSplitParts] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processFiles = async (files: FileList | File[]) => {
@@ -34,9 +35,19 @@ export const DxfUploader: React.FC<DxfUploaderProps> = ({ onSuccess }) => {
     }
 
     try {
-      const promises = dxfFiles.map(file => api.processarDxf(file));
+      const promises = dxfFiles.map(file => api.processarDxf(file, splitParts));
       const results = await Promise.all(promises);
-      onSuccess(results);
+      
+      const flatResults: DXFResult[] = [];
+      for (const res of results) {
+        if (Array.isArray(res)) {
+          flatResults.push(...res);
+        } else {
+          flatResults.push(res);
+        }
+      }
+
+      onSuccess(flatResults);
       setFileName(null); // Limpa após sucesso para permitir novos uploads
     } catch (err: any) {
       setError(err.message || "Erro ao ler metadados dos arquivos DXF.");
@@ -78,6 +89,19 @@ export const DxfUploader: React.FC<DxfUploaderProps> = ({ onSuccess }) => {
 
   return (
     <div className="w-full">
+      <div className="flex items-center gap-2 mb-4 bg-white/[0.02] hover:bg-white/[0.04] p-3 rounded-lg border border-white/5 w-fit transition-colors select-none">
+        <input
+          type="checkbox"
+          id="splitParts"
+          checked={splitParts}
+          onChange={(e) => setSplitParts(e.target.checked)}
+          className="rounded border-white/10 bg-white/[0.03] text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer"
+        />
+        <label htmlFor="splitParts" className="text-xs font-semibold text-slate-300 cursor-pointer">
+          Este arquivo contém múltiplas peças (individualizar automaticamente)
+        </label>
+      </div>
+
       <div
         onDragEnter={handleDrag}
         onDragOver={handleDrag}

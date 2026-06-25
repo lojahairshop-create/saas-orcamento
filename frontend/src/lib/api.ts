@@ -327,16 +327,20 @@ class ApiClient {
   // Engenharia
   // -------------------------------------------------------------------------
 
-  async processarDxf(file: File): Promise<DXFResult> {
+  async processarDxf(file: File, splitParts: boolean = false): Promise<any> {
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch(`${API_BASE_URL}/engenharia/processar-dxf`, {
+    const url = splitParts 
+      ? `${API_BASE_URL}/engenharia/processar-dxf?split_parts=true` 
+      : `${API_BASE_URL}/engenharia/processar-dxf`;
+
+    const res = await fetch(url, {
       method: "POST",
       headers: this.getHeaders(null), // Sem content-type JSON para deixar o browser definir multipart/form-data
       body: formData,
     });
-    return this.handleResponse<DXFResult>(res);
+    return this.handleResponse<any>(res);
   }
 
   async calcularNesting(data: any): Promise<NestingResult> {

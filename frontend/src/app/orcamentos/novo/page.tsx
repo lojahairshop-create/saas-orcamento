@@ -35,11 +35,14 @@ import {
   Layers,
   Sparkles,
   CheckCircle,
+  X,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function NovoOrcamentoWizard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("id");
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -130,6 +133,76 @@ export default function NovoOrcamentoWizard() {
     loadMateriais();
     loadCustos();
   }, []);
+
+  // Carregar orçamento se estiver no modo edição
+  useEffect(() => {
+    if (!editId) return;
+    async function loadEditOrcamento() {
+      try {
+        setLoading(true);
+        const data = await api.getOrcamento(editId!);
+        
+        // Preencher informações do cliente
+        setCliente({
+          nome: data.cliente.nome || "",
+          email: data.cliente.email || "",
+          telefone: data.cliente.telefone || "",
+          cnpj: data.cliente.cnpj || "",
+          endereco: data.cliente.endereco || "",
+          cidade: data.cliente.cidade || "",
+          estado: data.cliente.estado || "SP",
+        });
+        
+        setTipoVenda(data.tipo_venda || "pecas");
+        setIpiRate(data.ipi_rate ?? 0.05);
+        setTaxaComissao(data.taxa_comissao ?? 0.03);
+        setCondicaoPagamento(data.condicao_pagamento || "30 dias");
+        setPrazoEntrega(data.prazo_entrega || "15 dias úteis");
+        setValidade(data.validade ?? 30);
+        setObservacoes(data.observacoes || "");
+
+        // Mapear itens de volta
+        const getTempo = (ops: any[], name: string) => {
+          const op = ops.find(o => o.nome === name);
+          return op ? op.tempo_min : 0.0;
+        };
+
+        const mappedItens = data.itens.map((it: any) => ({
+          id: it.id || `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          descricao: it.descricao || "",
+          num_desenho: "",
+          material: it.material || "AÇO CARBONO",
+          tipo_material: it.tipo_material || "",
+          espessura: it.espessura || 0,
+          largura: it.largura || 0,
+          comprimento: it.comprimento || 0,
+          perimetro: it.perimetro || 0,
+          num_entradas: it.num_entradas || 1,
+          quantidade: it.quantidade || 1,
+          chapa_l: it.chapa_l || 1200,
+          chapa_c: it.chapa_c || 2400,
+          preco_kg: it.preco_kg || 0,
+          margem_lucro: it.margem_lucro || 0.3,
+          tempo_setup: getTempo(it.operacoes || [], "SET-UP"),
+          tempo_dobra: getTempo(it.operacoes || [], "DOBRA"),
+          tempo_caldeiraria: getTempo(it.operacoes || [], "CALDEIRARIA"),
+          tempo_solda: getTempo(it.operacoes || [], "SOLDA"),
+          tempo_guilhotina: getTempo(it.operacoes || [], "GUILHOTINA"),
+          tempo_usinagem: getTempo(it.operacoes || [], "USINAGEM INTERNA"),
+          tempo_montagem: getTempo(it.operacoes || [], "MONTAGEM"),
+          observacoes: it.observacoes || ""
+        }));
+        
+        setItens(mappedItens);
+      } catch (err) {
+        console.error("Erro ao carregar orçamento para edição:", err);
+        alert("Erro ao carregar orçamento para edição.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadEditOrcamento();
+  }, [editId]);
 
   const handleAddPeca = () => {
     if (!novaPeca.descricao) {
@@ -348,12 +421,18 @@ export default function NovoOrcamentoWizard() {
         }))
       };
 
-      const result = await api.createOrcamento(payload);
-      if (status !== "rascunho") {
-        await api.updateStatus(result.id, status);
+      let resultId = editId;
+      if (editId) {
+        await api.updateOrcamento(editId, payload);
+      } else {
+        const result = await api.createOrcamento(payload);
+        resultId = result.id;
       }
       
-      router.push(`/orcamentos/${result.id}`);
+      // Atualizar status
+      await api.updateStatus(resultId!, status);
+      
+      router.push(`/orcamentos/${resultId}`);
     } catch (err) {
       alert("Erro ao salvar orçamento.");
       console.error(err);
@@ -372,7 +451,9 @@ export default function NovoOrcamentoWizard() {
       <div className="flex flex-col gap-6">
         {/* Title */}
         <div>
-          <h1 className="text-xl font-bold text-slate-100">Criar Novo Orçamento</h1>
+          <h1 className="text-xl font-bold text-slate-100">
+            {editId ? "Editar Orçamento" : "Criar Novo Orçamento"}
+          </h1>
           <p className="text-xs text-slate-500 mt-1">
             Preencha os dados do cliente, importe peças via DXF e revise impostos por margem por dentro
           </p>
@@ -1067,11 +1148,29 @@ export default function NovoOrcamentoWizard() {
 
                   <div className="flex flex-col gap-2 mt-6">
                     <Button
+                      variant="primary"
+                      className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+                      loading={loading}
+                      onClick={() => handleSave("aprovado")}
+                    >
+                      <CheckCircle className="h-4.5 w-4.5" /> Aprovar Orçamento
+                    </Button>
+
+                    <Button
+                      variant="danger"
                       className="w-full flex items-center justify-center gap-2"
+                      loading={loading}
+                      onClick={() => handleSave("reprovado")}
+                    >
+                      <X className="h-4.5 w-4.5" /> Reprovar / Rejeitar
+                    </Button>
+
+                    <Button
+                      className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white border-none shadow-[0_0_15px_rgba(59,130,246,0.15)]"
                       loading={loading}
                       onClick={() => handleSave("pendente")}
                     >
-                      <CheckCircle className="h-4.5 w-4.5" /> Enviar para Aprovação
+                      Enviar para Aprovação
                     </Button>
                     
                     <Button
@@ -1080,7 +1179,7 @@ export default function NovoOrcamentoWizard() {
                       loading={loading}
                       onClick={() => handleSave("rascunho")}
                     >
-                      Salvar Rascunho
+                      Salvar como Rascunho
                     </Button>
 
                     <Button

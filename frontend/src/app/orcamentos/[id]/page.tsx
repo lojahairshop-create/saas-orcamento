@@ -18,6 +18,7 @@ import {
   Weight,
   Layers,
   ArrowLeft,
+  Edit,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -160,13 +161,21 @@ export default function OrcamentoDetailPage() {
           <div className="flex gap-2">
             <Button
               variant="secondary"
+              onClick={() => router.push(`/orcamentos/novo?id=${orcamento.id}`)}
+              className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white border-none"
+            >
+              <Edit className="h-4 w-4" /> Editar Orçamento
+            </Button>
+
+            <Button
+              variant="secondary"
               onClick={handleDownloadPdf}
               className="flex items-center gap-1.5"
             >
               <FileDown className="h-4 w-4" /> Exportar PDF
             </Button>
             
-            {orcamento.status === OrcamentoStatus.PENDENTE && (
+            {(orcamento.status === OrcamentoStatus.PENDENTE || orcamento.status === OrcamentoStatus.RASCUNHO) && (
               <React.Fragment>
                 <Button
                   variant="primary"

@@ -343,12 +343,12 @@
             <tr>
                 <th style="width: 5%;" class="text-center">Item</th>
                 <th style="width: 12%;" class="text-center">Dimensão</th>
-                <th style="width: 32%;">Produto / Descrição</th>
-                <th style="width: 10%;" class="text-right">Peso (Kg)</th>
-                <th style="width: 18%;">Material</th>
+                <th style="width: 30%;">Produto / Descrição</th>
+                <th style="width: 10%;" class="text-center">Peso (Kg)</th>
+                <th style="width: 15%;">Material</th>
                 <th style="width: 6%;" class="text-center">Qtde.</th>
-                <th style="width: 8%;" class="text-right">Valor Unit.</th>
-                <th style="width: 9%;" class="text-right">Valor Total</th>
+                <th style="width: 11%;" class="text-center">Valor Unit.</th>
+                <th style="width: 11%;" class="text-center">Valor Total</th>
             </tr>
         </thead>
         <tbody>
@@ -357,7 +357,7 @@
                 <td class="text-center">{{ loop.index }}</td>
                 <td class="dim-cell">
                     <div class="dim-box"></div>
-                    <div class="dim-text">{{ "%.2f"|format(item.largura) }} X {{ "%.2f"|format(item.comprimento) }}</div>
+                    <div class="dim-text">{{ ("%.2f"|format(item.largura))|replace('.', ',') }} X {{ ("%.2f"|format(item.comprimento))|replace('.', ',') }}</div>
                 </td>
                 <td>
                     <strong>{{ item.descricao }}</strong><br>
@@ -377,18 +377,18 @@
                         {%- endfor -%}
                     </span>
                 </td>
-                <td class="text-right">{{ "%.2f"|format(item.peso_total) }}</td>
+                <td class="text-center">{{ ("%.2f"|format(item.peso_total))|replace('.', ',') }}</td>
                 <td>
                     {% if item.tipo_material %}
                         {{ item.tipo_material }}
                     {% else %}
                         {{ item.material }}
                     {% endif %}
-                    {{ "%.2f"|format(item.espessura) }}mm
+                    {{ ("%.2f"|format(item.espessura))|replace('.', ',') }}mm
                 </td>
                 <td class="text-center">{{ item.quantidade }}</td>
-                <td class="text-right">R$ {{ "%.2f"|format(item.preco_unitario_com_imp) }}</td>
-                <td class="text-right">R$ {{ "%.2f"|format(item.preco_total) }}</td>
+                <td class="text-center" style="white-space: nowrap;">R$ {{ ("%.2f"|format(item.preco_unitario_com_imp))|replace('.', ',') }}</td>
+                <td class="text-center" style="white-space: nowrap;">R$ {{ ("%.2f"|format(item.preco_total))|replace('.', ',') }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -405,15 +405,15 @@
             <td style="width: 5%;"></td>
             <td class="totals-box" style="width: 40%;">
                 <div class="grand-total-label">VALOR TOTAL :</div>
-                <div class="grand-total-val">R$ {{ "%.2f"|format(orcamento.total_preco) }}</div>
+                <div class="grand-total-val">R$ {{ ("%.2f"|format(orcamento.total_preco))|replace('.', ',') }}</div>
                 <div class="tax-info">
-                    (Venda IPI - {{ "%.2f"|format(orcamento.ipi_rate * 100) }}% / Benef. Isento)
+                    (Venda IPI - {{ ("%.2f"|format(orcamento.ipi_rate * 100))|replace('.', ',') }}% / Benef. Isento)
                 </div>
                 <div class="summary-line" style="margin-top: 10px;">
                     Total de {{ orcamento.itens|length }} peças
                 </div>
                 <div class="summary-line">
-                    Peso total do orçamento {{ "%.2f"|format(orcamento.total_peso) }} Kg
+                    Peso total do orçamento {{ ("%.2f"|format(orcamento.total_peso))|replace('.', ',') }} Kg
                 </div>
             </td>
         </tr>
@@ -484,7 +484,7 @@
                 <td class="terms-label">Impostos:</td>
                 <td class="terms-value">
                     ICMS INCLUSO - PIS/COFINS INCLUSO<br>
-                    IPI: {{ "%.2f"|format(orcamento.ipi_rate * 100) }}% A INCLUIR
+                    IPI: {{ ("%.2f"|format(orcamento.ipi_rate * 100))|replace('.', ',') }}% A INCLUIR
                 </td>
             </tr>
         </table>
