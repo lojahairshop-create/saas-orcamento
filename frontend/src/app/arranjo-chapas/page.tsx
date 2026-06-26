@@ -86,7 +86,7 @@ export default function ArranjoChapasPage() {
   const [bulkQuantityMultiplier, setBulkQuantityMultiplier] = useState<string>("");
 
   // Regrupar itens por material e espessura no frontend
-  const regroupItems = (flatItems: any[]) => {
+  const regroupItems = (flatItems: any[], forceSelectKeys: string[] = []) => {
     const groups: { [key: string]: any[] } = {};
     const newConfigs = { ...configs };
     const newExpanded = { ...expandedGroups };
@@ -117,7 +117,16 @@ export default function ArranjoChapasPage() {
       if (prevSelected.length === 0) {
         return activeKeys;
       }
-      return prevSelected.filter((key) => activeKeys.includes(key));
+      
+      // Mantém os que já estavam selecionados e ainda estão ativos
+      const baseSelected = prevSelected.filter((key) => activeKeys.includes(key));
+      // Força a seleção das chaves especificadas em forceSelectKeys (se estiverem ativas)
+      const forced = forceSelectKeys.filter((key) => activeKeys.includes(key) && !baseSelected.includes(key));
+      // Seleciona chaves novinhas em folha que surgiram e não existiam no agrupamento anterior
+      const oldKeys = Object.keys(groupedItems);
+      const brandNew = activeKeys.filter((key) => !oldKeys.includes(key) && !baseSelected.includes(key) && !forced.includes(key));
+      
+      return [...baseSelected, ...forced, ...brandNew];
     });
   };
 
@@ -285,9 +294,25 @@ export default function ArranjoChapasPage() {
         let qty = it.quantidade;
 
         if (bulkNewMaterial) mat = bulkNewMaterial;
-        if (bulkNewEspessura) esp = Number(bulkNewEspessura) || esp;
-        if (bulkNewQuantidade) qty = Number(bulkNewQuantidade) || qty;
-        else if (bulkQuantityMultiplier) qty = Math.max(1, Math.round(qty * (Number(bulkQuantityMultiplier) || 1)));
+        
+        if (bulkNewEspessura) {
+          const parsedEsp = parseFloat(String(bulkNewEspessura).replace(",", "."));
+          if (!isNaN(parsedEsp)) {
+            esp = parsedEsp;
+          }
+        }
+        
+        if (bulkNewQuantidade) {
+          const parsedQty = parseInt(String(bulkNewQuantidade), 10);
+          if (!isNaN(parsedQty)) {
+            qty = parsedQty;
+          }
+        } else if (bulkQuantityMultiplier) {
+          const parsedMult = parseFloat(String(bulkQuantityMultiplier).replace(",", "."));
+          if (!isNaN(parsedMult)) {
+            qty = Math.max(1, Math.round(qty * parsedMult));
+          }
+        }
 
         return {
           ...it,
@@ -300,8 +325,12 @@ export default function ArranjoChapasPage() {
       return it;
     });
 
+    // Identifica para quais novos grupos os itens modificados pertencem e força a seleção deles
+    const editedItems = updatedItems.filter((it) => selectedGroupIds.includes(it.id));
+    const forceSelectKeys = Array.from(new Set(editedItems.map((it) => `${it.material} - ${it.espessura}mm`)));
+
     setItems(updatedItems);
-    regroupItems(updatedItems);
+    regroupItems(updatedItems, forceSelectKeys);
 
     setSelectedItemIds((prev) => prev.filter((id) => !selectedGroupIds.includes(id)));
     setBulkModalOpen(false);
