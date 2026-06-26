@@ -399,6 +399,15 @@ class ApiClient {
     return this.handleResponse<NestingResult>(res);
   }
 
+  async darBaixaNesting(data: any): Promise<{ status: string; avisos: string[] }> {
+    const res = await fetch(`${API_BASE_URL}/engenharia/dar-baixa-nesting`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+    return this.handleResponse<{ status: string; avisos: string[] }>(res);
+  }
+
   // -------------------------------------------------------------------------
   // Dashboard
   // -------------------------------------------------------------------------

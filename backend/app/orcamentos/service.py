@@ -68,6 +68,7 @@ def _build_item_response(
         preco_kg=item_input.get("preco_kg", 0),
         margem_lucro=item_input.get("margem_lucro", 0.30),
         origem_material=item_input.get("origem_material", "chapa_inteira"),
+        vetor_svg=item_input.get("vetor_svg"),
         velocidade=calc_result.get("velocidade", 0),
         peck=calc_result.get("peck", 0),
         tempo_corte_laser=calc_result.get("tempo_corte_laser", 0),
@@ -196,6 +197,7 @@ async def create_orcamento(
             "preco_kg": item_input.get("preco_kg", 0),
             "margem_lucro": item_input.get("margem_lucro", 0.30),
             "origem_material": item_input.get("origem_material", "chapa_inteira"),
+            "vetor_svg": item_input.get("vetor_svg"),
             "velocidade": calc.get("velocidade", 0),
             "peck": calc.get("peck", 0),
             "tempo_corte_laser": calc.get("tempo_corte_laser", 0),
@@ -308,6 +310,7 @@ async def get_orcamento(orcamento_id: str, user_id: str) -> OrcamentoResponse:
                 preco_kg=item_db.get("preco_kg", 0),
                 margem_lucro=item_db.get("margem_lucro", 0.30),
                 origem_material=item_db.get("origem_material", "chapa_inteira"),
+                vetor_svg=item_db.get("vetor_svg"),
                 velocidade=item_db.get("velocidade", 0),
                 peck=item_db.get("peck", 0),
                 tempo_corte_laser=item_db.get("tempo_corte_laser", 0),
@@ -553,6 +556,7 @@ async def update_orcamento(
                 "preco_kg": item_input.get("preco_kg", 0),
                 "margem_lucro": item_input.get("margem_lucro", 0.30),
                 "origem_material": item_input.get("origem_material", "chapa_inteira"),
+                "vetor_svg": item_input.get("vetor_svg"),
                 "velocidade": calc.get("velocidade", 0),
                 "peck": calc.get("peck", 0),
                 "tempo_corte_laser": calc.get("tempo_corte_laser", 0),
@@ -767,7 +771,7 @@ async def get_itens_para_nesting(
     # Busca itens desses orçamentos
     items_res = (
         supabase.table("orcamento_itens")
-        .select("id, orcamento_id, descricao, material, espessura, largura, comprimento, quantidade, chapa_l, chapa_c")
+        .select("id, orcamento_id, descricao, material, espessura, largura, comprimento, quantidade, chapa_l, chapa_c, vetor_svg")
         .in_("orcamento_id", ids)
         .execute()
     )
@@ -788,6 +792,7 @@ async def get_itens_para_nesting(
             "quantidade": int(item["quantidade"]),
             "chapa_l": float(item["chapa_l"]),
             "chapa_c": float(item["chapa_c"]),
+            "vetor_svg": item.get("vetor_svg"),
         })
 
     return result

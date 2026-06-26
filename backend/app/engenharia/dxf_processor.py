@@ -14,6 +14,43 @@ class DXFProcessor:
     """Classe responsável pelo processamento geométrico de arquivos DXF."""
 
     @staticmethod
+    def primitives_to_svg(primitives: list, min_x: float, min_y: float, max_x: float, max_y: float) -> str:
+        largura = max_x - min_x
+        comprimento = max_y - min_y
+        if largura <= 0 or comprimento <= 0:
+            return ""
+        
+        paths = []
+        for p in primitives:
+            ptype = p["type"]
+            if ptype == "LINE":
+                x1 = p["start"][0] - min_x
+                y1 = max_y - p["start"][1]
+                x2 = p["end"][0] - min_x
+                y2 = max_y - p["end"][1]
+                paths.append(f'<path d="M {x1:.2f} {y1:.2f} L {x2:.2f} {y2:.2f}" stroke="currentColor" stroke-width="1.5" fill="none" />')
+            elif ptype == "ARC":
+                x1 = p["start"][0] - min_x
+                y1 = max_y - p["start"][1]
+                x2 = p["end"][0] - min_x
+                y2 = max_y - p["end"][1]
+                r = p["radius"]
+                delta = p["end_angle"] - p["start_angle"]
+                if delta < 0:
+                    delta += 360
+                large_arc = 1 if delta > 180 else 0
+                sweep = 1
+                paths.append(f'<path d="M {x1:.2f} {y1:.2f} A {r:.2f} {r:.2f} 0 {large_arc} {sweep} {x2:.2f} {y2:.2f}" stroke="currentColor" stroke-width="1.5" fill="none" />')
+            elif ptype == "CIRCLE":
+                cx = p["center"][0] - min_x
+                cy = max_y - p["center"][1]
+                r = p["radius"]
+                paths.append(f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{r:.2f}" stroke="currentColor" stroke-width="1.5" fill="none" />')
+                
+        svg_elements = "\n".join(paths)
+        return f'<svg viewBox="0 0 {largura:.2f} {comprimento:.2f}" xmlns="http://www.w3.org/2000/svg">{svg_elements}</svg>'
+
+    @staticmethod
     def process_file_content(file_bytes: bytes) -> Dict[str, Any]:
         """
         Lê o conteúdo binário de um arquivo DXF e extrai seus metadados geométricos.
@@ -239,13 +276,16 @@ class DXFProcessor:
         comprimento = max_y - min_y
         area_m2 = (largura / 1000.0) * (comprimento / 1000.0)
 
+        vetor_svg = DXFProcessor.primitives_to_svg(primitives, min_x, min_y, max_x, max_y)
+
         return {
             "perimetro": round(perimetro_total, 2),
             "num_entradas": max(1, entradas),
             "largura": round(largura, 2),
             "comprimento": round(comprimento, 2),
             "area": round(area_m2, 6),
-            "furos": furos
+            "furos": furos,
+            "vetor_svg": vetor_svg
         }
 
     @staticmethod
@@ -529,13 +569,16 @@ class DXFProcessor:
             if largura < 1.0 or comprimento < 1.0:
                 continue
 
+            vetor_svg = DXFProcessor.primitives_to_svg(all_prims, p_min_x, p_min_y, p_max_x, p_max_y)
+
             results.append({
                 "perimetro": round(perimetro_total, 2),
                 "num_entradas": max(1, entradas_count),
                 "largura": round(largura, 2),
                 "comprimento": round(comprimento, 2),
                 "area": round(area_m2, 6),
-                "furos": furos
+                "furos": furos,
+                "vetor_svg": vetor_svg
             })
 
         return results
