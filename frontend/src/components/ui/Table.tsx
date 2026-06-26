@@ -3,7 +3,7 @@
 import React from "react";
 
 interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
-  headers: string[];
+  headers: React.ReactNode[];
 }
 
 export const Table: React.FC<TableProps> = ({ headers, children, className = "", ...props }) => {

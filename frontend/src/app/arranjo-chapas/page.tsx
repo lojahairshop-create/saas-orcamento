@@ -74,6 +74,53 @@ export default function ArranjoChapasPage() {
   const [modalChapaClienteL, setModalChapaClienteL] = useState<number>(1200);
   const [modalChapaClienteC, setModalChapaClienteC] = useState<number>(2400);
 
+  // Seleção múltipla para edição em massa
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+
+  // Modal de Edição em Massa
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [bulkModalGroupKey, setBulkModalGroupKey] = useState<string | null>(null);
+  const [bulkNewMaterial, setBulkNewMaterial] = useState<string>("");
+  const [bulkNewEspessura, setBulkNewEspessura] = useState<string>("");
+  const [bulkNewQuantidade, setBulkNewQuantidade] = useState<string>("");
+  const [bulkQuantityMultiplier, setBulkQuantityMultiplier] = useState<string>("");
+
+  // Regrupar itens por material e espessura no frontend
+  const regroupItems = (flatItems: any[]) => {
+    const groups: { [key: string]: any[] } = {};
+    const newConfigs = { ...configs };
+    const newExpanded = { ...expandedGroups };
+
+    flatItems.forEach((item: any) => {
+      const key = `${item.material} - ${item.espessura}mm`;
+      if (!groups[key]) {
+        groups[key] = [];
+        if (!newConfigs[key]) {
+          newConfigs[key] = {
+            chapa_l: item.chapa_l || 1200,
+            chapa_c: item.chapa_c || 2400,
+            gap: 5.0,
+          };
+        }
+        if (newExpanded[key] === undefined) {
+          newExpanded[key] = true;
+        }
+      }
+      groups[key].push(item);
+    });
+
+    setGroupedItems(groups);
+    setConfigs(newConfigs);
+    setExpandedGroups(newExpanded);
+    setSelectedGroups((prevSelected) => {
+      const activeKeys = Object.keys(groups);
+      if (prevSelected.length === 0) {
+        return activeKeys;
+      }
+      return prevSelected.filter((key) => activeKeys.includes(key));
+    });
+  };
+
   // Carregar estoque de chapas
   async function loadEstoque() {
     setLoadingEstoque(true);
@@ -112,36 +159,15 @@ export default function ArranjoChapasPage() {
         setItems([]);
         setGroupedItems({});
         setSelectedGroups([]);
+        setSelectedItemIds([]);
         return;
       }
       setLoadingItems(true);
       try {
         const data = await api.getItensParaNesting(undefined, selectedOrcamentos.join(","));
         setItems(data || []);
-        
-        // Agrupar itens por material e espessura no frontend
-        const groups: { [key: string]: any[] } = {};
-        const initialConfigs: typeof configs = {};
-        const initialExpanded: { [key: string]: boolean } = {};
-
-        data.forEach((item: any) => {
-          const key = `${item.material} - ${item.espessura}mm`;
-          if (!groups[key]) {
-            groups[key] = [];
-            initialConfigs[key] = {
-              chapa_l: item.chapa_l || 1200,
-              chapa_c: item.chapa_c || 2400,
-              gap: 5.0,
-            };
-            initialExpanded[key] = true;
-          }
-          groups[key].push(item);
-        });
-
-        setGroupedItems(groups);
-        setSelectedGroups(Object.keys(groups));
-        setConfigs((prev) => ({ ...initialConfigs, ...prev }));
-        setExpandedGroups((prev) => ({ ...initialExpanded, ...prev }));
+        regroupItems(data || []);
+        setSelectedItemIds([]);
       } catch (err) {
         console.error("Erro ao carregar itens para nesting:", err);
       } finally {
@@ -206,7 +232,7 @@ export default function ArranjoChapasPage() {
   };
 
   const handleSaveEditItem = (groupKey: string, itemId: string) => {
-    const updated = (groupedItems[groupKey] || []).map((it) => {
+    const updatedItems = items.map((it) => {
       if (it.id === itemId) {
         return {
           ...it,
@@ -220,11 +246,66 @@ export default function ArranjoChapasPage() {
       return it;
     });
 
-    setGroupedItems({
-      ...groupedItems,
-      [groupKey]: updated,
-    });
+    setItems(updatedItems);
+    regroupItems(updatedItems);
     setEditingItemId(null);
+  };
+
+  // Funções para seleção e aplicação de edição em massa
+  const handleToggleSelectItem = (itemId: string) => {
+    setSelectedItemIds((prev) =>
+      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
+    );
+  };
+
+  const handleToggleSelectAllGroup = (groupKey: string, checked: boolean) => {
+    const groupItemIds = (groupedItems[groupKey] || []).map((it) => it.id);
+    if (checked) {
+      setSelectedItemIds((prev) => {
+        const uniqueNewIds = groupItemIds.filter((id) => !prev.includes(id));
+        return [...prev, ...uniqueNewIds];
+      });
+    } else {
+      setSelectedItemIds((prev) => prev.filter((id) => !groupItemIds.includes(id)));
+    }
+  };
+
+  const handleApplyBulkEdit = (groupKey: string) => {
+    const groupItems = groupedItems[groupKey] || [];
+    const selectedGroupIds = groupItems
+      .filter((it) => selectedItemIds.includes(it.id))
+      .map((it) => it.id);
+
+    if (selectedGroupIds.length === 0) return;
+
+    const updatedItems = items.map((it) => {
+      if (selectedGroupIds.includes(it.id)) {
+        let mat = it.material;
+        let esp = it.espessura;
+        let qty = it.quantidade;
+
+        if (bulkNewMaterial) mat = bulkNewMaterial;
+        if (bulkNewEspessura) esp = Number(bulkNewEspessura) || esp;
+        if (bulkNewQuantidade) qty = Number(bulkNewQuantidade) || qty;
+        else if (bulkQuantityMultiplier) qty = Math.max(1, Math.round(qty * (Number(bulkQuantityMultiplier) || 1)));
+
+        return {
+          ...it,
+          material: mat,
+          espessura: esp,
+          quantidade: qty,
+          area: (it.largura * it.comprimento) / 1e6,
+        };
+      }
+      return it;
+    });
+
+    setItems(updatedItems);
+    regroupItems(updatedItems);
+
+    setSelectedItemIds((prev) => prev.filter((id) => !selectedGroupIds.includes(id)));
+    setBulkModalOpen(false);
+    setBulkModalGroupKey(null);
   };
 
   const runNesting = async (
@@ -771,6 +852,31 @@ export default function ArranjoChapasPage() {
                   const loading = nestingLoading[groupKey];
                   const expanded = expandedGroups[groupKey];
 
+                  const allGroupSelected = groupItems.length > 0 && groupItems.every((it) => selectedItemIds.includes(it.id));
+                  const someGroupSelected = groupItems.some((it) => selectedItemIds.includes(it.id));
+                  const groupSelectedCount = groupItems.filter((it) => selectedItemIds.includes(it.id)).length;
+                  
+                  const tableHeaders = [
+                    <input
+                      key="select-all-checkbox"
+                      type="checkbox"
+                      checked={allGroupSelected}
+                      ref={(el) => {
+                        if (el) {
+                          el.indeterminate = someGroupSelected && !allGroupSelected;
+                        }
+                      }}
+                      onChange={(e) => handleToggleSelectAllGroup(groupKey, e.target.checked)}
+                      className="rounded border-white/10 bg-slate-950/40 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />,
+                    "Orçamento",
+                    "Peça",
+                    "Dimensões (mm)",
+                    "Quantidade",
+                    "Área Unit (m²)",
+                    "Ações"
+                  ];
+
                   return (
                     <Card
                       key={groupKey}
@@ -808,13 +914,45 @@ export default function ArranjoChapasPage() {
                       }
                     >
                       {expanded && (
-                        <div className="flex flex-col gap-6 mt-2">
+                        <div className="flex flex-col gap-4 mt-2">
+                          {/* Barra de Ações para Edição em Massa */}
+                          <div className="flex justify-between items-center bg-white/[0.02] border border-white/5 px-4 py-2 rounded-lg text-xs">
+                            <span className="text-slate-400 font-semibold">
+                              Selecione peças na tabela para habilitar a edição em massa.
+                            </span>
+                            {groupSelectedCount > 0 && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => {
+                                  setBulkModalGroupKey(groupKey);
+                                  setBulkNewMaterial("");
+                                  setBulkNewEspessura("");
+                                  setBulkNewQuantidade("");
+                                  setBulkQuantityMultiplier("");
+                                  setBulkModalOpen(true);
+                                }}
+                                className="h-7 text-[10px] cursor-pointer bg-blue-600/10 border-blue-500/20 text-blue-400 hover:bg-blue-600/20 px-3 flex items-center gap-1 select-none font-bold"
+                              >
+                                <Edit className="h-3 w-3" /> Editar em Massa ({groupSelectedCount})
+                              </Button>
+                            )}
+                          </div>
+
                           {/* List of items in this group */}
-                          <Table headers={["Orçamento", "Peça", "Dimensões (mm)", "Quantidade", "Área Unit (m²)", "Ações"]}>
+                          <Table headers={tableHeaders}>
                             {groupItems.map((item, itIdx) => {
                               const isEditing = editingItemId === item.id;
                               return (
                                 <TableRow key={item.id || itIdx}>
+                                  <TableCell className="w-10 text-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedItemIds.includes(item.id)}
+                                      onChange={() => handleToggleSelectItem(item.id)}
+                                      className="rounded border-white/10 bg-slate-950/40 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                    />
+                                  </TableCell>
                                   <TableCell className="font-semibold text-slate-400 text-xs">
                                     {item.orcamento_numero}
                                   </TableCell>
@@ -1298,6 +1436,91 @@ export default function ArranjoChapasPage() {
                   className="h-9 text-xs cursor-pointer bg-blue-600 hover:bg-blue-700 border-none shadow-[0_0_15px_rgba(59,130,246,0.15)]"
                 >
                   Confirmar e Calcular
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Edição em Massa */}
+        {bulkModalOpen && bulkModalGroupKey && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-white/10 rounded-xl max-w-md w-full p-6 flex flex-col gap-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+              <div>
+                <h3 className="text-base font-bold text-slate-100 flex items-center gap-1.5">
+                  <Edit className="h-4.5 w-4.5 text-blue-500" /> Edição em Massa de Peças
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Modificando as peças selecionadas no grupo: <span className="text-blue-400 font-bold">{bulkModalGroupKey}</span>
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Select
+                    label="Alterar Material"
+                    value={bulkNewMaterial}
+                    onChange={(e) => setBulkNewMaterial(e.target.value)}
+                    options={[
+                      { value: "", label: "Manter original" },
+                      { value: "AÇO CARBONO", label: "Aço Carbono" },
+                      { value: "INOX", label: "Inox" },
+                      { value: "ALUMÍNIO", label: "Alumínio" },
+                    ]}
+                    className="h-9 text-xs"
+                  />
+                  <Input
+                    label="Alterar Espessura (mm)"
+                    type="number"
+                    placeholder="Manter original"
+                    value={bulkNewEspessura}
+                    onChange={(e) => setBulkNewEspessura(e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-3">
+                  <Input
+                    label="Nova Quantidade Fixa"
+                    type="number"
+                    placeholder="Manter original"
+                    value={bulkNewQuantidade}
+                    disabled={!!bulkQuantityMultiplier}
+                    onChange={(e) => setBulkNewQuantidade(e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                  <Input
+                    label="Multiplicar Qtd por"
+                    type="number"
+                    placeholder="Manter original"
+                    value={bulkQuantityMultiplier}
+                    disabled={!!bulkNewQuantidade}
+                    onChange={(e) => setBulkQuantityMultiplier(e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-500 italic">
+                  * Campos em branco não serão modificados. A alteração de material/espessura reagrupará as peças automaticamente.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3 border-t border-white/5 pt-4 mt-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setBulkModalOpen(false);
+                    setBulkModalGroupKey(null);
+                  }}
+                  className="h-9 text-xs cursor-pointer"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => handleApplyBulkEdit(bulkModalGroupKey)}
+                  className="h-9 text-xs cursor-pointer bg-blue-600 hover:bg-blue-700 border-none shadow-[0_0_15px_rgba(59,130,246,0.15)]"
+                >
+                  Aplicar Alterações
                 </Button>
               </div>
             </div>
