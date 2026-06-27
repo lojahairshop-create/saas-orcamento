@@ -11,6 +11,8 @@ from app.orcamentos.schemas import (
     OrcamentoUpdate,
     OrcamentoResponse,
     StatusUpdate,
+    ItemUpdateNesting,
+    BulkUpdateNesting,
 )
 from app.orcamentos import service
 from app.pdf.generator import PDFGenerator
@@ -325,3 +327,106 @@ async def exportar_nesting_html(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Erro ao gerar relatório de arranjo: {str(exc)}"
         )
+
+
+@router.put("/itens/{item_id}")
+async def atualizar_item_orcamento(
+    item_id: str,
+    payload: ItemUpdateNesting,
+    current_user: dict = Depends(get_current_user),
+):
+    """Atualiza as dimensões, descrição ou quantidade de um item de orçamento para nesting."""
+    try:
+        from app.database import get_supabase_service_client
+        supabase = get_supabase_service_client()
+        
+        # Verifica se o item pertence a um orçamento do usuário logado
+        item_res = supabase.table("orcamento_itens").select("orcamento_id").eq("id", item_id).single().execute()
+        if not item_res.data:
+            raise HTTPException(status_code=404, detail="Item não encontrado")
+            
+        orc_id = item_res.data["orcamento_id"]
+        orc_res = supabase.table("orcamentos").select("created_by").eq("id", orc_id).single().execute()
+        if not orc_res.data or orc_res.data["created_by"] != current_user["id"]:
+            raise HTTPException(status_code=403, detail="Acesso negado")
+            
+        # Filtra campos não nulos
+        update_fields = {}
+        payload_dict = payload.model_dump(exclude_unset=True)
+        for k, v in payload_dict.items():
+            if v is not None:
+                update_fields[k] = v
+                
+        # Atualiza a área se largura ou comprimento forem fornecidos
+        if "largura" in update_fields or "comprimento" in update_fields:
+            # Pega valores atuais se um deles faltar
+            item_full = supabase.table("orcamento_itens").select("largura, comprimento").eq("id", item_id).single().execute()
+            larg = update_fields.get("largura", item_full.data.get("largura", 0.0))
+            comp = update_fields.get("comprimento", item_full.data.get("comprimento", 0.0))
+            update_fields["area"] = (float(larg) * float(comp)) / 1e6
+
+        res = supabase.table("orcamento_itens").update(update_fields).eq("id", item_id).execute()
+        return res.data[0] if res.data else {}
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Erro ao atualizar item: {str(exc)}"
+        )
+
+
+@router.post("/itens/bulk-update")
+async def atualizar_itens_bulk(
+    payload: BulkUpdateNesting,
+    current_user: dict = Depends(get_current_user),
+):
+    """Atualiza vários itens de orçamento em lote para o nesting."""
+    try:
+        from app.database import get_supabase_service_client
+        supabase = get_supabase_service_client()
+        
+        item_ids = payload.item_ids
+        fields_dict = payload.fields.model_dump(exclude_unset=True)
+        
+        if not item_ids or not fields_dict:
+            return {"status": "success", "updated_count": 0}
+            
+        # Verifica posse dos itens
+        items_res = supabase.table("orcamento_itens").select("id, orcamento_id").in_("id", item_ids).execute()
+        if not items_res.data:
+            return {"status": "success", "updated_count": 0}
+            
+        orc_ids = list(set([it["orcamento_id"] for it in items_res.data]))
+        orc_res = supabase.table("orcamentos").select("id").eq("created_by", current_user["id"]).in_("id", orc_ids).execute()
+        valid_orc_ids = [o["id"] for o in orc_res.data]
+        
+        valid_item_ids = [it["id"] for it in items_res.data if it["orcamento_id"] in valid_orc_ids]
+        if not valid_item_ids:
+            raise HTTPException(status_code=403, detail="Acesso negado para todos os itens")
+            
+        update_fields = {}
+        for k, v in fields_dict.items():
+            if v is not None:
+                update_fields[k] = v
+                
+        # Bulk updates in Supabase
+        res = supabase.table("orcamento_itens").update(update_fields).in_("id", valid_item_ids).execute()
+        
+        # Se alterou largura/comprimento, recalcula a área de cada um
+        if "largura" in update_fields or "comprimento" in update_fields:
+            for item in res.data:
+                larg = item.get("largura", 0.0)
+                comp = item.get("comprimento", 0.0)
+                area = (float(larg) * float(comp)) / 1e6
+                supabase.table("orcamento_itens").update({"area": area}).eq("id", item["id"]).execute()
+                
+        return {"status": "success", "updated_count": len(res.data)}
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Erro ao atualizar itens em lote: {str(exc)}"
+        )
+

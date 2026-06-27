@@ -84,6 +84,9 @@ export default function ArranjoChapasPage() {
   const [bulkNewEspessura, setBulkNewEspessura] = useState<string>("");
   const [bulkNewQuantidade, setBulkNewQuantidade] = useState<string>("");
   const [bulkQuantityMultiplier, setBulkQuantityMultiplier] = useState<string>("");
+  const [bulkNewDescricao, setBulkNewDescricao] = useState<string>("");
+  const [bulkNewLargura, setBulkNewLargura] = useState<string>("");
+  const [bulkNewComprimento, setBulkNewComprimento] = useState<string>("");
 
   // Regrupar itens por material e espessura no frontend
   const regroupItems = (flatItems: any[], forceSelectKeys: string[] = []) => {
@@ -240,24 +243,41 @@ export default function ArranjoChapasPage() {
     });
   };
 
-  const handleSaveEditItem = (groupKey: string, itemId: string) => {
-    const updatedItems = items.map((it) => {
-      if (it.id === itemId) {
-        return {
-          ...it,
-          descricao: editFields.descricao,
-          largura: Number(editFields.largura),
-          comprimento: Number(editFields.comprimento),
-          quantidade: Number(editFields.quantidade),
-          area: (Number(editFields.largura) * Number(editFields.comprimento)) / 1e6,
-        };
-      }
-      return it;
-    });
+  const handleSaveEditItem = async (groupKey: string, itemId: string) => {
+    const largVal = Number(String(editFields.largura).replace(",", "."));
+    const compVal = Number(String(editFields.comprimento).replace(",", "."));
+    const qtyVal = Number(editFields.quantidade);
+    const descVal = editFields.descricao;
 
-    setItems(updatedItems);
-    regroupItems(updatedItems);
-    setEditingItemId(null);
+    try {
+      await api.updateItemNesting(itemId, {
+        descricao: descVal,
+        largura: largVal,
+        comprimento: compVal,
+        quantidade: qtyVal,
+      });
+
+      const updatedItems = items.map((it) => {
+        if (it.id === itemId) {
+          return {
+            ...it,
+            descricao: descVal,
+            largura: largVal,
+            comprimento: compVal,
+            quantidade: qtyVal,
+            area: (largVal * compVal) / 1e6,
+          };
+        }
+        return it;
+      });
+
+      setItems(updatedItems);
+      regroupItems(updatedItems);
+      setEditingItemId(null);
+    } catch (err: any) {
+      console.error("Erro ao salvar edicao do item:", err);
+      alert("Erro ao salvar alterações no banco de dados.");
+    }
   };
 
   // Funções para seleção e aplicação de edição em massa
@@ -279,62 +299,140 @@ export default function ArranjoChapasPage() {
     }
   };
 
-  const handleApplyBulkEdit = (groupKey: string) => {
-    const groupItems = groupedItems[groupKey] || [];
-    const selectedGroupIds = groupItems
-      .filter((it) => selectedItemIds.includes(it.id))
-      .map((it) => it.id);
+  const handleApplyBulkEdit = async (groupKey: string | null) => {
+    let selectedGroupIds: string[] = [];
+
+    if (groupKey) {
+      const groupItems = groupedItems[groupKey] || [];
+      selectedGroupIds = groupItems
+        .filter((it) => selectedItemIds.includes(it.id))
+        .map((it) => it.id);
+    } else {
+      selectedGroupIds = [...selectedItemIds];
+    }
 
     if (selectedGroupIds.length === 0) return;
 
-    const updatedItems = items.map((it) => {
-      if (selectedGroupIds.includes(it.id)) {
-        let mat = it.material;
-        let esp = it.espessura;
-        let qty = it.quantidade;
-
-        if (bulkNewMaterial) mat = bulkNewMaterial;
-        
-        if (bulkNewEspessura) {
-          const parsedEsp = parseFloat(String(bulkNewEspessura).replace(",", "."));
-          if (!isNaN(parsedEsp)) {
-            esp = parsedEsp;
-          }
-        }
-        
-        if (bulkNewQuantidade) {
-          const parsedQty = parseInt(String(bulkNewQuantidade), 10);
-          if (!isNaN(parsedQty)) {
-            qty = parsedQty;
-          }
-        } else if (bulkQuantityMultiplier) {
-          const parsedMult = parseFloat(String(bulkQuantityMultiplier).replace(",", "."));
-          if (!isNaN(parsedMult)) {
-            qty = Math.max(1, Math.round(qty * parsedMult));
-          }
-        }
-
-        return {
-          ...it,
-          material: mat,
-          espessura: esp,
-          quantidade: qty,
-          area: (it.largura * it.comprimento) / 1e6,
-        };
+    // Constrói objeto de campos que serão atualizados no banco
+    const fieldsToUpdate: any = {};
+    if (bulkNewMaterial) fieldsToUpdate.material = bulkNewMaterial;
+    
+    if (bulkNewEspessura) {
+      const parsedEsp = parseFloat(String(bulkNewEspessura).replace(",", "."));
+      if (!isNaN(parsedEsp)) {
+        fieldsToUpdate.espessura = parsedEsp;
       }
-      return it;
-    });
+    }
+    
+    if (bulkNewQuantidade) {
+      const parsedQty = parseInt(String(bulkNewQuantidade), 10);
+      if (!isNaN(parsedQty)) {
+        fieldsToUpdate.quantidade = parsedQty;
+      }
+    }
 
-    // Identifica para quais novos grupos os itens modificados pertencem e força a seleção deles
-    const editedItems = updatedItems.filter((it) => selectedGroupIds.includes(it.id));
-    const forceSelectKeys = Array.from(new Set(editedItems.map((it) => `${it.material} - ${it.espessura}mm`)));
+    if (bulkNewDescricao) {
+      fieldsToUpdate.descricao = bulkNewDescricao;
+    }
 
-    setItems(updatedItems);
-    regroupItems(updatedItems, forceSelectKeys);
+    if (bulkNewLargura) {
+      const parsedLarg = parseFloat(String(bulkNewLargura).replace(",", "."));
+      if (!isNaN(parsedLarg)) {
+        fieldsToUpdate.largura = parsedLarg;
+      }
+    }
 
-    setSelectedItemIds((prev) => prev.filter((id) => !selectedGroupIds.includes(id)));
-    setBulkModalOpen(false);
-    setBulkModalGroupKey(null);
+    if (bulkNewComprimento) {
+      const parsedComp = parseFloat(String(bulkNewComprimento).replace(",", "."));
+      if (!isNaN(parsedComp)) {
+        fieldsToUpdate.comprimento = parsedComp;
+      }
+    }
+
+    try {
+      // 1. Envia as atualizações para o banco de dados
+      if (bulkQuantityMultiplier) {
+        const parsedMult = parseFloat(String(bulkQuantityMultiplier).replace(",", "."));
+        if (!isNaN(parsedMult)) {
+          // Como cada item tem uma quantidade original diferente, atualizamos individualmente no banco
+          await Promise.all(
+            items
+              .filter((it) => selectedGroupIds.includes(it.id))
+              .map((it) => {
+                const newQty = Math.max(1, Math.round(it.quantidade * parsedMult));
+                return api.updateItemNesting(it.id, { ...fieldsToUpdate, quantidade: newQty });
+              })
+          );
+        }
+      } else if (Object.keys(fieldsToUpdate).length > 0) {
+        await api.bulkUpdateItemsNesting(selectedGroupIds, fieldsToUpdate);
+      }
+
+      // 2. Atualiza o estado no frontend
+      const updatedItems = items.map((it) => {
+        if (selectedGroupIds.includes(it.id)) {
+          let mat = it.material;
+          let esp = it.espessura;
+          let qty = it.quantidade;
+          let desc = it.descricao;
+          let larg = it.largura;
+          let comp = it.comprimento;
+
+          if (bulkNewMaterial) mat = bulkNewMaterial;
+          
+          if (bulkNewEspessura) {
+            const parsedEsp = parseFloat(String(bulkNewEspessura).replace(",", "."));
+            if (!isNaN(parsedEsp)) esp = parsedEsp;
+          }
+          
+          if (bulkNewQuantidade) {
+            const parsedQty = parseInt(String(bulkNewQuantidade), 10);
+            if (!isNaN(parsedQty)) qty = parsedQty;
+          } else if (bulkQuantityMultiplier) {
+            const parsedMult = parseFloat(String(bulkQuantityMultiplier).replace(",", "."));
+            if (!isNaN(parsedMult)) qty = Math.max(1, Math.round(qty * parsedMult));
+          }
+
+          if (bulkNewDescricao) desc = bulkNewDescricao;
+
+          if (bulkNewLargura) {
+            const parsedLarg = parseFloat(String(bulkNewLargura).replace(",", "."));
+            if (!isNaN(parsedLarg)) larg = parsedLarg;
+          }
+
+          if (bulkNewComprimento) {
+            const parsedComp = parseFloat(String(bulkNewComprimento).replace(",", "."));
+            if (!isNaN(parsedComp)) comp = parsedComp;
+          }
+
+          return {
+            ...it,
+            descricao: desc,
+            largura: larg,
+            comprimento: comp,
+            material: mat,
+            espessura: esp,
+            quantidade: qty,
+            area: (larg * comp) / 1e6,
+          };
+        }
+        return it;
+      });
+
+      // Identifica para quais novos grupos os itens modificados pertencem e força a seleção deles
+      const editedItems = updatedItems.filter((it) => selectedGroupIds.includes(it.id));
+      const forceSelectKeys = Array.from(new Set(editedItems.map((it) => `${it.material} - ${it.espessura}mm`)));
+
+      setItems(updatedItems);
+      regroupItems(updatedItems, forceSelectKeys);
+
+      setSelectedItemIds((prev) => prev.filter((id) => !selectedGroupIds.includes(id)));
+      setBulkModalOpen(false);
+      setBulkModalGroupKey(null);
+    } catch (err: any) {
+      console.error("Erro ao aplicar edicao em massa:", err);
+      alert("Erro ao salvar as edições em lote no banco de dados.");
+    }
   };
 
   const runNesting = async (
@@ -959,6 +1057,9 @@ export default function ArranjoChapasPage() {
                                   setBulkNewEspessura("");
                                   setBulkNewQuantidade("");
                                   setBulkQuantityMultiplier("");
+                                  setBulkNewDescricao("");
+                                  setBulkNewLargura("");
+                                  setBulkNewComprimento("");
                                   setBulkModalOpen(true);
                                 }}
                                 className="h-7 text-[10px] cursor-pointer bg-blue-600/10 border-blue-500/20 text-blue-400 hover:bg-blue-600/20 px-3 flex items-center gap-1 select-none font-bold"
@@ -1472,7 +1573,7 @@ export default function ArranjoChapasPage() {
         )}
 
         {/* Modal de Edição em Massa */}
-        {bulkModalOpen && bulkModalGroupKey && (
+        {bulkModalOpen && (bulkModalGroupKey || selectedItemIds.length > 0) && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-slate-900 border border-white/10 rounded-xl max-w-md w-full p-6 flex flex-col gap-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
               <div>
@@ -1480,12 +1581,46 @@ export default function ArranjoChapasPage() {
                   <Edit className="h-4.5 w-4.5 text-blue-500" /> Edição em Massa de Peças
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Modificando as peças selecionadas no grupo: <span className="text-blue-400 font-bold">{bulkModalGroupKey}</span>
+                  {bulkModalGroupKey ? (
+                    <>Modificando as peças selecionadas no grupo: <span className="text-blue-400 font-bold">{bulkModalGroupKey}</span></>
+                  ) : (
+                    <>Modificando <span className="text-blue-400 font-bold">{selectedItemIds.length}</span> peças selecionadas globalmente</>
+                  )}
                 </p>
               </div>
 
-              <div className="flex flex-col gap-4">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto pr-1">
+                {/* Descrição */}
+                <Input
+                  label="Alterar Descrição"
+                  placeholder="Manter original"
+                  value={bulkNewDescricao}
+                  onChange={(e) => setBulkNewDescricao(e.target.value)}
+                  className="h-9 text-xs"
+                />
+
+                {/* Dimensões */}
+                <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-3">
+                  <Input
+                    label="Alterar Largura (mm)"
+                    type="number"
+                    placeholder="Manter original"
+                    value={bulkNewLargura}
+                    onChange={(e) => setBulkNewLargura(e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                  <Input
+                    label="Alterar Comprimento (mm)"
+                    type="number"
+                    placeholder="Manter original"
+                    value={bulkNewComprimento}
+                    onChange={(e) => setBulkNewComprimento(e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                </div>
+
+                {/* Material e Espessura */}
+                <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-3">
                   <Select
                     label="Alterar Material"
                     value={bulkNewMaterial}
@@ -1508,6 +1643,7 @@ export default function ArranjoChapasPage() {
                   />
                 </div>
 
+                {/* Quantidades */}
                 <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-3">
                   <Input
                     label="Nova Quantidade Fixa"
@@ -1528,7 +1664,8 @@ export default function ArranjoChapasPage() {
                     className="h-9 text-xs"
                   />
                 </div>
-                <p className="text-[10px] text-slate-500 italic">
+                
+                <p className="text-[10px] text-slate-500 italic border-t border-white/5 pt-2 mt-1">
                   * Campos em branco não serão modificados. A alteração de material/espessura reagrupará as peças automaticamente.
                 </p>
               </div>
@@ -1552,6 +1689,49 @@ export default function ArranjoChapasPage() {
                   Aplicar Alterações
                 </Button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Floating Bulk Action Bar */}
+        {selectedItemIds.length > 0 && (
+          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 bg-slate-900/95 backdrop-blur-md border border-blue-500/30 px-6 py-3 rounded-full flex items-center gap-4 shadow-[0_10px_30px_rgba(0,0,0,0.5),0_0_20px_rgba(59,130,246,0.15)] animate-in slide-in-from-bottom-10 duration-300">
+            <span className="text-xs font-semibold text-slate-200">
+              <span className="bg-blue-600/20 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded mr-1.5 font-bold">
+                {selectedItemIds.length}
+              </span>
+              peças selecionadas no total
+            </span>
+            <div className="h-4 w-px bg-white/10" />
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  setSelectedItemIds([]);
+                }}
+                className="h-8 text-xs cursor-pointer border-white/10 text-slate-400 hover:text-slate-200"
+              >
+                Limpar
+              </Button>
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => {
+                  setBulkModalGroupKey(null);
+                  setBulkNewMaterial("");
+                  setBulkNewEspessura("");
+                  setBulkNewQuantidade("");
+                  setBulkQuantityMultiplier("");
+                  setBulkNewDescricao("");
+                  setBulkNewLargura("");
+                  setBulkNewComprimento("");
+                  setBulkModalOpen(true);
+                }}
+                className="h-8 text-xs cursor-pointer bg-blue-600 hover:bg-blue-700 border-none px-4 flex items-center gap-1 font-bold shadow-[0_0_15px_rgba(59,130,246,0.2)]"
+              >
+                <Edit className="h-3 w-3" /> Editar em Massa
+              </Button>
             </div>
           </div>
         )}

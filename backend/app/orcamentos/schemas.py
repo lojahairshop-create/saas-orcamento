@@ -201,3 +201,18 @@ class OrcamentoResponse(BaseModel):
     created_by: Optional[str] = None
 
     model_config = {"from_attributes": True}
+
+
+class ItemUpdateNesting(BaseModel):
+    descricao: Optional[str] = None
+    material: Optional[str] = None
+    espessura: Optional[float] = None
+    largura: Optional[float] = None
+    comprimento: Optional[float] = None
+    quantidade: Optional[int] = None
+
+
+class BulkUpdateNesting(BaseModel):
+    item_ids: List[str]
+    fields: ItemUpdateNesting
+

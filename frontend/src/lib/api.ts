@@ -116,6 +116,24 @@ class ApiClient {
     return this.handleResponse<any[]>(res);
   }
 
+  async updateItemNesting(itemId: string, data: any): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/orcamentos/itens/${itemId}`, {
+      method: "PUT",
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+    return this.handleResponse<any>(res);
+  }
+
+  async bulkUpdateItemsNesting(itemIds: string[], fields: any): Promise<{ status: string; updated_count: number }> {
+    const res = await fetch(`${API_BASE_URL}/orcamentos/itens/bulk-update`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({ item_ids: itemIds, fields }),
+    });
+    return this.handleResponse<{ status: string; updated_count: number }>(res);
+  }
+
   async getOrcamento(id: string): Promise<Orcamento> {
     const res = await fetch(`${API_BASE_URL}/orcamentos/${id}`, {
       method: "GET",
