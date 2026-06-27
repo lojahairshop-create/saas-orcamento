@@ -67,6 +67,21 @@ function NovoOrcamentoWizardContent() {
 
   // --- Step 2: Lista de Peças ---
   const [itens, setItens] = useState<any[]>([]);
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [bulkNewMaterial, setBulkNewMaterial] = useState<string>("");
+  const [bulkNewEspessura, setBulkNewEspessura] = useState<string>("");
+  const [bulkNewQuantidade, setBulkNewQuantidade] = useState<string>("");
+  
+  // Tempos das operações para edição em massa
+  const [bulkTempoSetup, setBulkTempoSetup] = useState<string>("");
+  const [bulkTempoDobra, setBulkTempoDobra] = useState<string>("");
+  const [bulkTempoCaldeiraria, setBulkTempoCaldeiraria] = useState<string>("");
+  const [bulkTempoSolda, setBulkTempoSolda] = useState<string>("");
+  const [bulkTempoGuilhotina, setBulkTempoGuilhotina] = useState<string>("");
+  const [bulkTempoUsinagem, setBulkTempoUsinagem] = useState<string>("");
+  const [bulkTempoMontagem, setBulkTempoMontagem] = useState<string>("");
+
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [custosOperacao, setCustosOperacao] = useState<{ [key: string]: number }>({});
   const [dxfItemsToConfigure, setDxfItemsToConfigure] = useState<any[] | null>(null);
@@ -320,6 +335,112 @@ function NovoOrcamentoWizardContent() {
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
     }
+  };
+
+  const handleOpenBulkEdit = () => {
+    setBulkNewMaterial("");
+    setBulkNewEspessura("");
+    setBulkNewQuantidade("");
+    setBulkTempoSetup("");
+    setBulkTempoDobra("");
+    setBulkTempoCaldeiraria("");
+    setBulkTempoSolda("");
+    setBulkTempoGuilhotina("");
+    setBulkTempoUsinagem("");
+    setBulkTempoMontagem("");
+    setBulkModalOpen(true);
+  };
+
+  const handleApplyBulkEdit = () => {
+    if (selectedItemIds.length === 0) return;
+
+    const updatedItens = itens.map((it) => {
+      if (selectedItemIds.includes(it.id)) {
+        let mat = it.material;
+        let esp = it.espessura;
+        let qty = it.quantidade;
+        let setup = it.tempo_setup;
+        let dobra = it.tempo_dobra;
+        let caldeiraria = it.tempo_caldeiraria;
+        let solda = it.tempo_solda;
+        let guilhotina = it.tempo_guilhotina;
+        let usinagem = it.tempo_usinagem;
+        let montagem = it.tempo_montagem;
+        let precoKg = it.preco_kg;
+        let tipoMat = it.tipo_material;
+
+        if (bulkNewMaterial) {
+          mat = bulkNewMaterial;
+          const matched = materiais.find(m => m.nome === bulkNewMaterial);
+          tipoMat = matched ? matched.tipo : tipoMat;
+          precoKg = matched ? matched.preco_kg : precoKg;
+        }
+        
+        if (bulkNewEspessura) {
+          const parsedEsp = parseFloat(String(bulkNewEspessura).replace(",", "."));
+          if (!isNaN(parsedEsp)) {
+            esp = parsedEsp;
+          }
+        }
+        
+        if (bulkNewQuantidade) {
+          const parsedQty = parseInt(String(bulkNewQuantidade), 10);
+          if (!isNaN(parsedQty)) {
+            qty = parsedQty;
+          }
+        }
+
+        if (bulkTempoSetup) {
+          const parsed = parseFloat(String(bulkTempoSetup).replace(",", "."));
+          if (!isNaN(parsed)) setup = parsed;
+        }
+        if (bulkTempoDobra) {
+          const parsed = parseFloat(String(bulkTempoDobra).replace(",", "."));
+          if (!isNaN(parsed)) dobra = parsed;
+        }
+        if (bulkTempoCaldeiraria) {
+          const parsed = parseFloat(String(bulkTempoCaldeiraria).replace(",", "."));
+          if (!isNaN(parsed)) caldeiraria = parsed;
+        }
+        if (bulkTempoSolda) {
+          const parsed = parseFloat(String(bulkTempoSolda).replace(",", "."));
+          if (!isNaN(parsed)) solda = parsed;
+        }
+        if (bulkTempoGuilhotina) {
+          const parsed = parseFloat(String(bulkTempoGuilhotina).replace(",", "."));
+          if (!isNaN(parsed)) guilhotina = parsed;
+        }
+        if (bulkTempoUsinagem) {
+          const parsed = parseFloat(String(bulkTempoUsinagem).replace(",", "."));
+          if (!isNaN(parsed)) usinagem = parsed;
+        }
+        if (bulkTempoMontagem) {
+          const parsed = parseFloat(String(bulkTempoMontagem).replace(",", "."));
+          if (!isNaN(parsed)) montagem = parsed;
+        }
+
+        return {
+          ...it,
+          material: mat,
+          tipo_material: tipoMat,
+          preco_kg: precoKg,
+          espessura: esp,
+          quantidade: qty,
+          tempo_setup: setup,
+          tempo_dobra: dobra,
+          tempo_caldeiraria: caldeiraria,
+          tempo_solda: solda,
+          tempo_guilhotina: guilhotina,
+          tempo_usinagem: usinagem,
+          tempo_montagem: montagem,
+        };
+      }
+      return it;
+    });
+
+    setItens(updatedItens);
+    setSelectedItemIds([]);
+    setBulkModalOpen(false);
   };
 
   const handleDxfSuccess = (dxfs: DXFResult[]) => {
@@ -1200,49 +1321,114 @@ function NovoOrcamentoWizardContent() {
             <Card header={`Peças Adicionadas (${itens.length})`}>
               {itens.length > 0 ? (
                 <div className="flex flex-col gap-4">
-                  <Table headers={["Item", "Descrição", "Material / Esp.", "Qtd", "Origem", "Dimensões", "Perímetro", "Ações"]}>
-                    {itens.map((item, idx) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-bold">{idx + 1}</TableCell>
-                        <TableCell>{item.descricao}</TableCell>
-                        <TableCell>{item.material} {item.espessura}mm</TableCell>
-                        <TableCell className="text-center">{item.quantidade}</TableCell>
-                        <TableCell>
-                          <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-white/5 border border-white/5 text-slate-300">
-                            {item.origem_material === "cliente"
-                              ? "Cliente"
-                              : item.origem_material?.startsWith("retalho_")
-                              ? "Retalho"
-                              : "Chapa Inteira"}
-                          </span>
-                        </TableCell>
-                        <TableCell>{item.largura} x {item.comprimento} mm</TableCell>
-                        <TableCell>{item.perimetro} mm</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleEditPeca(item)}
-                              className="p-1 text-blue-400 hover:bg-blue-950/20 select-none cursor-pointer"
-                              title="Editar Peça"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleRemovePeca(item.id)}
-                              className="p-1 text-red-400 hover:bg-red-950/20 select-none cursor-pointer"
-                              title="Excluir Peça"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </Table>
+                  {/* Barra de Ações para Edição em Massa */}
+                  <div className="flex justify-between items-center bg-white/[0.02] border border-white/5 px-4 py-2 rounded-lg text-xs">
+                    <span className="text-slate-400 font-semibold">
+                      Selecione peças na tabela para habilitar a edição em massa.
+                    </span>
+                    {selectedItemIds.length > 0 && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={handleOpenBulkEdit}
+                        className="h-7 text-[10px] cursor-pointer bg-blue-600/10 border-blue-500/20 text-blue-400 hover:bg-blue-600/20 px-3 flex items-center gap-1 select-none font-bold"
+                      >
+                        <Edit className="h-3 w-3" /> Editar em Massa ({selectedItemIds.length})
+                      </Button>
+                    )}
+                  </div>
+
+                  {(() => {
+                    const allSelected = itens.length > 0 && itens.every(it => selectedItemIds.includes(it.id));
+                    const someSelected = itens.some(it => selectedItemIds.includes(it.id));
+                    
+                    const tableHeaders = [
+                      <input
+                        key="select-all-budget-items"
+                        type="checkbox"
+                        checked={allSelected}
+                        ref={(el) => {
+                          if (el) {
+                            el.indeterminate = someSelected && !allSelected;
+                          }
+                        }}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedItemIds(itens.map(it => it.id));
+                          } else {
+                            setSelectedItemIds([]);
+                          }
+                        }}
+                        className="rounded border-white/10 bg-slate-950/40 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      />,
+                      "Item",
+                      "Descrição",
+                      "Material / Esp.",
+                      "Qtd",
+                      "Origem",
+                      "Dimensões",
+                      "Perímetro",
+                      "Ações"
+                    ];
+
+                    return (
+                      <Table headers={tableHeaders}>
+                        {itens.map((item, idx) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="w-10 text-center">
+                              <input
+                                type="checkbox"
+                                checked={selectedItemIds.includes(item.id)}
+                                onChange={() => {
+                                  setSelectedItemIds(prev =>
+                                    prev.includes(item.id) ? prev.filter(id => id !== item.id) : [...prev, item.id]
+                                  );
+                                }}
+                                className="rounded border-white/10 bg-slate-950/40 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                              />
+                            </TableCell>
+                            <TableCell className="font-bold">{idx + 1}</TableCell>
+                            <TableCell>{item.descricao}</TableCell>
+                            <TableCell>{item.material} {item.espessura}mm</TableCell>
+                            <TableCell className="text-center">{item.quantidade}</TableCell>
+                            <TableCell>
+                              <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-white/5 border border-white/5 text-slate-300">
+                                {item.origem_material === "cliente"
+                                  ? "Cliente"
+                                  : item.origem_material?.startsWith("retalho_")
+                                  ? "Retalho"
+                                  : "Chapa Inteira"}
+                              </span>
+                            </TableCell>
+                            <TableCell>{item.largura} x {item.comprimento} mm</TableCell>
+                            <TableCell>{item.perimetro} mm</TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleEditPeca(item)}
+                                  className="p-1 text-blue-400 hover:bg-blue-950/20 select-none cursor-pointer"
+                                  title="Editar Peça"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleRemovePeca(item.id)}
+                                  className="p-1 text-red-400 hover:bg-red-950/20 select-none cursor-pointer"
+                                  title="Excluir Peça"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </Table>
+                    );
+                  })()}
 
                   <div className="flex justify-between mt-6">
                     <Button variant="secondary" onClick={() => setStep(1)} className="flex items-center gap-1">
@@ -1418,6 +1604,144 @@ function NovoOrcamentoWizardContent() {
                   </div>
                 </div>
               </Card>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Edição em Massa de Peças do Orçamento */}
+        {bulkModalOpen && selectedItemIds.length > 0 && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-white/10 rounded-xl max-w-xl w-full p-6 flex flex-col gap-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+              <div>
+                <h3 className="text-base font-bold text-slate-100 flex items-center gap-1.5">
+                  <Edit className="h-4.5 w-4.5 text-blue-500" /> Edição em Massa de Peças
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Modificando <span className="text-blue-400 font-bold">{selectedItemIds.length}</span> peças selecionadas no orçamento.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto pr-1">
+                {/* Configurações básicas */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Select
+                    label="Alterar Material"
+                    value={bulkNewMaterial}
+                    onChange={(e) => setBulkNewMaterial(e.target.value)}
+                    options={[
+                      { value: "", label: "Manter original" },
+                      { value: "AÇO CARBONO", label: "AÇO CARBONO" },
+                      { value: "INOX", label: "INOX" },
+                      { value: "ALUMÍNIO", label: "ALUMÍNIO" },
+                    ]}
+                    className="h-9 text-xs"
+                  />
+                  <Input
+                    label="Alterar Espessura (mm)"
+                    type="number"
+                    placeholder="Manter original"
+                    value={bulkNewEspessura}
+                    onChange={(e) => setBulkNewEspessura(e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                  <Input
+                    label="Alterar Quantidade"
+                    type="number"
+                    placeholder="Manter original"
+                    value={bulkNewQuantidade}
+                    onChange={(e) => setBulkNewQuantidade(e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                </div>
+
+                {/* Tempos de Operação */}
+                <div className="border-t border-white/5 pt-4 mt-2">
+                  <h4 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">
+                    Alterar Tempos de Operação (minutos)
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Input
+                      label="SET-UP"
+                      type="number"
+                      placeholder="Manter original"
+                      value={bulkTempoSetup}
+                      onChange={(e) => setBulkTempoSetup(e.target.value)}
+                      className="h-9 text-xs"
+                    />
+                    <Input
+                      label="DOBRA"
+                      type="number"
+                      placeholder="Manter original"
+                      value={bulkTempoDobra}
+                      onChange={(e) => setBulkTempoDobra(e.target.value)}
+                      className="h-9 text-xs"
+                    />
+                    <Input
+                      label="CALDEIRARIA"
+                      type="number"
+                      placeholder="Manter original"
+                      value={bulkTempoCaldeiraria}
+                      onChange={(e) => setBulkTempoCaldeiraria(e.target.value)}
+                      className="h-9 text-xs"
+                    />
+                    <Input
+                      label="SOLDA"
+                      type="number"
+                      placeholder="Manter original"
+                      value={bulkTempoSolda}
+                      onChange={(e) => setBulkTempoSolda(e.target.value)}
+                      className="h-9 text-xs"
+                    />
+                    <Input
+                      label="GUILHOTINA"
+                      type="number"
+                      placeholder="Manter original"
+                      value={bulkTempoGuilhotina}
+                      onChange={(e) => setBulkTempoGuilhotina(e.target.value)}
+                      className="h-9 text-xs"
+                    />
+                    <Input
+                      label="USINAGEM"
+                      type="number"
+                      placeholder="Manter original"
+                      value={bulkTempoUsinagem}
+                      onChange={(e) => setBulkTempoUsinagem(e.target.value)}
+                      className="h-9 text-xs"
+                    />
+                    <Input
+                      label="MONTAGEM"
+                      type="number"
+                      placeholder="Manter original"
+                      value={bulkTempoMontagem}
+                      onChange={(e) => setBulkTempoMontagem(e.target.value)}
+                      className="h-9 text-xs"
+                    />
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-slate-500 italic border-t border-white/5 pt-2 mt-1">
+                  * Campos em branco não serão modificados. A alteração de material atualizará o tipo de material e preço por quilo automaticamente.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3 border-t border-white/5 pt-4 mt-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setBulkModalOpen(false);
+                  }}
+                  className="h-9 text-xs cursor-pointer"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleApplyBulkEdit}
+                  className="h-9 text-xs cursor-pointer bg-blue-600 hover:bg-blue-700 border-none shadow-[0_0_15px_rgba(59,130,246,0.15)]"
+                >
+                  Aplicar Alterações
+                </Button>
+              </div>
             </div>
           </div>
         )}
