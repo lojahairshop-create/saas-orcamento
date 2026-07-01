@@ -335,6 +335,12 @@ export default function OrcamentoDetailPage() {
                         {item.observacoes && (
                           <span className="text-[10px] text-slate-500 block mt-0.5">Obs: {item.observacoes}</span>
                         )}
+                        {((item as any).tempo_corte > 0 || (item as any).custo_extra > 0) && (
+                          <div className="text-[10px] text-blue-400/80 flex gap-3 mt-0.5">
+                            {(item as any).tempo_corte > 0 && <span>Tempo Corte: {(item as any).tempo_corte} min</span>}
+                            {(item as any).custo_extra > 0 && <span>Custo Extra: {formatCurrency((item as any).custo_extra)}</span>}
+                          </div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>{item.material}</TableCell>

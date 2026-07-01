@@ -48,6 +48,8 @@ class ItemCreate(BaseModel):
     chapa_c: float = 2400.0
     preco_kg: float = 0.0
     margem_lucro: float = 0.30
+    custo_extra: float = 0.0
+    tempo_corte: float = 0.0
     operacoes: List[OperacaoItem] = []
     observacoes: Optional[str] = None
     origem_material: Optional[str] = "chapa_inteira"
@@ -68,6 +70,8 @@ class ItemUpdate(BaseModel):
     chapa_c: Optional[float] = None
     preco_kg: Optional[float] = None
     margem_lucro: Optional[float] = None
+    custo_extra: Optional[float] = None
+    tempo_corte: Optional[float] = None
     operacoes: Optional[List[OperacaoItem]] = None
     observacoes: Optional[str] = None
     origem_material: Optional[str] = None
@@ -95,6 +99,8 @@ class ItemCalculadoResponse(BaseModel):
     margem_lucro: float = 0.30
     origem_material: str = "chapa_inteira"
     vetor_svg: Optional[str] = None
+    custo_extra: float = 0.0
+    tempo_corte: float = 0.0
 
     # Valores calculados
     velocidade: float = 0.0

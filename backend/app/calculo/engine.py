@@ -213,10 +213,14 @@ class CalculoEngine:
             material, espessura, parametros_laser_custom
         )
 
-        # 2. Tempo corte laser (calcula o tempo total do lote e arredonda para cima)
-        tempo_corte_laser = calcular_tempo_corte_laser(
-            perimetro, velocidade, num_entradas, peck, quantidade
-        )
+        # 2. Tempo corte laser (calcula o tempo total do lote e arredonda para cima, ou usa o tempo_corte manual)
+        tempo_corte_manual = float(item_data.get("tempo_corte", 0.0))
+        if tempo_corte_manual > 0.0:
+            tempo_corte_laser = tempo_corte_manual * quantidade
+        else:
+            tempo_corte_laser = calcular_tempo_corte_laser(
+                perimetro, velocidade, num_entradas, peck, quantidade
+            )
 
         # 3. Área e pesos
         densidade = self.get_densidade(material)
@@ -270,9 +274,10 @@ class CalculoEngine:
                 tempos_min[nome] = tempo * quantidade
                 custos_hora[nome] = custo
 
-        # 9. Total fabricação e custo básico
+        # 9. Total fabricação e custo básico (adiciona o custo_extra)
         total_fabricacao = calcular_total_fabricacao(tempos_min, custos_hora)
-        custo_basico = calcular_custo_basico(total_fabricacao, custo_mp)
+        custo_extra = float(item_data.get("custo_extra", 0.0))
+        custo_basico = calcular_custo_basico(total_fabricacao, custo_mp) + (custo_extra * quantidade)
 
         # 10. Valor de venda sem impostos
         valor_venda_sem_imp = calcular_valor_venda_sem_imp(custo_basico, margem_lucro)
@@ -310,6 +315,8 @@ class CalculoEngine:
             "velocidade": velocidade,
             "peck": peck,
             "tempo_corte_laser": tempo_corte_laser,
+            "custo_extra": float(item_data.get("custo_extra", 0.0)),
+            "tempo_corte": float(item_data.get("tempo_corte", 0.0)),
             # Geometria / Peso
             "area": area,
             "peso_unitario": peso_unitario,

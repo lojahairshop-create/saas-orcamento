@@ -156,6 +156,8 @@ CREATE TABLE IF NOT EXISTS public.orcamento_itens (
     total_tributos DECIMAL(12,4) NOT NULL,
     total_nf DECIMAL(12,4) NOT NULL,
     comissao DECIMAL(12,4) NOT NULL,
+    custo_extra DECIMAL(12,4) DEFAULT 0.0000 NOT NULL,
+    tempo_corte DECIMAL(10,4) DEFAULT 0.0000 NOT NULL,
     observacoes TEXT,
     
     -- Operações e tempos em formato JSON para flexibilidade

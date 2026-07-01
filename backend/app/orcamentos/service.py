@@ -95,6 +95,8 @@ def _build_item_response(
         comissao=calc_result.get("comissao", 0),
         operacoes=operacoes,
         observacoes=item_input.get("observacoes"),
+        custo_extra=float(item_input.get("custo_extra", 0.0)),
+        tempo_corte=float(item_input.get("tempo_corte", 0.0)),
     )
 
 
@@ -197,6 +199,8 @@ async def create_orcamento(
             "preco_kg": item_input.get("preco_kg", 0),
             "margem_lucro": item_input.get("margem_lucro", 0.30),
             "origem_material": item_input.get("origem_material", "chapa_inteira"),
+            "custo_extra": item_input.get("custo_extra", 0.0),
+            "tempo_corte": item_input.get("tempo_corte", 0.0),
             "vetor_svg": item_input.get("vetor_svg"),
             "velocidade": calc.get("velocidade", 0),
             "peck": calc.get("peck", 0),
@@ -337,6 +341,8 @@ async def get_orcamento(orcamento_id: str, user_id: str) -> OrcamentoResponse:
                 comissao=item_db.get("comissao", 0),
                 operacoes=operacoes_model,
                 observacoes=item_db.get("observacoes"),
+                custo_extra=float(item_db.get("custo_extra", 0.0)),
+                tempo_corte=float(item_db.get("tempo_corte", 0.0)),
             )
         )
 
@@ -556,6 +562,8 @@ async def update_orcamento(
                 "preco_kg": item_input.get("preco_kg", 0),
                 "margem_lucro": item_input.get("margem_lucro", 0.30),
                 "origem_material": item_input.get("origem_material", "chapa_inteira"),
+                "custo_extra": item_input.get("custo_extra", 0.0),
+                "tempo_corte": item_input.get("tempo_corte", 0.0),
                 "vetor_svg": item_input.get("vetor_svg"),
                 "velocidade": calc.get("velocidade", 0),
                 "peck": calc.get("peck", 0),

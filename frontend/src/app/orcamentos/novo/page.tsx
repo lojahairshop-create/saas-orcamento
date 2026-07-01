@@ -105,6 +105,8 @@ function NovoOrcamentoWizardContent() {
     preco_kg: 2.00,
     margem_lucro: 0.30,
     origem_material: "chapa_inteira",
+    tempo_corte: 0.0,
+    custo_extra: 0.0,
     
     // Tempos das operações (minutos)
     tempo_setup: 6.0,
@@ -240,6 +242,8 @@ function NovoOrcamentoWizardContent() {
           preco_kg: it.preco_kg || 0,
           margem_lucro: it.margem_lucro || 0.3,
           origem_material: it.origem_material || "chapa_inteira",
+          tempo_corte: it.tempo_corte || 0.0,
+          custo_extra: it.custo_extra || 0.0,
           tempo_setup: getTempo(it.operacoes || [], "SET-UP"),
           tempo_dobra: getTempo(it.operacoes || [], "DOBRA"),
           tempo_caldeiraria: getTempo(it.operacoes || [], "CALDEIRARIA"),
@@ -285,6 +289,8 @@ function NovoOrcamentoWizardContent() {
       num_entradas: 1,
       quantidade: 1,
       origem_material: "chapa_inteira",
+      tempo_corte: 0,
+      custo_extra: 0,
       tempo_setup: 6.0,
       tempo_dobra: 6.0,
       tempo_caldeiraria: 6.0,
@@ -320,6 +326,8 @@ function NovoOrcamentoWizardContent() {
       preco_kg: item.preco_kg ?? 2.00,
       margem_lucro: item.margem_lucro ?? 0.30,
       origem_material: item.origem_material || "chapa_inteira",
+      tempo_corte: item.tempo_corte ?? 0,
+      custo_extra: item.custo_extra ?? 0,
       tempo_setup: item.tempo_setup ?? 0,
       tempo_dobra: item.tempo_dobra ?? 0,
       tempo_caldeiraria: item.tempo_caldeiraria ?? 0,
@@ -512,8 +520,11 @@ function NovoOrcamentoWizardContent() {
       // 1. Velocidade de avanço baseada em material e espessura do cadastro de parâmetros laser
       const { velocidade: avanco, peck } = obterParametrosLaser(item.material, item.espessura);
 
-      // 2. Tempo corte laser (retorna tempo total do lote arredondado para cima)
-      const tempoLaserTotal = calcularTempoCorteLaser(item.perimetro, avanco, item.num_entradas, peck, item.quantidade);
+      // 2. Tempo corte laser (retorna tempo total do lote arredondado para cima, ou usa o tempo_corte manual)
+      const tempoCorteManual = item.tempo_corte || 0.0;
+      const tempoLaserTotal = tempoCorteManual > 0.0
+        ? tempoCorteManual * item.quantidade
+        : calcularTempoCorteLaser(item.perimetro, avanco, item.num_entradas, peck, item.quantidade);
 
       // 3. Área e Peso
       const mat = item.material.toUpperCase().trim();
@@ -548,8 +559,9 @@ function NovoOrcamentoWizardContent() {
       ];
       const totalFab = calcularTotalFabricacao(operacoes);
 
-      // 7. Pricing
-      const custoBasico = calcularCustoBasico(totalFab, custoMp);
+      // 7. Pricing (adiciona o custo_extra)
+      const custoExtraTotal = (item.custo_extra || 0.0) * item.quantidade;
+      const custoBasico = calcularCustoBasico(totalFab, custoMp) + custoExtraTotal;
       const vendaSemImp = calcularValorVendaSemImp(custoBasico, item.margem_lucro);
       const vendaSemImpUnit = item.quantidade > 0 ? vendaSemImp / item.quantidade : 0;
       const precoUnitComImp = calcularPrecoComImpostos(vendaSemImpUnit, totalImpostos);
@@ -567,6 +579,8 @@ function NovoOrcamentoWizardContent() {
         preco_total: precoTotalItem,
         custo_mp: custoMp,
         total_fabricacao: totalFab,
+        custo_extra: item.custo_extra || 0.0,
+        tempo_corte: item.tempo_corte || 0.0,
       };
     });
 
@@ -620,6 +634,8 @@ function NovoOrcamentoWizardContent() {
           preco_kg: it.preco_kg,
           margem_lucro: it.margem_lucro,
           origem_material: it.origem_material || "chapa_inteira",
+          custo_extra: it.custo_extra,
+          tempo_corte: it.tempo_corte,
           operacoes: [
             { nome: "SET-UP", tempo_min: it.tempo_setup },
             { nome: "DOBRA", tempo_min: it.tempo_dobra },
@@ -1106,17 +1122,33 @@ function NovoOrcamentoWizardContent() {
                   label="Largura Peça (mm)"
                   type="number"
                   value={novaPeca.largura}
-                  onChange={e => setNovaPeca({ ...novaPeca, largura: parseFloat(e.target.value) || 0 })}
+                  onChange={e => {
+                    const larg = parseFloat(e.target.value) || 0;
+                    const comp = novaPeca.comprimento || 0;
+                    setNovaPeca({
+                      ...novaPeca,
+                      largura: larg,
+                      perimetro: (larg + comp) * 2
+                    });
+                  }}
                 />
                 <Input
                   label="Comprimento Peça (mm)"
                   type="number"
                   value={novaPeca.comprimento}
-                  onChange={e => setNovaPeca({ ...novaPeca, comprimento: parseFloat(e.target.value) || 0 })}
+                  onChange={e => {
+                    const comp = parseFloat(e.target.value) || 0;
+                    const larg = novaPeca.largura || 0;
+                    setNovaPeca({
+                      ...novaPeca,
+                      comprimento: comp,
+                      perimetro: (larg + comp) * 2
+                    });
+                  }}
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
                 <Input
                   label="Perímetro de Corte (mm)"
                   type="number"
@@ -1141,6 +1173,13 @@ function NovoOrcamentoWizardContent() {
                   type="number"
                   value={novaPeca.margem_lucro * 100}
                   onChange={e => setNovaPeca({ ...novaPeca, margem_lucro: parseFloat(e.target.value) / 100 })}
+                />
+                <Input
+                  label="Custo Extra (R$)"
+                  type="number"
+                  step="0.01"
+                  value={novaPeca.custo_extra}
+                  onChange={e => setNovaPeca({ ...novaPeca, custo_extra: parseFloat(e.target.value) || 0 })}
                 />
               </div>
 
@@ -1219,7 +1258,13 @@ function NovoOrcamentoWizardContent() {
                 <h4 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">
                   Tempos de Operação Adicionais (minutos)
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-8 gap-3">
+                  <Input
+                    label="CORTE (min)"
+                    type="number"
+                    value={novaPeca.tempo_corte}
+                    onChange={e => setNovaPeca({ ...novaPeca, tempo_corte: parseFloat(e.target.value) || 0 })}
+                  />
                   <Input
                     label="SET-UP"
                     type="number"
@@ -1287,6 +1332,8 @@ function NovoOrcamentoWizardContent() {
                         preco_kg: 2.00,
                         margem_lucro: 0.30,
                         origem_material: "chapa_inteira",
+                        tempo_corte: 0.0,
+                        custo_extra: 0.0,
                         tempo_setup: 6.0,
                         tempo_dobra: 6.0,
                         tempo_caldeiraria: 6.0,
