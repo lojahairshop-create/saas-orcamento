@@ -24,6 +24,7 @@ import {
   calcularCustoBasico,
   calcularValorVendaSemImp,
   calcularPrecoComImpostos,
+  obterParametrosLaser,
 } from "@/lib/calculo";
 import {
   User,
@@ -508,16 +509,8 @@ function NovoOrcamentoWizardContent() {
     let totalPeso = 0.0;
 
     const itensCalculados = itens.map((item) => {
-      // 1. Velocidade de avanço baseada em material e espessura
-      let avanco = 3528.0;
-      let peck = 1.0;
-      if (item.material === "INOX") {
-        if (item.espessura <= 1.0) { avanco = 7800; }
-        else if (item.espessura <= 2.0) { avanco = 5300; }
-        else { avanco = 3528; }
-      } else if (item.material === "ALUMÍNIO" || item.material === "ALUMINIO") {
-        avanco = 2450;
-      }
+      // 1. Velocidade de avanço baseada em material e espessura do cadastro de parâmetros laser
+      const { velocidade: avanco, peck } = obterParametrosLaser(item.material, item.espessura);
 
       // 2. Tempo corte laser (retorna tempo total do lote arredondado para cima)
       const tempoLaserTotal = calcularTempoCorteLaser(item.perimetro, avanco, item.num_entradas, peck, item.quantidade);

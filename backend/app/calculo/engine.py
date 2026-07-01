@@ -259,22 +259,13 @@ class CalculoEngine:
             if isinstance(op, dict):
                 nome = op.get("nome", "")
                 tempo = float(op.get("tempo_min", 0))
-                custo = float(
-                    op.get(
-                        "custo_hora",
-                        custos_op_config.get(nome, self.CUSTO_HORA_DEFAULT),
-                    )
-                )
+                custo_val = op.get("custo_hora")
+                custo = float(custo_val) if custo_val is not None else float(custos_op_config.get(nome, self.CUSTO_HORA_DEFAULT))
             else:
                 nome = getattr(op, "nome", "")
                 tempo = float(getattr(op, "tempo_min", 0))
-                custo = float(
-                    getattr(
-                        op,
-                        "custo_hora",
-                        custos_op_config.get(nome, self.CUSTO_HORA_DEFAULT),
-                    )
-                )
+                custo_val = getattr(op, "custo_hora", None)
+                custo = float(custo_val) if custo_val is not None else float(custos_op_config.get(nome, self.CUSTO_HORA_DEFAULT))
             if nome and tempo > 0:
                 tempos_min[nome] = tempo * quantidade
                 custos_hora[nome] = custo

@@ -27,7 +27,7 @@ class StatusOrcamento(str, Enum):
 class OperacaoItem(BaseModel):
     nome: str
     tempo_min: float = 0.0
-    custo_hora: float = 10.0
+    custo_hora: Optional[float] = None
 
 
 # ---------------------------------------------------------------------------

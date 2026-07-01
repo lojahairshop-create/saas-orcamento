@@ -93,3 +93,90 @@ export function calcularPrecoComImpostos(valorSemImp: number, totalImpostos: num
   if (divisor <= 0) return valorSemImp;
   return valorSemImp / divisor; // Margem por dentro
 }
+
+export const PARAMETROS_LASER: Record<string, Record<number, [number, number]>> = {
+  "INOX": {
+    1.0:  [7800, 1.0],
+    1.5:  [6300, 1.1],
+    2.0:  [5300, 1.1],
+    2.5:  [4500, 1.2],
+    3.0:  [3800, 1.2],
+    3.18: [3528, 1.3],
+    4.0:  [2450, 1.4],
+    4.75: [2000, 1.5],
+    5.0:  [1600, 1.8],
+    6.35: [1200, 2.0],
+    8.0:  [500,  2.5],
+    10.0: [350,  3.0],
+    12.7: [225,  4.0],
+    15.87: [0,   0],
+    19.0:  [0,   0],
+  },
+  "AÇO CARBONO": {
+    1.0:  [6500, 1.0],
+    1.5:  [5800, 1.0],
+    2.0:  [4900, 1.0],
+    2.5:  [3724, 1.0],
+    3.0:  [3600, 1.0],
+    3.18: [3528, 1.0],
+    4.0:  [2646, 1.0],
+    4.75: [2352, 1.5],
+    6.35: [2058, 2.0],
+    8.0:  [1666, 2.5],
+    10.0: [1200, 3.0],
+    12.7: [1078, 3.0],
+    15.87: [780, 6.0],
+    19.0:  [600, 10.0],
+  },
+  "ALUMÍNIO": {
+    1.0:  [8750, 1.0],
+    1.5:  [6600, 1.0],
+    2.0:  [5390, 1.0],
+    2.5:  [3724, 1.0],
+    3.18: [2450, 1.0],
+    4.0:  [1764, 1.2],
+    4.75: [1274, 1.2],
+    6.35: [882,  1.5],
+    8.0:  [300,  1.5],
+    10.0: [0,    0],
+    12.7: [0,    0],
+    15.87: [0,   0],
+    19.0:  [0,   0],
+  },
+};
+
+export function obterParametrosLaser(material: string, espessura: number): { velocidade: number; peck: number } {
+  let matKey = material.toUpperCase().trim();
+  const aliases: Record<string, string> = {
+    "AÇO CARB.": "AÇO CARBONO",
+    "ACO CARBONO": "AÇO CARBONO",
+    "ACO CARB.": "AÇO CARBONO",
+    "ALUMINUM": "ALUMÍNIO",
+    "ALUMINIO": "ALUMÍNIO",
+  };
+  matKey = aliases[matKey] || matKey;
+
+  const matParams = PARAMETROS_LASER[matKey];
+  if (!matParams) {
+    return { velocidade: 0, peck: 0 };
+  }
+
+  // Busca exata
+  if (matParams[espessura]) {
+    const [vel, peck] = matParams[espessura];
+    return { velocidade: vel, peck };
+  }
+
+  // Busca aproximada pela espessura mais próxima
+  const espessuras = Object.keys(matParams).map(Number).sort((a, b) => a - b);
+  if (espessuras.length === 0) {
+    return { velocidade: 0, peck: 0 };
+  }
+
+  const closest = espessuras.reduce((prev, curr) => 
+    Math.abs(curr - espessura) < Math.abs(prev - espessura) ? curr : prev
+  );
+
+  const [vel, peck] = matParams[closest];
+  return { velocidade: vel, peck };
+}
