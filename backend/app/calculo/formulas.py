@@ -14,25 +14,27 @@ from typing import Dict
 # ---------------------------------------------------------------------------
 
 def calcular_area(largura_mm: float, comprimento_mm: float) -> float:
-    """Calcula área em m². Converte mm → m."""
-    return (largura_mm / 1000.0) * (comprimento_mm / 1000.0)
+    """Calcula área em m² adicionando margem de 20mm a cada dimensão. Converte mm → m."""
+    return ((largura_mm + 20.0) / 1000.0) * ((comprimento_mm + 20.0) / 1000.0)
 
 
 def calcular_peso_unitario(
-    area_m2: float, espessura_mm: float, densidade: float = 7.86
+    largura_mm: float, comprimento_mm: float, espessura_mm: float
 ) -> float:
-    """Peso unitário da peça em kg = área(m²) × espessura(mm) × densidade."""
-    return area_m2 * espessura_mm * densidade
+    """
+    Calcula peso unitário em kg com base na fórmula da planilha:
+    espessura * (largura + espessura) * (comprimento + espessura) * 7.86 / 1000000.0
+    """
+    return espessura_mm * (largura_mm + espessura_mm) * (comprimento_mm + espessura_mm) * 7.86 / 1000000.0
 
 
 def calcular_peso_chapa(
     chapa_l_mm: float,
     chapa_c_mm: float,
     espessura_mm: float,
-    densidade: float = 7.86,
 ) -> float:
-    """Peso da chapa inteira em kg = L(m) × C(m) × espessura(mm) × densidade."""
-    return (chapa_l_mm / 1000.0) * (chapa_c_mm / 1000.0) * espessura_mm * densidade
+    """Peso da chapa inteira em kg = L(mm) * C(mm) * espessura(mm) * 7.86 / 1000000.0"""
+    return chapa_l_mm * chapa_c_mm * espessura_mm * 7.86 / 1000000.0
 
 
 # ---------------------------------------------------------------------------
@@ -44,21 +46,22 @@ def calcular_pecas_por_chapa(
     chapa_c: float,
     peca_l: float,
     peca_c: float,
-    gap: float = 5.0,
+    espessura: float,
 ) -> int:
     """
     Máx. peças por chapa testando as 2 orientações.
+    Considera borda de 5mm na chapa (chapa - 10mm) e gap igual a espessura.
     Todas as dimensões em mm.
     """
     # Orientação 1
-    nx1 = math.floor(chapa_l / (peca_l + gap))
-    ny1 = math.floor(chapa_c / (peca_c + gap))
-    total1 = nx1 * ny1
+    nx1 = math.floor((chapa_l - 10.0) / (peca_l + espessura))
+    ny1 = math.floor((chapa_c - 10.0) / (peca_c + espessura))
+    total1 = max(0, nx1) * max(0, ny1)
 
     # Orientação 2 (peça rotacionada 90°)
-    nx2 = math.floor(chapa_l / (peca_c + gap))
-    ny2 = math.floor(chapa_c / (peca_l + gap))
-    total2 = nx2 * ny2
+    nx2 = math.floor((chapa_l - 10.0) / (peca_c + espessura))
+    ny2 = math.floor((chapa_c - 10.0) / (peca_l + espessura))
+    total2 = max(0, nx2) * max(0, ny2)
 
     return max(total1, total2)
 
@@ -84,9 +87,9 @@ def calcular_retalho(sobra: int, peso_unitario: float) -> float:
 # Custo de matéria-prima
 # ---------------------------------------------------------------------------
 
-def calcular_custo_mp(peso_total: float, preco_kg: float) -> float:
-    """Custo de matéria-prima = peso_total × preço/kg."""
-    return peso_total * preco_kg
+def calcular_custo_mp(peso_total: float, preco_kg: float, ipi_rate: float = 0.05) -> float:
+    """Custo de matéria-prima = peso_total × preço/kg * (1 + IPI)."""
+    return peso_total * preco_kg * (1.0 + ipi_rate)
 
 
 # ---------------------------------------------------------------------------
@@ -98,14 +101,17 @@ def calcular_tempo_corte_laser(
     velocidade_mm_min: float,
     num_entradas: int,
     peck_s: float,
+    quantidade: int = 1,
 ) -> float:
     """
-    Tempo de corte laser em minutos.
-    = (perímetro / velocidade) + (num_entradas × peck / 60)
+    Tempo total de corte laser para a quantidade no lote (em minutos, arredondado para cima).
+    = ceil( (((perímetro / velocidade * 60) + (num_entradas * peck)) * quantidade) / 60 )
     """
     if velocidade_mm_min <= 0:
         return 0.0
-    return (perimetro_mm / velocidade_mm_min) + (num_entradas * peck_s / 60.0)
+    total_sec = ((perimetro_mm / velocidade_mm_min * 60.0) + (num_entradas * peck_s)) * quantidade
+    total_min = total_sec / 60.0
+    return float(math.ceil(total_min))
 
 
 # ---------------------------------------------------------------------------

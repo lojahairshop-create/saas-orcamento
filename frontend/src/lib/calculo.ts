@@ -4,24 +4,23 @@
  */
 
 export function calcularArea(larguraMm: number, comprimentoMm: number): number {
-  return (larguraMm / 1000.0) * (comprimentoMm / 1000.0);
+  return ((larguraMm + 20.0) / 1000.0) * ((comprimentoMm + 20.0) / 1000.0);
 }
 
 export function calcularPesoUnitario(
-  areaM2: number,
-  espessuraMm: number,
-  densidade = 7.86
+  larguraMm: number,
+  comprimentoMm: number,
+  espessuraMm: number
 ): number {
-  return areaM2 * espessuraMm * densidade;
+  return espessuraMm * (larguraMm + espessuraMm) * (comprimentoMm + espessuraMm) * 7.86 / 1000000.0;
 }
 
 export function calcularPesoChapa(
   chapaL: number,
   chapaC: number,
-  espessuraMm: number,
-  densidade = 7.86
+  espessuraMm: number
 ): number {
-  return (chapaL / 1000.0) * (chapaC / 1000.0) * espessuraMm * densidade;
+  return chapaL * chapaC * espessuraMm * 7.86 / 1000000.0;
 }
 
 export function calcularPecasPorChapa(
@@ -29,15 +28,15 @@ export function calcularPecasPorChapa(
   chapaC: number,
   pecaL: number,
   pecaC: number,
-  gap = 5.0
+  espessura: number
 ): number {
-  const nx1 = Math.floor(chapaL / (pecaL + gap));
-  const ny1 = Math.floor(chapaC / (pecaC + gap));
-  const total1 = nx1 * ny1;
+  const nx1 = Math.floor((chapaL - 10.0) / (pecaL + espessura));
+  const ny1 = Math.floor((chapaC - 10.0) / (pecaC + espessura));
+  const total1 = Math.max(0, nx1) * Math.max(0, ny1);
 
-  const nx2 = Math.floor(chapaL / (pecaC + gap));
-  const ny2 = Math.floor(chapaC / (pecaL + gap));
-  const total2 = nx2 * ny2;
+  const nx2 = Math.floor((chapaL - 10.0) / (pecaC + espessura));
+  const ny2 = Math.floor((chapaC - 10.0) / (pecaL + espessura));
+  const total2 = Math.max(0, nx2) * Math.max(0, ny2);
 
   return Math.max(total1, total2);
 }
@@ -59,18 +58,20 @@ export function calcularRetalho(sobra: number, pesoUnitario: number): number {
   return sobra * pesoUnitario;
 }
 
-export function calcularCustoMP(pesoTotal: number, precoKg: number): number {
-  return pesoTotal * precoKg;
+export function calcularCustoMP(pesoTotal: number, precoKg: number, ipiRate = 0.05): number {
+  return pesoTotal * precoKg * (1.0 + ipiRate);
 }
 
 export function calcularTempoCorteLaser(
   perimetro: number,
   velocidade: number,
   numEntradas: number,
-  peck: number
+  peck: number,
+  quantidade = 1
 ): number {
   if (velocidade <= 0) return 0;
-  return perimetro / velocidade + (numEntradas * peck) / 60.0;
+  const totalSec = ((perimetro / velocidade * 60.0) + (numEntradas * peck)) * quantidade;
+  return Math.ceil(totalSec / 60.0);
 }
 
 export function calcularTotalFabricacao(

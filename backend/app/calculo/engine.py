@@ -88,10 +88,11 @@ class CalculoEngine:
     # multiplicador direto: area_m² × espessura_mm × densidade = kg)
     # ------------------------------------------------------------------
     DENSIDADES: Dict[str, float] = {
-        "INOX": 7.86,
+        "INOX": 8.2,
         "AÇO CARBONO": 7.86,
         "AÇO CARB.": 7.86,
-        "ALUMÍNIO": 2.71,
+        "ALUMÍNIO": 3.2,
+        "ALUMINIO": 3.2,
         "OUTROS": 7.86,
     }
 
@@ -212,20 +213,20 @@ class CalculoEngine:
             material, espessura, parametros_laser_custom
         )
 
-        # 2. Tempo corte laser
+        # 2. Tempo corte laser (calcula o tempo total do lote e arredonda para cima)
         tempo_corte_laser = calcular_tempo_corte_laser(
-            perimetro, velocidade, num_entradas, peck
+            perimetro, velocidade, num_entradas, peck, quantidade
         )
 
         # 3. Área e pesos
         densidade = self.get_densidade(material)
         area = calcular_area(largura, comprimento)
-        peso_unitario = calcular_peso_unitario(area, espessura, densidade)
-        peso_chapa = calcular_peso_chapa(chapa_l, chapa_c, espessura, densidade)
+        peso_unitario = calcular_peso_unitario(largura, comprimento, espessura)
+        peso_chapa = calcular_peso_chapa(chapa_l, chapa_c, espessura)
 
-        # 4. Peças por chapa (duas orientações)
+        # 4. Peças por chapa (duas orientações com gap=espessura e margem de 5mm na chapa)
         pecas_por_chapa = calcular_pecas_por_chapa(
-            chapa_l, chapa_c, largura, comprimento
+            chapa_l, chapa_c, largura, comprimento, espessura
         )
 
         # 5. Qtd chapas
@@ -235,9 +236,11 @@ class CalculoEngine:
         sobra = calcular_sobra(pecas_por_chapa, qtd_chapas, quantidade)
         retalho = calcular_retalho(sobra, peso_unitario)
 
-        # 7. Peso total e custo MP
-        peso_total = peso_unitario * quantidade
-        custo_mp = calcular_custo_mp(peso_total, preco_kg)
+        # 7. Peso total (com margem de max(espessura, 5mm)) e custo MP (com IPI)
+        pad = max(espessura, 5.0)
+        peso_total = quantidade * (espessura * (largura + pad) * (comprimento + pad) * densidade / 1000000.0)
+        ipi_rate = float(config.get("ipi_rate", 0.05))
+        custo_mp = calcular_custo_mp(peso_total, preco_kg, ipi_rate)
 
         # 8. Montagem dos tempos e custos de operação
         tempos_min: Dict[str, float] = {}
@@ -246,13 +249,12 @@ class CalculoEngine:
 
         # Adicionar corte laser como primeira operação (se houver perimetro)
         if tempo_corte_laser > 0:
-            tempo_laser_total = tempo_corte_laser * quantidade
-            tempos_min["CORTE LASER"] = tempo_laser_total
+            tempos_min["CORTE LASER"] = tempo_corte_laser
             custos_hora["CORTE LASER"] = custos_op_config.get(
                 "CORTE LASER", self.CUSTO_HORA_DEFAULT
             )
 
-        # Demais operações informadas
+        # Demais operações informadas (multiplica todas por quantidade, inclusive SET-UP)
         for op in operacoes_input:
             if isinstance(op, dict):
                 nome = op.get("nome", "")
@@ -274,10 +276,7 @@ class CalculoEngine:
                     )
                 )
             if nome and tempo > 0:
-                if nome.upper().strip() == "SET-UP":
-                    tempos_min[nome] = tempo
-                else:
-                    tempos_min[nome] = tempo * quantidade
+                tempos_min[nome] = tempo * quantidade
                 custos_hora[nome] = custo
 
         # 9. Total fabricação e custo básico

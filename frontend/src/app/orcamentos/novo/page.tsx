@@ -515,34 +515,37 @@ function NovoOrcamentoWizardContent() {
         if (item.espessura <= 1.0) { avanco = 7800; }
         else if (item.espessura <= 2.0) { avanco = 5300; }
         else { avanco = 3528; }
-      } else if (item.material === "ALUMÍNIO") {
+      } else if (item.material === "ALUMÍNIO" || item.material === "ALUMINIO") {
         avanco = 2450;
       }
 
-      // 2. Tempo corte laser
-      const tempoLaser = calcularTempoCorteLaser(item.perimetro, avanco, item.num_entradas, peck);
+      // 2. Tempo corte laser (retorna tempo total do lote arredondado para cima)
+      const tempoLaserTotal = calcularTempoCorteLaser(item.perimetro, avanco, item.num_entradas, peck, item.quantidade);
 
       // 3. Área e Peso
-      const densidade = item.material === "ALUMÍNIO" ? 2.71 : 7.86;
+      const mat = item.material.toUpperCase().trim();
+      const densidade = mat.includes("INOX") ? 8.2 : (mat.includes("ALUM") ? 3.2 : 7.86);
       const area = calcularArea(item.largura, item.comprimento);
-      const pesoUnit = calcularPesoUnitario(area, item.espessura, densidade);
-      const pesoTotal = pesoUnit * item.quantidade;
+      const pesoUnit = calcularPesoUnitario(item.largura, item.comprimento, item.espessura);
+      
+      const pad = Math.max(item.espessura, 5.0);
+      const pesoTotal = item.quantidade * (item.espessura * (item.largura + pad) * (item.comprimento + pad) * densidade / 1000000.0);
 
       // 4. Aproveitamento de chapa
-      const pecasChapa = calcularPecasPorChapa(item.chapa_l, item.chapa_c, item.largura, item.comprimento, 5.0);
+      const pecasChapa = calcularPecasPorChapa(item.chapa_l, item.chapa_c, item.largura, item.comprimento, item.espessura);
       const qtdChapas = calcularQtdChapas(item.quantidade, pecasChapa);
       const sobra = calcularSobra(pecasChapa, qtdChapas, item.quantidade);
       const retalho = sobra * pesoUnit;
 
-      // 5. Custo Matéria Prima
-      const custoMp = calcularCustoMP(pesoTotal, item.preco_kg);
+      // 5. Custo Matéria Prima (com IPI rate)
+      const custoMp = calcularCustoMP(pesoTotal, item.preco_kg, ipiRate);
 
       // 6. Fabricação (tempos e custos de hora reais ou default R$ 10.00/h)
       const getCusto = (nome: string) => custosOperacao[nome] ?? 10.00;
 
       const operacoes = [
-        { tempo_min: tempoLaser * item.quantidade, custo_hora: getCusto("CORTE LASER") },
-        { tempo_min: item.tempo_setup, custo_hora: getCusto("SET-UP") },
+        { tempo_min: tempoLaserTotal, custo_hora: getCusto("CORTE LASER") },
+        { tempo_min: item.tempo_setup * item.quantidade, custo_hora: getCusto("SET-UP") },
         { tempo_min: item.tempo_dobra * item.quantidade, custo_hora: getCusto("DOBRA") },
         { tempo_min: item.tempo_caldeiraria * item.quantidade, custo_hora: getCusto("CALDEIRARIA") },
         { tempo_min: item.tempo_solda * item.quantidade, custo_hora: getCusto("SOLDA") },
