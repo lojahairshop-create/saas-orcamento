@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -163,8 +163,8 @@ export default function EstoquePage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight flex items-center gap-3">
-              <Database className="h-8 w-8 text-blue-500" />
+            <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight flex items-center gap-3">
+              <Database className="h-8 w-8 text-teal-500" />
               Controle de Estoque de Chapas
             </h1>
             <p className="text-sm text-slate-400 mt-2">
@@ -175,42 +175,42 @@ export default function EstoquePage() {
 
         {/* Metrics Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="p-6 bg-[#0f0f15]/80 border-white/5 flex items-center gap-5">
-            <div className="h-12 w-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+          <Card className="p-6 bg-[#0f0f15]/80 border-gray-200 flex items-center gap-5">
+            <div className="h-12 w-12 rounded-xl bg-blue-500/10 border border-teal-200 flex items-center justify-center text-teal-600">
               <FileSpreadsheet className="h-6 w-6" />
             </div>
             <div>
               <span className="text-xs text-slate-500 font-medium">Chapas Inteiras</span>
-              <h3 className="text-2xl font-bold text-slate-200 mt-1">{totalInteiras} un</h3>
+              <h3 className="text-2xl font-bold text-slate-700 mt-1">{totalInteiras} un</h3>
             </div>
           </Card>
 
-          <Card className="p-6 bg-[#0f0f15]/80 border-white/5 flex items-center gap-5">
+          <Card className="p-6 bg-[#0f0f15]/80 border-gray-200 flex items-center gap-5">
             <div className="h-12 w-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
               <Layers className="h-6 w-6" />
             </div>
             <div>
               <span className="text-xs text-slate-500 font-medium">Retalhos em Estoque</span>
-              <h3 className="text-2xl font-bold text-slate-200 mt-1">{totalRetalhos} un</h3>
+              <h3 className="text-2xl font-bold text-slate-700 mt-1">{totalRetalhos} un</h3>
             </div>
           </Card>
 
-          <Card className="p-6 bg-[#0f0f15]/80 border-white/5 flex items-center gap-5">
-            <div className="h-12 w-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+          <Card className="p-6 bg-[#0f0f15]/80 border-gray-200 flex items-center gap-5">
+            <div className="h-12 w-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-teal-500">
               <TrendingDown className="h-6 w-6" />
             </div>
             <div>
               <span className="text-xs text-slate-500 font-medium">Total de Registros</span>
-              <h3 className="text-2xl font-bold text-slate-200 mt-1">{estoque.length} itens</h3>
+              <h3 className="text-2xl font-bold text-slate-700 mt-1">{estoque.length} itens</h3>
             </div>
           </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form Card */}
-          <Card className="lg:col-span-1 p-6 bg-[#0f0f15]/80 border-white/5 h-fit">
-            <h2 className="text-lg font-bold text-slate-200 mb-6 flex items-center gap-2">
-              {editingId ? <Edit className="h-5 w-5 text-blue-400" /> : <Plus className="h-5 w-5 text-blue-400" />}
+          <Card className="lg:col-span-1 p-6 bg-[#0f0f15]/80 border-gray-200 h-fit">
+            <h2 className="text-lg font-bold text-slate-700 mb-6 flex items-center gap-2">
+              {editingId ? <Edit className="h-5 w-5 text-teal-600" /> : <Plus className="h-5 w-5 text-teal-600" />}
               {editingId ? "Editar Registro" : "Adicionar Chapa / Retalho"}
             </h2>
 
@@ -324,7 +324,7 @@ export default function EstoquePage() {
                   <Button
                     type="button"
                     variant="ghost"
-                    className="flex-1 border-white/5 text-slate-400 hover:text-slate-200"
+                    className="flex-1 border-gray-200 text-slate-400 hover:text-slate-700"
                     onClick={cancelEdit}
                   >
                     <X className="h-4 w-4 mr-2" />
@@ -334,7 +334,7 @@ export default function EstoquePage() {
                 <Button
                   type="submit"
                   disabled={saveLoading}
-                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-[0_0_15px_rgba(59,130,246,0.15)]"
+                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-sm"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {saveLoading ? "Salvando..." : editingId ? "Salvar" : "Adicionar"}
@@ -344,8 +344,8 @@ export default function EstoquePage() {
           </Card>
 
           {/* List Card */}
-          <Card className="lg:col-span-2 p-6 bg-[#0f0f15]/80 border-white/5">
-            <h2 className="text-lg font-bold text-slate-200 mb-6">
+          <Card className="lg:col-span-2 p-6 bg-[#0f0f15]/80 border-gray-200">
+            <h2 className="text-lg font-bold text-slate-700 mb-6">
               Inventário de Chapas e Retalhos
             </h2>
 
@@ -362,7 +362,7 @@ export default function EstoquePage() {
                 <Table headers={["Material", "Liga/Especificação", "Tipo", "Espessura", "Dimensões", "Quantidade", "Ações"]}>
                   {estoque.map((item) => (
                     <TableRow key={item.id}>
-                        <TableCell className="py-4 pl-4 font-semibold text-slate-300">
+                        <TableCell className="py-4 pl-4 font-semibold text-slate-600">
                           {item.material}
                         </TableCell>
                         <TableCell className="py-4 text-slate-400">
@@ -372,20 +372,20 @@ export default function EstoquePage() {
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium uppercase ${
                               item.tipo_registro === "inteira"
-                                ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                                ? "bg-blue-500/10 text-teal-600 border border-teal-200"
                                 : "bg-purple-500/10 text-purple-400 border border-purple-500/20"
                             }`}
                           >
                             {item.tipo_registro === "inteira" ? "Inteira" : "Retalho"}
                           </span>
                         </TableCell>
-                        <TableCell className="py-4 text-center font-mono text-slate-300">
+                        <TableCell className="py-4 text-center font-mono text-slate-600">
                           {item.espessura.toFixed(2)} mm
                         </TableCell>
-                        <TableCell className="py-4 text-center font-mono text-slate-300">
+                        <TableCell className="py-4 text-center font-mono text-slate-600">
                           {item.largura.toFixed(0)} x {item.comprimento.toFixed(0)} mm
                         </TableCell>
-                        <TableCell className="py-4 text-center font-mono text-slate-200 font-bold">
+                        <TableCell className="py-4 text-center font-mono text-slate-700 font-bold">
                           {item.quantidade} un
                         </TableCell>
                         <TableCell className="py-4 text-right pr-4">
@@ -393,7 +393,7 @@ export default function EstoquePage() {
                             <button
                               onClick={() => handleEdit(item)}
                               title="Editar"
-                              className="text-slate-400 hover:text-blue-400 transition-colors p-1"
+                              className="text-slate-400 hover:text-teal-600 transition-colors p-1"
                             >
                               <Edit className="h-4 w-4" />
                             </button>

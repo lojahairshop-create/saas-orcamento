@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useRef } from "react";
 import { UploadCloud, FileCheck, FileX, Loader } from "lucide-react";
@@ -89,15 +89,15 @@ export const DxfUploader: React.FC<DxfUploaderProps> = ({ onSuccess }) => {
 
   return (
     <div className="w-full">
-      <div className="flex items-center gap-2 mb-4 bg-white/[0.02] hover:bg-white/[0.04] p-3 rounded-lg border border-white/5 w-fit transition-colors select-none">
+      <div className="flex items-center gap-2 mb-4 bg-gray-50 hover:bg-white/[0.04] p-3 rounded-lg border border-gray-200 w-fit transition-colors select-none">
         <input
           type="checkbox"
           id="splitParts"
           checked={splitParts}
           onChange={(e) => setSplitParts(e.target.checked)}
-          className="rounded border-white/10 bg-white/[0.03] text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer"
+          className="rounded border-gray-200 bg-white/[0.03] text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer"
         />
-        <label htmlFor="splitParts" className="text-xs font-semibold text-slate-300 cursor-pointer">
+        <label htmlFor="splitParts" className="text-xs font-semibold text-slate-600 cursor-pointer">
           Este arquivo contém múltiplas peças (individualizar automaticamente)
         </label>
       </div>
@@ -111,7 +111,7 @@ export const DxfUploader: React.FC<DxfUploaderProps> = ({ onSuccess }) => {
         className={`w-full min-h-[160px] border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all duration-200 ${
           isDragActive
             ? "border-blue-500 bg-blue-500/5"
-            : "border-white/10 bg-white/[0.01] hover:bg-white/[0.02] hover:border-white/20"
+            : "border-gray-200 bg-white hover:bg-gray-50 hover:border-white/20"
         }`}
       >
         <input
@@ -126,9 +126,9 @@ export const DxfUploader: React.FC<DxfUploaderProps> = ({ onSuccess }) => {
 
         {loading ? (
           <div className="flex flex-col items-center gap-3">
-            <Loader className="h-10 w-10 text-blue-500 animate-spin" />
+            <Loader className="h-10 w-10 text-teal-500 animate-spin" />
             <div className="flex flex-col gap-1">
-              <span className="text-sm font-semibold text-slate-200">
+              <span className="text-sm font-semibold text-slate-700">
                 Analisando Geometria...
               </span>
               <span className="text-[10px] text-slate-500 truncate max-w-xs">
@@ -140,14 +140,14 @@ export const DxfUploader: React.FC<DxfUploaderProps> = ({ onSuccess }) => {
           <div className="flex flex-col items-center gap-3">
             <FileCheck className="h-10 w-10 text-emerald-500" />
             <div className="flex flex-col gap-1">
-              <span className="text-sm font-semibold text-slate-200">
+              <span className="text-sm font-semibold text-slate-700">
                 DXF Importado com Sucesso!
               </span>
               <span className="text-[10px] text-slate-500 truncate max-w-xs">
                 {fileName}
               </span>
             </div>
-            <span className="text-[10px] text-blue-500 hover:underline">
+            <span className="text-[10px] text-teal-500 hover:underline">
               Clique para substituir o arquivo
             </span>
           </div>
@@ -155,7 +155,7 @@ export const DxfUploader: React.FC<DxfUploaderProps> = ({ onSuccess }) => {
           <div className="flex flex-col items-center gap-3">
             <UploadCloud className="h-10 w-10 text-slate-500" />
             <div className="flex flex-col gap-1">
-              <span className="text-sm font-semibold text-slate-300">
+              <span className="text-sm font-semibold text-slate-600">
                 Arraste seu desenho DXF aqui
               </span>
               <span className="text-xs text-slate-500 font-medium">

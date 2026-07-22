@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -51,7 +51,7 @@ export default function DashboardPage() {
     return (
       <AppLayout>
         <div className="h-96 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-2 border-blue-500 border-t-transparent" />
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-teal-500 border-t-transparent" />
         </div>
       </AppLayout>
     );
@@ -63,8 +63,8 @@ export default function DashboardPage() {
         {/* Title */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-xl font-bold text-slate-100">Painel de Resumo</h1>
-            <p className="text-xs text-slate-500 mt-1">Acompanhe seus orçamentos e conversão comercial</p>
+            <h1 className="text-xl font-bold text-slate-800">Painel de Resumo</h1>
+            <p className="text-xs text-slate-400 mt-1">Acompanhe seus orçamentos e conversão comercial</p>
           </div>
           <Link href="/orcamentos/novo">
             <Button size="sm">Novo Orçamento</Button>
@@ -133,7 +133,7 @@ export default function DashboardPage() {
           header={
             <div className="flex justify-between items-center w-full">
               <span>Orçamentos Recentes</span>
-              <Link href="/orcamentos" className="text-xs text-blue-500 hover:underline flex items-center gap-1 font-semibold">
+              <Link href="/orcamentos" className="text-xs text-teal-500 hover:underline flex items-center gap-1 font-semibold">
                 Ver todos <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
@@ -143,7 +143,7 @@ export default function DashboardPage() {
             <Table headers={["Nº Orçamento", "Cliente", "Data de Criação", "Valor Total", "Status", "Ações"]}>
               {recentOrcamentos.map((orc) => (
                 <TableRow key={orc.id}>
-                  <TableCell className="font-bold text-slate-100">{orc.numero}</TableCell>
+                  <TableCell className="font-bold text-slate-800">{orc.numero}</TableCell>
                   <TableCell>{orc.cliente_nome}</TableCell>
                   <TableCell>{new Date(orc.created_at).toLocaleDateString("pt-BR")}</TableCell>
                   <TableCell>{formatCurrency(orc.total_preco)}</TableCell>

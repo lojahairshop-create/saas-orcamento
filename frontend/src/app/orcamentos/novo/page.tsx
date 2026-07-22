@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, Suspense } from "react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -678,7 +678,7 @@ function NovoOrcamentoWizardContent() {
       <div className="flex flex-col gap-6">
         {/* Title */}
         <div>
-          <h1 className="text-xl font-bold text-slate-100">
+          <h1 className="text-xl font-bold text-slate-800">
             {editId ? "Editar Orçamento" : "Criar Novo Orçamento"}
           </h1>
           <p className="text-xs text-slate-500 mt-1">
@@ -687,30 +687,30 @@ function NovoOrcamentoWizardContent() {
         </div>
 
         {/* Wizard Steps Indicator */}
-        <div className="flex items-center gap-4 bg-white/[0.01] border border-white/5 rounded-xl p-4">
+        <div className="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-4">
           <div className="flex items-center gap-2">
             <span className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold ${
-              step >= 1 ? "bg-blue-600 text-white" : "bg-white/5 text-slate-500"
+              step >= 1 ? "bg-blue-600 text-white" : "bg-gray-50 text-slate-500"
             }`}>1</span>
-            <span className={`text-xs font-semibold ${step >= 1 ? "text-slate-200" : "text-slate-500"}`}>
+            <span className={`text-xs font-semibold ${step >= 1 ? "text-slate-700" : "text-slate-500"}`}>
               Dados do Cliente
             </span>
           </div>
           <ChevronRight className="h-4 w-4 text-slate-600" />
           <div className="flex items-center gap-2">
             <span className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold ${
-              step >= 2 ? "bg-blue-600 text-white" : "bg-white/5 text-slate-500"
+              step >= 2 ? "bg-blue-600 text-white" : "bg-gray-50 text-slate-500"
             }`}>2</span>
-            <span className={`text-xs font-semibold ${step >= 2 ? "text-slate-200" : "text-slate-500"}`}>
+            <span className={`text-xs font-semibold ${step >= 2 ? "text-slate-700" : "text-slate-500"}`}>
               Peças & Operações
             </span>
           </div>
           <ChevronRight className="h-4 w-4 text-slate-600" />
           <div className="flex items-center gap-2">
             <span className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold ${
-              step >= 3 ? "bg-blue-600 text-white" : "bg-white/5 text-slate-500"
+              step >= 3 ? "bg-blue-600 text-white" : "bg-gray-50 text-slate-500"
             }`}>3</span>
-            <span className={`text-xs font-semibold ${step >= 3 ? "text-slate-200" : "text-slate-500"}`}>
+            <span className={`text-xs font-semibold ${step >= 3 ? "text-slate-700" : "text-slate-500"}`}>
               Revisão & Cálculo
             </span>
           </div>
@@ -781,7 +781,7 @@ function NovoOrcamentoWizardContent() {
               </div>
             </div>
 
-            <div className="border-t border-white/5 pt-6 mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="border-t border-gray-200 pt-6 mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
               <Select
                 label="Tipo de Venda"
                 value={tipoVenda}
@@ -864,7 +864,7 @@ function NovoOrcamentoWizardContent() {
                   <div className="overflow-y-auto max-h-[50vh] pr-2">
                     <table className="w-full text-left border-collapse min-w-[1200px]">
                       <thead>
-                        <tr className="border-b border-white/10 text-xs font-semibold text-slate-400">
+                        <tr className="border-b border-gray-200 text-xs font-semibold text-slate-400">
                           <th className="py-3 px-2">Desenho / Descrição</th>
                           <th className="py-3 px-2">Dimensões (mm)</th>
                           <th className="py-3 px-2">Material</th>
@@ -880,17 +880,17 @@ function NovoOrcamentoWizardContent() {
                           <th className="py-3 px-2 w-16">Entradas</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-white/5 text-xs text-slate-200">
+                      <tbody className="divide-y divide-white/5 text-xs text-slate-700">
                         {dxfItemsToConfigure.map((item, idx) => (
                           <tr key={item.id}>
                             <td className="py-3 px-2">
                               <div className="flex flex-col gap-1 w-full max-w-[180px]">
-                                <span className="font-semibold text-xs text-blue-400 truncate block" title={item.descricao}>
+                                <span className="font-semibold text-xs text-teal-600 truncate block" title={item.descricao}>
                                   {item.descricao}
                                 </span>
                                 <input
                                   type="text"
-                                  className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                  className="bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-700"
                                   placeholder="Descrição amigável"
                                   value={item.descricao}
                                   onChange={(e) => {
@@ -906,7 +906,7 @@ function NovoOrcamentoWizardContent() {
                             </td>
                             <td className="py-3 px-2">
                               <select
-                                className="bg-[#12121e] border border-white/10 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-blue-500 w-full"
+                                className="bg-[#12121e] border border-gray-200 rounded px-2 py-1 text-xs text-slate-700 focus:outline-none focus:border-blue-500 w-full"
                                 value={item.material}
                                 onChange={(e) => {
                                   const matched = materiais.find(m => m.nome === e.target.value);
@@ -926,7 +926,7 @@ function NovoOrcamentoWizardContent() {
                               <input
                                 type="number"
                                 step="0.01"
-                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                className="bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-700"
                                 value={item.espessura}
                                 onChange={(e) => {
                                   const updated = [...dxfItemsToConfigure];
@@ -938,7 +938,7 @@ function NovoOrcamentoWizardContent() {
                             <td className="py-3 px-2">
                               <input
                                 type="number"
-                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                className="bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-700"
                                 value={item.quantidade}
                                 onChange={(e) => {
                                   const updated = [...dxfItemsToConfigure];
@@ -951,7 +951,7 @@ function NovoOrcamentoWizardContent() {
                               <input
                                 type="number"
                                 step="0.01"
-                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                className="bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-700"
                                 value={item.preco_kg}
                                 onChange={(e) => {
                                   const updated = [...dxfItemsToConfigure];
@@ -963,7 +963,7 @@ function NovoOrcamentoWizardContent() {
                             <td className="py-3 px-2">
                               <input
                                 type="number"
-                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                className="bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-700"
                                 value={item.margem_lucro * 100}
                                 onChange={(e) => {
                                   const updated = [...dxfItemsToConfigure];
@@ -976,7 +976,7 @@ function NovoOrcamentoWizardContent() {
                               <input
                                 type="number"
                                 step="0.1"
-                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                className="bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-700"
                                 value={item.tempo_dobra}
                                 onChange={(e) => {
                                   const updated = [...dxfItemsToConfigure];
@@ -989,7 +989,7 @@ function NovoOrcamentoWizardContent() {
                               <input
                                 type="number"
                                 step="0.1"
-                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                className="bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-700"
                                 value={item.tempo_solda}
                                 onChange={(e) => {
                                   const updated = [...dxfItemsToConfigure];
@@ -1002,7 +1002,7 @@ function NovoOrcamentoWizardContent() {
                               <input
                                 type="number"
                                 step="0.1"
-                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                className="bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-700"
                                 value={item.tempo_usinagem}
                                 onChange={(e) => {
                                   const updated = [...dxfItemsToConfigure];
@@ -1015,7 +1015,7 @@ function NovoOrcamentoWizardContent() {
                               <input
                                 type="number"
                                 step="0.1"
-                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                className="bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-700"
                                 value={item.tempo_setup}
                                 onChange={(e) => {
                                   const updated = [...dxfItemsToConfigure];
@@ -1027,7 +1027,7 @@ function NovoOrcamentoWizardContent() {
                             <td className="py-3 px-2">
                               <input
                                 type="number"
-                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                className="bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-700"
                                 value={item.perimetro}
                                 onChange={(e) => {
                                   const updated = [...dxfItemsToConfigure];
@@ -1039,7 +1039,7 @@ function NovoOrcamentoWizardContent() {
                             <td className="py-3 px-2">
                               <input
                                 type="number"
-                                className="bg-white/[0.03] border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-200"
+                                className="bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-full text-slate-700"
                                 value={item.num_entradas}
                                 onChange={(e) => {
                                   const updated = [...dxfItemsToConfigure];
@@ -1055,7 +1055,7 @@ function NovoOrcamentoWizardContent() {
                   </div>
 
                   {/* Botões de Ação */}
-                  <div className="flex justify-end gap-3 border-t border-white/5 pt-4 mt-2">
+                  <div className="flex justify-end gap-3 border-t border-gray-200 pt-4 mt-2">
                     <Button type="button" variant="secondary" onClick={() => setDxfItemsToConfigure(null)}>
                       Cancelar
                     </Button>
@@ -1184,7 +1184,7 @@ function NovoOrcamentoWizardContent() {
               </div>
 
               {/* Origem de Chapa e Estoque */}
-              <div className="border-t border-white/5 pt-4 mt-4">
+              <div className="border-t border-gray-200 pt-4 mt-4">
                 <h4 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">
                   Configuração de Material e Origem
                 </h4>
@@ -1235,8 +1235,8 @@ function NovoOrcamentoWizardContent() {
                     />
 
                     {sugestaoEstoque?.sugestao && (
-                      <div className="mt-2 text-[11px] text-blue-400 font-semibold flex items-center gap-1.5 bg-blue-500/5 border border-blue-500/10 px-3 py-2 rounded-lg">
-                        <Sparkles className="h-3.5 w-3.5 text-blue-400 animate-pulse shrink-0" />
+                      <div className="mt-2 text-[11px] text-teal-600 font-semibold flex items-center gap-1.5 bg-blue-500/5 border border-blue-500/10 px-3 py-2 rounded-lg">
+                        <Sparkles className="h-3.5 w-3.5 text-teal-600 animate-pulse shrink-0" />
                         <span>{sugestaoEstoque.sugestao}</span>
                         {sugestaoEstoque.opcao_sugerida && novaPeca.origem_material !== sugestaoEstoque.opcao_sugerida && (
                           <button
@@ -1254,7 +1254,7 @@ function NovoOrcamentoWizardContent() {
               </div>
 
               {/* Tempos operacionais */}
-              <div className="border-t border-white/5 pt-4 mt-4">
+              <div className="border-t border-gray-200 pt-4 mt-4">
                 <h4 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">
                   Tempos de Operação Adicionais (minutos)
                 </h4>
@@ -1344,7 +1344,7 @@ function NovoOrcamentoWizardContent() {
                         observacoes: "",
                       });
                     }} 
-                    className="text-slate-400 hover:text-slate-200 select-none cursor-pointer"
+                    className="text-slate-400 hover:text-slate-700 select-none cursor-pointer"
                   >
                     Cancelar Edição
                   </Button>
@@ -1352,7 +1352,7 @@ function NovoOrcamentoWizardContent() {
                 <Button 
                   variant={editingPecaId ? "primary" : "secondary"} 
                   onClick={handleAddPeca} 
-                  className={`flex items-center gap-1 select-none cursor-pointer ${editingPecaId ? "bg-blue-600 hover:bg-blue-700 text-white border-none shadow-[0_0_15px_rgba(59,130,246,0.15)]" : ""}`}
+                  className={`flex items-center gap-1 select-none cursor-pointer ${editingPecaId ? "bg-blue-600 hover:bg-blue-700 text-white border-none shadow-sm" : ""}`}
                 >
                   {editingPecaId ? <CheckCircle className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                   {editingPecaId ? "Salvar Alterações" : "Adicionar à Lista"}
@@ -1365,7 +1365,7 @@ function NovoOrcamentoWizardContent() {
               {itens.length > 0 ? (
                 <div className="flex flex-col gap-4">
                   {/* Barra de Ações para Edição em Massa */}
-                  <div className="flex justify-between items-center bg-white/[0.02] border border-white/5 px-4 py-2 rounded-lg text-xs">
+                  <div className="flex justify-between items-center bg-gray-50 border border-gray-200 px-4 py-2 rounded-lg text-xs">
                     <span className="text-slate-400 font-semibold">
                       Selecione peças na tabela para habilitar a edição em massa.
                     </span>
@@ -1374,7 +1374,7 @@ function NovoOrcamentoWizardContent() {
                         size="sm"
                         variant="secondary"
                         onClick={handleOpenBulkEdit}
-                        className="h-7 text-[10px] cursor-pointer bg-blue-600/10 border-blue-500/20 text-blue-400 hover:bg-blue-600/20 px-3 flex items-center gap-1 select-none font-bold"
+                        className="h-7 text-[10px] cursor-pointer bg-teal-50 border-teal-200 text-teal-600 hover:bg-blue-600/20 px-3 flex items-center gap-1 select-none font-bold"
                       >
                         <Edit className="h-3 w-3" /> Editar em Massa ({selectedItemIds.length})
                       </Button>
@@ -1402,7 +1402,7 @@ function NovoOrcamentoWizardContent() {
                             setSelectedItemIds([]);
                           }
                         }}
-                        className="rounded border-white/10 bg-slate-950/40 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        className="rounded border-gray-200 bg-slate-950/40 text-blue-600 focus:ring-blue-500 cursor-pointer"
                       />,
                       "Item",
                       "Descrição",
@@ -1427,7 +1427,7 @@ function NovoOrcamentoWizardContent() {
                                     prev.includes(item.id) ? prev.filter(id => id !== item.id) : [...prev, item.id]
                                   );
                                 }}
-                                className="rounded border-white/10 bg-slate-950/40 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                className="rounded border-gray-200 bg-slate-950/40 text-blue-600 focus:ring-blue-500 cursor-pointer"
                               />
                             </TableCell>
                             <TableCell className="font-bold">{idx + 1}</TableCell>
@@ -1435,7 +1435,7 @@ function NovoOrcamentoWizardContent() {
                             <TableCell>{item.material} {item.espessura}mm</TableCell>
                             <TableCell className="text-center">{item.quantidade}</TableCell>
                             <TableCell>
-                              <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-white/5 border border-white/5 text-slate-300">
+                              <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-gray-50 border border-gray-200 text-slate-600">
                                 {item.origem_material === "cliente"
                                   ? "Cliente"
                                   : item.origem_material?.startsWith("retalho_")
@@ -1451,7 +1451,7 @@ function NovoOrcamentoWizardContent() {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleEditPeca(item)}
-                                  className="p-1 text-blue-400 hover:bg-blue-950/20 select-none cursor-pointer"
+                                  className="p-1 text-teal-600 hover:bg-blue-950/20 select-none cursor-pointer"
                                   title="Editar Peça"
                                 >
                                   <Edit className="h-4 w-4" />
@@ -1501,13 +1501,13 @@ function NovoOrcamentoWizardContent() {
                 <Table headers={["Descrição", "Qtd", "Peso Total", "Custo MP", "Fabricação", "Preço s/ Imp", "Total c/ Imp"]}>
                   {calculado.itens.map((item: any, idx: number) => (
                     <TableRow key={idx}>
-                      <TableCell className="font-semibold text-slate-100">{item.descricao}</TableCell>
+                      <TableCell className="font-semibold text-slate-800">{item.descricao}</TableCell>
                       <TableCell className="text-center">{item.quantidade}</TableCell>
                       <TableCell>{item.peso_total.toFixed(2)} kg</TableCell>
                       <TableCell>{formatCurrency(item.custo_mp)}</TableCell>
                       <TableCell>{formatCurrency(item.total_fabricacao)}</TableCell>
                       <TableCell>{formatCurrency(item.preco_unitario_com_imp * (1 - 0.2393) * item.quantidade)}</TableCell>
-                      <TableCell className="font-bold text-slate-100">{formatCurrency(item.preco_total)}</TableCell>
+                      <TableCell className="font-bold text-slate-800">{formatCurrency(item.preco_total)}</TableCell>
                     </TableRow>
                   ))}
                 </Table>
@@ -1547,7 +1547,7 @@ function NovoOrcamentoWizardContent() {
             <div className="flex flex-col gap-6">
               <Card
                 header={
-                  <div className="flex items-center gap-1.5 text-blue-400">
+                  <div className="flex items-center gap-1.5 text-teal-600">
                     <Sparkles className="h-4.5 w-4.5" />
                     <span>Resumo Financeiro (NF)</span>
                   </div>
@@ -1556,18 +1556,18 @@ function NovoOrcamentoWizardContent() {
                 <div className="space-y-4">
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400">Total Matéria-Prima:</span>
-                    <span className="font-medium text-slate-200">{formatCurrency(calculado.total_custo_mp)}</span>
+                    <span className="font-medium text-slate-700">{formatCurrency(calculado.total_custo_mp)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400">Total Fabricação:</span>
-                    <span className="font-medium text-slate-200">{formatCurrency(calculado.total_fabricacao)}</span>
+                    <span className="font-medium text-slate-700">{formatCurrency(calculado.total_fabricacao)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400">Peso Total Orçado:</span>
-                    <span className="font-medium text-slate-200">{calculado.total_peso.toFixed(2)} kg</span>
+                    <span className="font-medium text-slate-700">{calculado.total_peso.toFixed(2)} kg</span>
                   </div>
 
-                  <div className="border-t border-white/5 my-3" />
+                  <div className="border-t border-gray-200 my-3" />
 
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400">Total Impostos (Embutidos):</span>
@@ -1578,25 +1578,25 @@ function NovoOrcamentoWizardContent() {
                     <span className="font-medium text-amber-500">{formatCurrency(calculado.total_comissao)}</span>
                   </div>
 
-                  <div className="border-t border-white/5 my-3" />
+                  <div className="border-t border-gray-200 my-3" />
 
                   <div className="flex justify-between items-baseline">
-                    <span className="text-xs font-bold text-slate-300">VALOR PRODUTOS:</span>
-                    <span className="text-lg font-bold text-blue-400">{formatCurrency(calculado.total_preco)}</span>
+                    <span className="text-xs font-bold text-slate-600">VALOR PRODUTOS:</span>
+                    <span className="text-lg font-bold text-teal-600">{formatCurrency(calculado.total_preco)}</span>
                   </div>
                   
                   {ipiRate > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-400">IPI ({ipiRate * 100}% por fora):</span>
-                      <span className="font-medium text-slate-200">{formatCurrency(calculado.total_nf - calculado.total_preco)}</span>
+                      <span className="font-medium text-slate-700">{formatCurrency(calculado.total_nf - calculado.total_preco)}</span>
                     </div>
                   )}
 
-                  <div className="bg-blue-600/10 border border-blue-500/20 rounded-xl p-4 mt-4 flex flex-col gap-1">
+                  <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 mt-4 flex flex-col gap-1">
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                       TOTAL NOTA FISCAL (c/ IPI)
                     </span>
-                    <span className="text-2xl font-black text-slate-100">
+                    <span className="text-2xl font-black text-slate-800">
                       {formatCurrency(calculado.total_nf)}
                     </span>
                   </div>
@@ -1604,7 +1604,7 @@ function NovoOrcamentoWizardContent() {
                   <div className="flex flex-col gap-2 mt-6">
                     <Button
                       variant="primary"
-                      className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+                      className="w-full flex items-center justify-center gap-2 bg-teal-500 hover:bg-teal-600 text-white border-none shadow-sm"
                       loading={loading}
                       onClick={() => handleSave("aprovado")}
                     >
@@ -1621,7 +1621,7 @@ function NovoOrcamentoWizardContent() {
                     </Button>
 
                     <Button
-                      className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white border-none shadow-[0_0_15px_rgba(59,130,246,0.15)]"
+                      className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white border-none shadow-sm"
                       loading={loading}
                       onClick={() => handleSave("pendente")}
                     >
@@ -1639,7 +1639,7 @@ function NovoOrcamentoWizardContent() {
 
                     <Button
                       variant="ghost"
-                      className="w-full text-xs text-slate-500 hover:text-slate-300"
+                      className="w-full text-xs text-slate-500 hover:text-slate-600"
                       onClick={() => setStep(2)}
                     >
                       Voltar e Editar Peças
@@ -1654,13 +1654,13 @@ function NovoOrcamentoWizardContent() {
         {/* Modal de Edição em Massa de Peças do Orçamento */}
         {bulkModalOpen && selectedItemIds.length > 0 && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-white/10 rounded-xl max-w-xl w-full p-6 flex flex-col gap-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-slate-900 border border-gray-200 rounded-xl max-w-xl w-full p-6 flex flex-col gap-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
               <div>
-                <h3 className="text-base font-bold text-slate-100 flex items-center gap-1.5">
-                  <Edit className="h-4.5 w-4.5 text-blue-500" /> Edição em Massa de Peças
+                <h3 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
+                  <Edit className="h-4.5 w-4.5 text-teal-500" /> Edição em Massa de Peças
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Modificando <span className="text-blue-400 font-bold">{selectedItemIds.length}</span> peças selecionadas no orçamento.
+                  Modificando <span className="text-teal-600 font-bold">{selectedItemIds.length}</span> peças selecionadas no orçamento.
                 </p>
               </div>
 
@@ -1698,7 +1698,7 @@ function NovoOrcamentoWizardContent() {
                 </div>
 
                 {/* Tempos de Operação */}
-                <div className="border-t border-white/5 pt-4 mt-2">
+                <div className="border-t border-gray-200 pt-4 mt-2">
                   <h4 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">
                     Alterar Tempos de Operação (minutos)
                   </h4>
@@ -1762,12 +1762,12 @@ function NovoOrcamentoWizardContent() {
                   </div>
                 </div>
 
-                <p className="text-[10px] text-slate-500 italic border-t border-white/5 pt-2 mt-1">
+                <p className="text-[10px] text-slate-500 italic border-t border-gray-200 pt-2 mt-1">
                   * Campos em branco não serão modificados. A alteração de material atualizará o tipo de material e preço por quilo automaticamente.
                 </p>
               </div>
 
-              <div className="flex justify-end gap-3 border-t border-white/5 pt-4 mt-2">
+              <div className="flex justify-end gap-3 border-t border-gray-200 pt-4 mt-2">
                 <Button
                   variant="secondary"
                   onClick={() => {
@@ -1780,7 +1780,7 @@ function NovoOrcamentoWizardContent() {
                 <Button
                   variant="primary"
                   onClick={handleApplyBulkEdit}
-                  className="h-9 text-xs cursor-pointer bg-blue-600 hover:bg-blue-700 border-none shadow-[0_0_15px_rgba(59,130,246,0.15)]"
+                  className="h-9 text-xs cursor-pointer bg-blue-600 hover:bg-blue-700 border-none shadow-sm"
                 >
                   Aplicar Alterações
                 </Button>

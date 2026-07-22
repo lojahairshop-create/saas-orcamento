@@ -10,11 +10,10 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex flex-col items-center justify-center gap-4">
-        {/* Loading Spinner */}
+      <div className="min-h-screen bg-[#f8f9fc] flex flex-col items-center justify-center gap-4">
         <div className="relative w-12 h-12 flex items-center justify-center">
-          <div className="absolute inset-0 rounded-full border-2 border-blue-500/10 border-t-blue-500 animate-spin" />
-          <div className="w-5 h-5 rounded-full bg-blue-500/10 animate-ping" />
+          <div className="absolute inset-0 rounded-full border-2 border-[#2ec4b6]/20 border-t-[#2ec4b6] animate-spin" />
+          <div className="w-5 h-5 rounded-full bg-[#2ec4b6]/20 animate-ping" />
         </div>
         <span className="text-xs font-semibold text-slate-500 tracking-wider uppercase animate-pulse">
           Carregando Sessão...
@@ -24,16 +23,12 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }
 
   if (!isAuthenticated) {
-    //useAuth redireciona automaticamente para /login
     return null;
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-slate-100 flex">
-      {/* Sidebar Navigation */}
+    <div className="min-h-screen bg-[#f8f9fc] text-slate-800 flex">
       <Sidebar />
-
-      {/* Main Wrapper */}
       <div className="flex-1 pl-64 flex flex-col min-h-screen">
         <Header />
         <main className="flex-1 p-8 overflow-y-auto">

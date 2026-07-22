@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -92,7 +92,7 @@ export default function OrcamentosListPage() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-xl font-bold text-slate-100">Gestão de Orçamentos</h1>
+            <h1 className="text-xl font-bold text-slate-800">Gestão de Orçamentos</h1>
             <p className="text-xs text-slate-500 mt-1">
               Visualize, edite, exporte em PDF ou gerencie o status de suas propostas
             </p>
@@ -153,7 +153,7 @@ export default function OrcamentosListPage() {
               <Table headers={["Nº Orçamento", "Cliente", "Estado", "Data Criação", "Valor Total", "Status", "Ações"]}>
                 {filteredOrcamentos.map((orc) => (
                   <TableRow key={orc.id}>
-                    <TableCell className="font-bold text-slate-100">{orc.numero}</TableCell>
+                    <TableCell className="font-bold text-slate-800">{orc.numero}</TableCell>
                     <TableCell>{orc.cliente_nome}</TableCell>
                     <TableCell className="text-center">{orc.cliente_estado}</TableCell>
                     <TableCell>{new Date(orc.created_at).toLocaleDateString("pt-BR")}</TableCell>
@@ -164,7 +164,7 @@ export default function OrcamentosListPage() {
                     <TableCell className="flex items-center gap-2">
                       <Link href={`/orcamentos/${orc.id}`}>
                         <Button size="sm" variant="ghost" className="p-2" title="Visualizar">
-                          <Eye className="h-4 w-4 text-slate-400 hover:text-slate-100" />
+                          <Eye className="h-4 w-4 text-slate-400 hover:text-slate-800" />
                         </Button>
                       </Link>
 
@@ -175,7 +175,7 @@ export default function OrcamentosListPage() {
                         title="Baixar PDF"
                         onClick={() => handleDownloadPdf(orc.id, orc.numero)}
                       >
-                        <FileDown className="h-4 w-4 text-blue-400 hover:text-blue-200" />
+                        <FileDown className="h-4 w-4 text-teal-600 hover:text-blue-200" />
                       </Button>
 
                       <Button
@@ -195,7 +195,7 @@ export default function OrcamentosListPage() {
 
               {/* Pagination Controls */}
               {totalPages > 1 && (
-                <div className="flex justify-between items-center mt-4 border-t border-white/5 pt-4">
+                <div className="flex justify-between items-center mt-4 border-t border-gray-200 pt-4">
                   <span className="text-xs text-slate-500 font-semibold">
                     Página {page} de {totalPages}
                   </span>

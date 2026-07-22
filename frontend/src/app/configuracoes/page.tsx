@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -253,20 +253,20 @@ export default function ConfiguracoesPage() {
       <div className="flex flex-col gap-6">
         {/* Title */}
         <div>
-          <h1 className="text-xl font-bold text-slate-100">Painel Administrativo</h1>
+          <h1 className="text-xl font-bold text-slate-800">Painel Administrativo</h1>
           <p className="text-xs text-slate-500 mt-1">
             Configure taxas de impostos, tabelas de preço de matérias-primas e custos operacionais
           </p>
         </div>
 
         {/* Tab Selector */}
-        <div className="flex border-b border-white/5 gap-1 bg-white/[0.01] rounded-xl p-1 max-w-2xl">
+        <div className="flex border-b border-gray-200 gap-1 bg-white rounded-xl p-1 max-w-2xl">
           <button
             onClick={() => setActiveTab("impostos")}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-150 ${
               activeTab === "impostos"
-                ? "bg-blue-600 text-white shadow-[0_0_15px_rgba(59,130,246,0.15)]"
-                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-700 hover:bg-gray-50"
             }`}
           >
             <FileText className="h-4.5 w-4.5" /> Impostos / UFs
@@ -275,8 +275,8 @@ export default function ConfiguracoesPage() {
             onClick={() => setActiveTab("empresa")}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-150 ${
               activeTab === "empresa"
-                ? "bg-blue-600 text-white shadow-[0_0_15px_rgba(59,130,246,0.15)]"
-                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-700 hover:bg-gray-50"
             }`}
           >
             <Building className="h-4.5 w-4.5" /> Dados da Empresa
@@ -285,8 +285,8 @@ export default function ConfiguracoesPage() {
             onClick={() => setActiveTab("materiais")}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-150 ${
               activeTab === "materiais"
-                ? "bg-blue-600 text-white shadow-[0_0_15px_rgba(59,130,246,0.15)]"
-                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-700 hover:bg-gray-50"
             }`}
           >
             <DollarSign className="h-4.5 w-4.5" /> Materiais
@@ -295,8 +295,8 @@ export default function ConfiguracoesPage() {
             onClick={() => setActiveTab("laser")}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-150 ${
               activeTab === "laser"
-                ? "bg-blue-600 text-white shadow-[0_0_15px_rgba(59,130,246,0.15)]"
-                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-700 hover:bg-gray-50"
             }`}
           >
             <Zap className="h-4.5 w-4.5" /> Laser / Peck
@@ -305,8 +305,8 @@ export default function ConfiguracoesPage() {
             onClick={() => setActiveTab("custos")}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-150 ${
               activeTab === "custos"
-                ? "bg-blue-600 text-white shadow-[0_0_15px_rgba(59,130,246,0.15)]"
-                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-700 hover:bg-gray-50"
             }`}
           >
             <Clock className="h-4.5 w-4.5" /> Custos / Hora
@@ -382,13 +382,13 @@ export default function ConfiguracoesPage() {
               <Table headers={["UF", "Estado", "ICMS Equipamento (%)", "BC Equipamento (%)", "ICMS Peças (%)", "BC Peças (%)"]}>
                 {impostosEstados.map((est) => (
                   <TableRow key={est.uf}>
-                    <TableCell className="font-bold text-slate-100">{est.uf}</TableCell>
+                    <TableCell className="font-bold text-slate-800">{est.uf}</TableCell>
                     <TableCell>{est.nome}</TableCell>
                     <TableCell>
                       <input
                         type="number"
                         step="0.1"
-                        className="bg-transparent border-b border-white/5 focus:border-blue-500 w-16 text-center focus:outline-none"
+                        className="bg-transparent border-b border-gray-200 focus:border-blue-500 w-16 text-center focus:outline-none"
                         defaultValue={est.icms_equipamento * 100}
                         onBlur={(e) =>
                           handleUpdateEstado(est.uf, "icms_equipamento", parseFloat(e.target.value) / 100)
@@ -399,7 +399,7 @@ export default function ConfiguracoesPage() {
                       <input
                         type="number"
                         step="0.1"
-                        className="bg-transparent border-b border-white/5 focus:border-blue-500 w-16 text-center focus:outline-none"
+                        className="bg-transparent border-b border-gray-200 focus:border-blue-500 w-16 text-center focus:outline-none"
                         defaultValue={est.base_calc_equipamento * 100}
                         onBlur={(e) =>
                           handleUpdateEstado(est.uf, "base_calc_equipamento", parseFloat(e.target.value) / 100)
@@ -410,7 +410,7 @@ export default function ConfiguracoesPage() {
                       <input
                         type="number"
                         step="0.1"
-                        className="bg-transparent border-b border-white/5 focus:border-blue-500 w-16 text-center focus:outline-none"
+                        className="bg-transparent border-b border-gray-200 focus:border-blue-500 w-16 text-center focus:outline-none"
                         defaultValue={est.icms_pecas * 100}
                         onBlur={(e) =>
                           handleUpdateEstado(est.uf, "icms_pecas", parseFloat(e.target.value) / 100)
@@ -421,7 +421,7 @@ export default function ConfiguracoesPage() {
                       <input
                         type="number"
                         step="0.1"
-                        className="bg-transparent border-b border-white/5 focus:border-blue-500 w-16 text-center focus:outline-none"
+                        className="bg-transparent border-b border-gray-200 focus:border-blue-500 w-16 text-center focus:outline-none"
                         defaultValue={est.base_calc_pecas * 100}
                         onBlur={(e) =>
                           handleUpdateEstado(est.uf, "base_calc_pecas", parseFloat(e.target.value) / 100)
@@ -503,7 +503,7 @@ export default function ConfiguracoesPage() {
               <Table headers={["Material", "Tipo / Especificação", "Preço por KG (R$)", "Densidade (kg/m²·mm)", "Ações"]}>
                 {materiais.map((mat) => (
                   <TableRow key={mat.id} className={editingMaterialId === mat.id ? "bg-blue-950/10 border-l-2 border-blue-500" : ""}>
-                    <TableCell className="font-bold text-slate-100">{mat.nome}</TableCell>
+                    <TableCell className="font-bold text-slate-800">{mat.nome}</TableCell>
                     <TableCell>{mat.tipo}</TableCell>
                     <TableCell>R$ {mat.preco_kg.toFixed(2)}</TableCell>
                     <TableCell>{mat.densidade.toFixed(3)}</TableCell>
@@ -513,7 +513,7 @@ export default function ConfiguracoesPage() {
                           size="sm"
                           variant="ghost"
                           onClick={() => handleEditMaterial(mat)}
-                          className="p-1.5 text-blue-400 hover:bg-blue-950/20"
+                          className="p-1.5 text-teal-600 hover:bg-blue-950/20"
                           title="Editar Material"
                         >
                           <Edit className="h-4 w-4" />
@@ -590,7 +590,7 @@ export default function ConfiguracoesPage() {
               <Table headers={["Material", "Espessura (mm)", "Velocidade Avanço (mm/min)", "Tempo Peck (s)", "Ações"]}>
                 {parametrosLaser.map((param) => (
                   <TableRow key={param.id}>
-                    <TableCell className="font-bold text-slate-100">{param.material}</TableCell>
+                    <TableCell className="font-bold text-slate-800">{param.material}</TableCell>
                     <TableCell>{param.espessura.toFixed(2)} mm</TableCell>
                     <TableCell>{param.avanco} mm/min</TableCell>
                     <TableCell>{param.peck} s</TableCell>
@@ -617,14 +617,14 @@ export default function ConfiguracoesPage() {
             <Table headers={["Operação de Fabricação", "Custo por Hora (R$)"]}>
               {custosOperacao.map((op) => (
                 <TableRow key={op.id}>
-                  <TableCell className="font-semibold text-slate-100">{op.operacao}</TableCell>
+                  <TableCell className="font-semibold text-slate-800">{op.operacao}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <span className="text-slate-500 font-bold">R$</span>
                       <input
                         type="number"
                         step="0.01"
-                        className="bg-transparent border-b border-white/5 focus:border-blue-500 w-24 px-1 focus:outline-none font-semibold text-slate-200"
+                        className="bg-transparent border-b border-gray-200 focus:border-blue-500 w-24 px-1 focus:outline-none font-semibold text-slate-700"
                         defaultValue={op.custo_hora}
                         onBlur={(e) =>
                           handleUpdateCustoHora(op.id, op.operacao, parseFloat(e.target.value) || 10.0)
@@ -716,11 +716,11 @@ export default function ConfiguracoesPage() {
                 </div>
 
                 {/* Bloco de Upload da Logo */}
-                <div className="flex flex-col items-center justify-center border border-white/5 bg-white/[0.01] rounded-xl p-6 gap-4">
+                <div className="flex flex-col items-center justify-center border border-gray-200 bg-white rounded-xl p-6 gap-4">
                   <span className="text-xs font-bold text-slate-400 self-start">LOGO DA EMPRESA (PDF / HTML)</span>
                   
                   {configsGlobais.logo_base64 ? (
-                    <div className="relative w-full h-44 border border-white/10 rounded-xl bg-white/[0.02] flex items-center justify-center p-4">
+                    <div className="relative w-full h-44 border border-gray-200 rounded-xl bg-gray-50 flex items-center justify-center p-4">
                       <img
                         src={configsGlobais.logo_base64}
                         alt="Logo da Empresa"
@@ -741,7 +741,7 @@ export default function ConfiguracoesPage() {
                       </Button>
                     </div>
                   ) : (
-                    <label className="w-full h-44 border-2 border-dashed border-white/10 hover:border-blue-500 rounded-xl bg-white/[0.01] flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors">
+                    <label className="w-full h-44 border-2 border-dashed border-gray-200 hover:border-blue-500 rounded-xl bg-white flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors">
                       <Image className="h-10 w-10 text-slate-500" />
                       <span className="text-xs font-bold text-slate-400">Selecionar Imagem</span>
                       <span className="text-[10px] text-slate-600">Recomendado: PNG ou JPG até 1MB</span>

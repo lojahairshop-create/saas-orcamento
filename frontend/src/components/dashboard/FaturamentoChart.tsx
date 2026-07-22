@@ -23,8 +23,8 @@ interface FaturamentoChartProps {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-[#0f172a] border border-white/10 p-3 rounded-lg shadow-2xl backdrop-blur-md">
-        <p className="text-xs font-semibold text-slate-300 mb-1.5">{label}</p>
+      <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-lg">
+        <p className="text-xs font-semibold text-slate-700 mb-1.5">{label}</p>
         {payload.map((entry: any, index: number) => (
           <p
             key={index}
@@ -53,17 +53,17 @@ export const FaturamentoChart: React.FC<FaturamentoChartProps> = ({ data }) => {
             bottom: 0,
           }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
           <XAxis
             dataKey="mes"
-            stroke="#64748b"
+            stroke="#94a3b8"
             fontSize={11}
             tickLine={false}
             axisLine={false}
             dy={10}
           />
           <YAxis
-            stroke="#64748b"
+            stroke="#94a3b8"
             fontSize={11}
             tickLine={false}
             axisLine={false}
@@ -71,27 +71,27 @@ export const FaturamentoChart: React.FC<FaturamentoChartProps> = ({ data }) => {
               value >= 1000 ? `R$ ${(value / 1000).toFixed(0)}k` : `R$ ${value}`
             }
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255, 255, 255, 0.02)" }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
           <Legend
             verticalAlign="top"
             height={36}
             iconType="circle"
             iconSize={8}
             formatter={(value) => (
-              <span className="text-xs font-semibold text-slate-400 mr-2">{value}</span>
+              <span className="text-xs font-semibold text-slate-500 mr-2">{value}</span>
             )}
           />
           <Bar
             name="Cotado"
             dataKey="cotado"
-            fill="#3b82f6"
+            fill="#4f9cf7"
             radius={[4, 4, 0, 0]}
             maxBarSize={30}
           />
           <Bar
             name="Aprovado"
             dataKey="aprovado"
-            fill="#10b981"
+            fill="#2ec4b6"
             radius={[4, 4, 0, 0]}
             maxBarSize={30}
           />

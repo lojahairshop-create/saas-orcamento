@@ -32,18 +32,18 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4 bg-gradient-radial-dark relative overflow-hidden">
+    <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Animated Orb */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[100px] pointer-events-none animate-pulse" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-teal-50 rounded-full blur-[100px] pointer-events-none animate-pulse" />
 
       <div className="w-full max-w-md z-10">
         {/* Logo and Tagline */}
         <div className="flex flex-col items-center mb-8">
-          <div className="h-12 w-12 rounded-xl bg-blue-600/15 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-3 shadow-[0_0_20px_rgba(59,130,246,0.15)] animate-float">
+          <div className="h-12 w-12 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 mb-3 shadow-lg animate-float">
             <Cpu className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">
-            Metal<span className="text-blue-500">Cut</span> Pro
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
+            Metal<span className="text-teal-500">Cut</span> Pro
           </h1>
           <p className="text-slate-400 text-xs mt-1.5 font-medium">
             Sistema de Orçamentos Metalúrgicos
@@ -51,8 +51,8 @@ function LoginContent() {
         </div>
 
         {/* Login Card */}
-        <div className="glass-card p-8 bg-[#0c0c14]/50 border-white/10 shadow-2xl">
-          <h2 className="text-lg font-bold text-slate-100 mb-6">Acesse sua Conta</h2>
+        <div className="glass-card p-8 shadow-xl">
+          <h2 className="text-lg font-bold text-slate-800 mb-6">Acesse sua Conta</h2>
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
@@ -78,7 +78,7 @@ function LoginContent() {
             />
 
             {error && (
-              <div className="flex items-start gap-2.5 bg-red-950/20 border border-red-900/30 rounded-lg p-3 text-xs text-red-400 font-medium">
+              <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-500 font-medium">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <span>{error}</span>
               </div>

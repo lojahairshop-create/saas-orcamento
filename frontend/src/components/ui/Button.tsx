@@ -3,9 +3,10 @@
 import React from "react";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "danger" | "ghost";
+  variant?: "primary" | "secondary" | "danger" | "ghost" | "outline";
   size?: "sm" | "md" | "lg";
   loading?: boolean;
+  isLoading?: boolean;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -13,22 +14,27 @@ export const Button: React.FC<ButtonProps> = ({
   variant = "primary",
   size = "md",
   loading = false,
+  isLoading = false,
   className = "",
   disabled,
   ...props
 }) => {
+  const isSpinnerLoading = loading || isLoading;
+
   const baseStyles =
-    "inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none cursor-pointer";
-  
+    "inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:pointer-events-none cursor-pointer";
+
   const variants = {
     primary:
-      "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white shadow-lg shadow-blue-500/10 border border-blue-500/20 active:scale-[0.98]",
+      "bg-teal-500 hover:bg-teal-600 text-white shadow-sm shadow-teal-500/20 border border-teal-600/30 active:scale-[0.98]",
     secondary:
-      "bg-white/5 hover:bg-white/10 text-slate-100 border border-white/10 hover:border-white/20 active:scale-[0.98]",
+      "bg-gray-100 hover:bg-gray-200 text-slate-700 border border-gray-200 active:scale-[0.98]",
     danger:
-      "bg-red-950/40 hover:bg-red-900/60 text-red-200 border border-red-800/30 hover:border-red-700/50 active:scale-[0.98]",
+      "bg-red-500 hover:bg-red-600 text-white shadow-sm border border-red-600/30 active:scale-[0.98]",
     ghost:
-      "text-slate-400 hover:text-slate-100 hover:bg-white/5",
+      "text-slate-500 hover:text-slate-800 hover:bg-gray-100",
+    outline:
+      "bg-transparent border border-gray-200 hover:bg-gray-50 text-slate-700",
   };
 
   const sizes = {
@@ -39,11 +45,11 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
-      disabled={disabled || loading}
+      disabled={disabled || isSpinnerLoading}
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
-      {loading && (
+      {isSpinnerLoading && (
         <svg
           className="animate-spin -ml-1 mr-2 h-4 w-4 text-current"
           xmlns="http://www.w3.org/2000/svg"
@@ -69,3 +75,4 @@ export const Button: React.FC<ButtonProps> = ({
     </button>
   );
 };
+export default Button;
