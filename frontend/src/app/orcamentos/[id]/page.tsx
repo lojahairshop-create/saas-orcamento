@@ -217,33 +217,33 @@ export default function OrcamentoDetailPage() {
         </div>
 
         {/* Title Block */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/[0.01] border border-white/5 rounded-xl p-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-slate-100">{orcamento.numero}</h1>
+              <h1 className="text-xl font-bold text-slate-800">{orcamento.numero}</h1>
               <Badge status={orcamento.status} />
             </div>
-            <span className="text-xs text-slate-500 font-semibold">
+            <span className="text-xs text-slate-600 font-semibold">
               Orçamento de {orcamento.tipo_venda === "pecas" ? "Peças Industriais" : "Equipamentos"}
             </span>
           </div>
 
           <div className="flex gap-6 text-xs text-slate-600">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-blue-500" />
+              <Calendar className="h-4 w-4 text-teal-600" />
               <div className="flex flex-col">
                 <span className="text-[10px] text-slate-500">Criação</span>
-                <span className="font-semibold text-slate-200">
+                <span className="font-semibold text-slate-800">
                   {new Date(orcamento.created_at || "").toLocaleDateString("pt-BR")}
                 </span>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <UserIcon className="h-4 w-4 text-emerald-500" />
+              <UserIcon className="h-4 w-4 text-teal-600" />
               <div className="flex flex-col">
                 <span className="text-[10px] text-slate-500">Vendedor</span>
-                <span className="font-semibold text-slate-200">MetalCut Pro Admin</span>
+                <span className="font-semibold text-slate-800">MetalCut Pro Admin</span>
               </div>
             </div>
           </div>
@@ -282,23 +282,23 @@ export default function OrcamentoDetailPage() {
                 <div className="grid grid-cols-2 gap-y-4 gap-x-6 text-sm">
                   <div>
                     <span className="text-xs text-slate-500 block font-semibold mb-0.5">Nome/Empresa</span>
-                    <span className="font-bold text-slate-200">{orcamento.cliente.nome}</span>
+                    <span className="font-bold text-slate-800">{orcamento.cliente.nome}</span>
                   </div>
                   <div>
                     <span className="text-xs text-slate-500 block font-semibold mb-0.5">CNPJ / CPF</span>
-                    <span>{orcamento.cliente.cnpj || "Não informado"}</span>
+                    <span className="text-slate-700 font-medium">{orcamento.cliente.cnpj || "Não informado"}</span>
                   </div>
                   <div>
                     <span className="text-xs text-slate-500 block font-semibold mb-0.5">E-mail Comercial</span>
-                    <span>{orcamento.cliente.email || "Não informado"}</span>
+                    <span className="text-slate-700 font-medium">{orcamento.cliente.email || "Não informado"}</span>
                   </div>
                   <div>
                     <span className="text-xs text-slate-500 block font-semibold mb-0.5">Telefone Contato</span>
-                    <span>{orcamento.cliente.telefone || "Não informado"}</span>
+                    <span className="text-slate-700 font-medium">{orcamento.cliente.telefone || "Não informado"}</span>
                   </div>
-                  <div className="col-span-2 border-t border-white/5 pt-3">
+                  <div className="col-span-2 border-t border-gray-200 pt-3">
                     <span className="text-xs text-slate-500 block font-semibold mb-0.5">Endereço Completo</span>
-                    <span>
+                    <span className="text-slate-700 font-medium">
                       {orcamento.cliente.endereco || "Não informado"} - {orcamento.cliente.cidade || ""} ({orcamento.cliente.estado})
                     </span>
                   </div>
@@ -309,15 +309,15 @@ export default function OrcamentoDetailPage() {
                 <div className="flex flex-col gap-4 text-sm">
                   <div>
                     <span className="text-xs text-slate-500 block font-semibold mb-0.5">Pagamento</span>
-                    <span className="font-medium text-slate-200">{orcamento.condicao_pagamento || "A combinar"}</span>
+                    <span className="font-medium text-slate-800">{orcamento.condicao_pagamento || "A combinar"}</span>
                   </div>
                   <div>
                     <span className="text-xs text-slate-500 block font-semibold mb-0.5">Prazo de Entrega</span>
-                    <span className="font-medium text-slate-200">{orcamento.prazo_entrega || "A combinar"}</span>
+                    <span className="font-medium text-slate-800">{orcamento.prazo_entrega || "A combinar"}</span>
                   </div>
                   <div>
                     <span className="text-xs text-slate-500 block font-semibold mb-0.5">Validade da Proposta</span>
-                    <span className="font-medium text-slate-200">{orcamento.validade} dias corridos</span>
+                    <span className="font-medium text-slate-800">{orcamento.validade} dias corridos</span>
                   </div>
                 </div>
               </Card>
@@ -328,27 +328,27 @@ export default function OrcamentoDetailPage() {
               <Table headers={["Item", "Descrição da Peça", "Material", "Espessura", "Qtd", "Peso Total", "Unitário c/ Imp", "Total c/ Imp"]}>
                 {orcamento.itens.map((item, idx) => (
                   <TableRow key={idx}>
-                    <TableCell className="font-bold">{idx + 1}</TableCell>
+                    <TableCell className="font-bold text-slate-800">{idx + 1}</TableCell>
                     <TableCell>
                       <div>
-                        <span className="font-semibold text-slate-100">{item.descricao}</span>
+                        <span className="font-semibold text-slate-800">{item.descricao}</span>
                         {item.observacoes && (
                           <span className="text-[10px] text-slate-500 block mt-0.5">Obs: {item.observacoes}</span>
                         )}
                         {((item as any).tempo_corte > 0 || (item as any).custo_extra > 0) && (
-                          <div className="text-[10px] text-blue-400/80 flex gap-3 mt-0.5">
+                          <div className="text-[10px] text-teal-600 flex gap-3 mt-0.5">
                             {(item as any).tempo_corte > 0 && <span>Tempo Corte: {(item as any).tempo_corte} min</span>}
                             {(item as any).custo_extra > 0 && <span>Custo Extra: {formatCurrency((item as any).custo_extra)}</span>}
                           </div>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>{item.material}</TableCell>
-                    <TableCell>{item.espessura} mm</TableCell>
-                    <TableCell className="text-center">{item.quantidade}</TableCell>
-                    <TableCell>{item.peso_total?.toFixed(2)} kg</TableCell>
-                    <TableCell>{formatCurrency(item.preco_unitario_com_imp || 0)}</TableCell>
-                    <TableCell className="font-bold text-slate-100">{formatCurrency(item.preco_total || 0)}</TableCell>
+                    <TableCell className="text-slate-700">{item.material}</TableCell>
+                    <TableCell className="text-slate-700">{item.espessura} mm</TableCell>
+                    <TableCell className="text-center text-slate-700">{item.quantidade}</TableCell>
+                    <TableCell className="text-slate-700">{item.peso_total?.toFixed(2)} kg</TableCell>
+                    <TableCell className="text-slate-700">{formatCurrency(item.preco_unitario_com_imp || 0)}</TableCell>
+                    <TableCell className="font-bold text-slate-800">{formatCurrency(item.preco_total || 0)}</TableCell>
                   </TableRow>
                 ))}
               </Table>
@@ -366,7 +366,7 @@ export default function OrcamentoDetailPage() {
 
               <Card
                 header={
-                  <div className="flex items-center gap-1.5 text-blue-400">
+                  <div className="flex items-center gap-1.5 text-teal-600">
                     <Layers className="h-4.5 w-4.5" />
                     <span>Resumo Tributário & Custos</span>
                   </div>
@@ -374,43 +374,43 @@ export default function OrcamentoDetailPage() {
               >
                 <div className="space-y-4">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-500 font-semibold">Custo Matéria-Prima:</span>
-                    <span className="font-semibold text-slate-200">{formatCurrency(orcamento.total_custo_mp)}</span>
+                    <span className="text-slate-600 font-semibold">Custo Matéria-Prima:</span>
+                    <span className="font-semibold text-slate-800">{formatCurrency(orcamento.total_custo_mp)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-500 font-semibold">Custo de Fabricação:</span>
-                    <span className="font-semibold text-slate-200">{formatCurrency(orcamento.total_fabricacao)}</span>
+                    <span className="text-slate-600 font-semibold">Custo de Fabricação:</span>
+                    <span className="font-semibold text-slate-800">{formatCurrency(orcamento.total_fabricacao)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-500 font-semibold">Impostos Embutidos (Médio):</span>
-                    <span className="font-semibold text-red-400">{formatCurrency(orcamento.total_tributos)}</span>
+                    <span className="text-slate-600 font-semibold">Impostos Embutidos (Médio):</span>
+                    <span className="font-semibold text-red-500">{formatCurrency(orcamento.total_tributos)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-500 font-semibold">Comissão Operacional:</span>
-                    <span className="font-semibold text-amber-500">{formatCurrency(orcamento.total_comissao)}</span>
+                    <span className="text-slate-600 font-semibold">Comissão Operacional:</span>
+                    <span className="font-semibold text-amber-600">{formatCurrency(orcamento.total_comissao)}</span>
                   </div>
 
-                  <div className="border-t border-white/5 my-3" />
+                  <div className="border-t border-gray-200 my-3" />
 
                   <div className="flex justify-between items-baseline">
                     <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">VALOR PRODUTOS:</span>
-                    <span className="text-lg font-extrabold text-blue-400">{formatCurrency(orcamento.total_preco)}</span>
+                    <span className="text-lg font-extrabold text-teal-600">{formatCurrency(orcamento.total_preco)}</span>
                   </div>
 
                   {orcamento.ipi_rate > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-500 font-semibold">IPI ({orcamento.ipi_rate * 100}% por fora):</span>
-                      <span className="font-semibold text-slate-200">
+                      <span className="text-slate-600 font-semibold">IPI ({orcamento.ipi_rate * 100}% por fora):</span>
+                      <span className="font-semibold text-slate-800">
                         {formatCurrency(orcamento.total_nf - orcamento.total_preco)}
                       </span>
                     </div>
                   )}
 
-                  <div className="bg-blue-600/10 border border-blue-500/20 rounded-xl p-4 mt-4 flex flex-col gap-1.5 shadow-[0_0_15px_rgba(59,130,246,0.05)]">
+                  <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 mt-4 flex flex-col gap-1.5">
                     <span className="text-[10px] text-slate-600 font-bold uppercase tracking-wider">
                       TOTAL NOTA FISCAL (c/ IPI)
                     </span>
-                    <span className="text-2xl font-black text-slate-100">
+                    <span className="text-2xl font-black text-slate-900">
                       {formatCurrency(orcamento.total_nf)}
                     </span>
                   </div>

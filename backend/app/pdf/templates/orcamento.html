@@ -359,22 +359,14 @@
                     <div class="dim-box"></div>
                     <div class="dim-text">{{ ("%.2f"|format(item.largura))|replace('.', ',') }} X {{ ("%.2f"|format(item.comprimento))|replace('.', ',') }}</div>
                 </td>
-                <td>
+                <td style="white-space: nowrap;">
                     <strong>{{ item.descricao }}</strong><br>
-                    <span style="font-size: 7.5pt; color: #64748b;">
-                        Processos: {% set ns = namespace(primeiro=true) %}
-                        {%- if item.tempo_corte_laser > 0 or item.tempo_corte > 0 %}Laser{% set ns.primeiro = false %}{% endif %}
-                        {%- for op in item.operacoes %}
-                            {%- if op.tempo_min > 0 and op.nome|upper != 'CORTE LASER' %}
-                                {%- if not ns.primeiro %}, {% endif %}
-                                {{- op.nome|title -}}
-                                {%- set ns.primeiro = false -%}
-                            {%- endif %}
-                        {%- endfor %}
+                    <span style="font-size: 7.5pt; color: #64748b; white-space: nowrap;">
+                        Processos: {% set ns = namespace(primeiro=true) %}{%- if item.tempo_corte_laser > 0 or item.tempo_corte > 0 %}Laser{% set ns.primeiro = false %}{% endif %}{%- for op in item.operacoes %}{%- if op.tempo_min > 0 and op.nome|upper != 'CORTE LASER' %}{%- if not ns.primeiro %}, {% endif %}{{- op.nome|title -}}{%- set ns.primeiro = false -%}{%- endif %}{%- endfor %}
                     </span>
                 </td>
-                <td class="text-center">{{ ("%.2f"|format(item.peso_total))|replace('.', ',') }}</td>
-                <td>
+                <td class="text-center" style="white-space: nowrap;">{{ ("%.2f"|format(item.peso_total))|replace('.', ',') }}</td>
+                <td class="text-center" style="white-space: nowrap;">
                     {%- set mat_upper = (item.material or '')|upper -%}
                     {%- if 'CARBONO' in mat_upper or 'CARBON' in mat_upper -%}
                         Aço Carbono

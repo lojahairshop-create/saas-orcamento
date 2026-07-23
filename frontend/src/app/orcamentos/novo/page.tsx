@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, Suspense } from "react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -121,6 +121,21 @@ function NovoOrcamentoWizardContent() {
   });
 
   const [sugestaoEstoque, setSugestaoEstoque] = useState<any>(null);
+  const [margemGeralPct, setMargemGeralPct] = useState<number>(30);
+
+  const handleUpdateMargemGeral = (pct: number) => {
+    setMargemGeralPct(pct);
+    const decimal = pct / 100;
+    setItens(prev => {
+      const updated = prev.map(it => ({
+        ...it,
+        margem_lucro: decimal,
+      }));
+      const res = processarCalculoLocal(updated);
+      setCalculado(res);
+      return updated;
+    });
+  };
 
   // Carregar materiais e custos padrão do backend no início
   useEffect(() => {
@@ -491,12 +506,13 @@ function NovoOrcamentoWizardContent() {
   // --- Step 3: Cálculos e Revisão ---
   const [calculado, setCalculado] = useState<any>(null);
 
-  const processarCalculoLocal = () => {
+  const processarCalculoLocal = (itensList?: any[]) => {
     // Simular o cálculo do backend localmente para pré-visualização instantânea.
     // Impostos dependendo do Estado e Tipo de Venda
     // 7% ICMS se AC, AL, AP, AM, BA, CE, ES, GO, MA, MT, MS, PA, PB, PE, PI, RN, RO, RR, SE, TO, ZFM
     // 12% se MG, PR, RJ, RS, SC, SP(equipamento)
     // 18% se SP(peças)
+    const targetItens = itensList || itens;
     
     let icmsRate = 0.18;
     const est7 = ["AC", "AL", "AP", "AM", "BA", "CE", "ES", "GO", "MA", "MT", "MS", "PA", "PB", "PE", "PI", "RN", "RO", "RR", "SE", "TO", "ZFM"];
@@ -516,7 +532,7 @@ function NovoOrcamentoWizardContent() {
     let totalFabricacao = 0.0;
     let totalPeso = 0.0;
 
-    const itensCalculados = itens.map((item) => {
+    const itensCalculados = targetItens.map((item) => {
       // 1. Velocidade de avanço baseada em material e espessura do cadastro de parâmetros laser
       const { velocidade: avanco, peck } = obterParametrosLaser(item.material, item.espessura);
 
@@ -1148,7 +1164,7 @@ function NovoOrcamentoWizardContent() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
                 <Input
                   label="Perímetro de Corte (mm)"
                   type="number"
@@ -1156,7 +1172,7 @@ function NovoOrcamentoWizardContent() {
                   onChange={e => setNovaPeca({ ...novaPeca, perimetro: parseFloat(e.target.value) || 0 })}
                 />
                 <Input
-                  label="Furos (Num Entradas)"
+                  label="Nº Entradas"
                   type="number"
                   value={novaPeca.num_entradas}
                   onChange={e => setNovaPeca({ ...novaPeca, num_entradas: parseInt(e.target.value) || 1 })}
@@ -1167,12 +1183,6 @@ function NovoOrcamentoWizardContent() {
                   step="0.01"
                   value={novaPeca.preco_kg}
                   onChange={e => setNovaPeca({ ...novaPeca, preco_kg: parseFloat(e.target.value) || 0 })}
-                />
-                <Input
-                  label="Margem de Lucro (%)"
-                  type="number"
-                  value={novaPeca.margem_lucro * 100}
-                  onChange={e => setNovaPeca({ ...novaPeca, margem_lucro: parseFloat(e.target.value) / 100 })}
                 />
                 <Input
                   label="Custo Extra (R$)"
@@ -1473,13 +1483,29 @@ function NovoOrcamentoWizardContent() {
                     );
                   })()}
 
-                  <div className="flex justify-between mt-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 border-t border-gray-200 pt-4">
                     <Button variant="secondary" onClick={() => setStep(1)} className="flex items-center gap-1">
                       <ChevronLeft className="h-4 w-4" /> Voltar
                     </Button>
-                    <Button onClick={() => setStep(3)} className="flex items-center gap-1">
-                      Calcular e Revisar <ChevronRight className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl">
+                        <span className="text-xs font-bold text-slate-700">Margem de Lucro Geral (%):</span>
+                        <input
+                          type="number"
+                          step="1"
+                          className="w-16 bg-white border border-gray-300 rounded px-2 py-1 text-xs font-bold text-slate-800 text-center focus:border-teal-500 focus:outline-none"
+                          value={margemGeralPct}
+                          onChange={(e) => handleUpdateMargemGeral(parseFloat(e.target.value) || 0)}
+                        />
+                      </div>
+                      <Button onClick={() => {
+                        const res = processarCalculoLocal(itens);
+                        setCalculado(res);
+                        setStep(3);
+                      }} className="flex items-center gap-1">
+                        Calcular e Revisar <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -1579,6 +1605,17 @@ function NovoOrcamentoWizardContent() {
                   </div>
 
                   <div className="border-t border-gray-200 my-3" />
+
+                  <div className="flex justify-between items-center bg-gray-50 border border-gray-200 p-2.5 rounded-xl">
+                    <span className="text-xs font-bold text-slate-700">Margem de Lucro Geral (%):</span>
+                    <input
+                      type="number"
+                      step="1"
+                      className="w-16 bg-white border border-gray-300 rounded px-2 py-1 text-xs font-bold text-slate-800 text-center focus:border-teal-500 focus:outline-none"
+                      value={margemGeralPct}
+                      onChange={(e) => handleUpdateMargemGeral(parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
 
                   <div className="flex justify-between items-baseline">
                     <span className="text-xs font-bold text-slate-600">VALOR PRODUTOS:</span>
