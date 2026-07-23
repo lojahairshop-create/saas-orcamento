@@ -637,10 +637,22 @@ function NovoOrcamentoWizardContent() {
   }, [step, ipiRate, taxaComissao]);
 
   const handleSave = async (status: string) => {
+    if (itens.length === 0) {
+      alert("Por favor, adicione pelo menos uma peça ao orçamento antes de salvar.");
+      setStep(2);
+      return;
+    }
+
+    const clienteNomeFinal = cliente.nome.trim() || "Cliente Geral";
+    const clientePayload = {
+      ...cliente,
+      nome: clienteNomeFinal,
+    };
+
     setLoading(true);
     try {
       const payload = {
-        cliente,
+        cliente: clientePayload,
         tipo_venda: tipoVenda,
         ipi_rate: ipiRate,
         taxa_comissao: taxaComissao,
@@ -649,31 +661,31 @@ function NovoOrcamentoWizardContent() {
         validade,
         observacoes,
         itens: itens.map(it => ({
-          descricao: it.descricao,
-          material: it.material,
-          tipo_material: it.tipo_material,
-          espessura: it.espessura,
-          largura: it.largura,
-          comprimento: it.comprimento,
-          perimetro: it.perimetro,
-          num_entradas: it.num_entradas,
-          quantidade: it.quantidade,
-          chapa_l: it.chapa_l,
-          chapa_c: it.chapa_c,
-          preco_kg: it.preco_kg,
-          margem_lucro: it.margem_lucro,
+          descricao: it.descricao || "Peça sem descrição",
+          material: it.material || "AÇO CARBONO",
+          tipo_material: it.tipo_material || "",
+          espessura: it.espessura || 0,
+          largura: it.largura || 0,
+          comprimento: it.comprimento || 0,
+          perimetro: it.perimetro || 0,
+          num_entradas: it.num_entradas || 1,
+          quantidade: it.quantidade || 1,
+          chapa_l: it.chapa_l || 1200,
+          chapa_c: it.chapa_c || 2400,
+          preco_kg: it.preco_kg || 0,
+          margem_lucro: it.margem_lucro || 0.30,
           origem_material: it.origem_material || "chapa_inteira",
           beneficiamento: !!it.beneficiamento,
-          custo_extra: it.custo_extra,
-          tempo_corte: it.tempo_corte,
+          custo_extra: it.custo_extra || 0,
+          tempo_corte: it.tempo_corte || 0,
           operacoes: [
-            { nome: "SET-UP", tempo_min: it.tempo_setup },
-            { nome: "DOBRA", tempo_min: it.tempo_dobra },
-            { nome: "CALDEIRARIA", tempo_min: it.tempo_caldeiraria },
-            { nome: "SOLDA", tempo_min: it.tempo_solda },
-            { nome: "GUILHOTINA", tempo_min: it.tempo_guilhotina },
-            { nome: "USINAGEM INTERNA", tempo_min: it.tempo_usinagem },
-            { nome: "MONTAGEM", tempo_min: it.tempo_montagem },
+            { nome: "SET-UP", tempo_min: it.tempo_setup || 0 },
+            { nome: "DOBRA", tempo_min: it.tempo_dobra || 0 },
+            { nome: "CALDEIRARIA", tempo_min: it.tempo_caldeiraria || 0 },
+            { nome: "SOLDA", tempo_min: it.tempo_solda || 0 },
+            { nome: "GUILHOTINA", tempo_min: it.tempo_guilhotina || 0 },
+            { nome: "USINAGEM INTERNA", tempo_min: it.tempo_usinagem || 0 },
+            { nome: "MONTAGEM", tempo_min: it.tempo_montagem || 0 },
           ]
         }))
       };
@@ -687,12 +699,14 @@ function NovoOrcamentoWizardContent() {
       }
       
       // Atualizar status
-      await api.updateStatus(resultId!, status);
+      if (resultId) {
+        await api.updateStatus(resultId, status);
+      }
       
       router.push(`/orcamentos/${resultId}`);
-    } catch (err) {
-      alert("Erro ao salvar orçamento.");
-      console.error(err);
+    } catch (err: any) {
+      console.error("Erro ao salvar orçamento:", err);
+      alert(err?.message || "Erro ao salvar orçamento. Verifique os dados inseridos.");
     } finally {
       setLoading(false);
     }
@@ -1621,11 +1635,15 @@ function NovoOrcamentoWizardContent() {
                   />
                 </div>
                 <div className="mt-4">
-                  <Input
-                    label="Observações do Orçamento"
-                    placeholder="Condições especiais de frete, impostos diferenciados ou observações de desenho..."
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                    Observações do Orçamento
+                  </label>
+                  <textarea
+                    rows={5}
+                    placeholder="Tolerância de corte: 0,2mm +/-\nTolerância de dobra: 1,5mm +/-\nHorário de retirada de materiais: 07h às 12h | 13h às 17h..."
                     value={observacoes}
                     onChange={e => setObservacoes(e.target.value)}
+                    className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-xs text-slate-800 focus:border-teal-500 focus:outline-none resize-y leading-relaxed"
                   />
                 </div>
               </Card>

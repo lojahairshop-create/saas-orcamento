@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Proposta Comercial - Orçamento {{ orcamento.numero }}</title>
+    <title>Orçamento {{ orcamento.numero }}</title>
     <style>
         @page {
             size: A4;
@@ -10,19 +10,11 @@
             margin-left: 15mm;
             margin-right: 15mm;
             margin-bottom: 20mm;
-            @bottom-left {
-                content: "";
-                border-top: 1px solid #cbd5e1;
-                margin-bottom: 10px;
-            }
             @bottom-right {
                 content: "Página " counter(page) " de " counter(pages);
                 font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
                 font-size: 8pt;
                 color: #64748b;
-                border-top: 1px solid #cbd5e1;
-                margin-bottom: 10px;
-                padding-top: 5px;
             }
         }
         body {
@@ -30,456 +22,383 @@
             margin: 0;
             padding: 0;
             color: #0f172a;
-            font-size: 9.5pt;
+            font-size: 9pt;
             line-height: 1.4;
             background-color: #ffffff;
         }
-        .header {
-            margin-bottom: 15px;
-            width: 100%;
-        }
-        .header table {
+        
+        /* Cabeçalho Superior */
+        .header-table {
             width: 100%;
             border-collapse: collapse;
+            margin-bottom: 12px;
         }
-        .header td {
-            vertical-align: middle;
-        }
-        .logo-box {
-            width: 150px;
-            height: 75px;
-        }
-        .logo-placeholder {
-            width: 100%;
-            height: 100%;
-            border: 2px dashed #cbd5e1;
-            background-color: #f8fafc;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            box-sizing: border-box;
-        }
-        .logo-placeholder-dot {
-            padding: 8px;
-        }
-        .logo-plus {
-            font-size: 14pt;
-            color: #94a3b8;
-            display: block;
-            margin-bottom: 2px;
-            line-height: 1;
-        }
-        .logo-text-ph {
-            font-size: 7.5pt;
-            font-weight: bold;
-            color: #94a3b8;
-            letter-spacing: 0.5px;
-            display: block;
-        }
-        .budget-number {
-            font-size: 16pt;
-            font-weight: bold;
-            color: #0f172a;
-            text-align: right;
-        }
-        .parties-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-            margin-bottom: 15px;
-        }
-        .party-box {
+        .header-table td {
             vertical-align: top;
-            font-size: 9pt;
-            color: #334155;
-            line-height: 1.4;
         }
-        .party-box strong {
-            color: #0f172a;
+        .company-logo {
+            max-height: 60px;
+            max-width: 180px;
+            object-fit: contain;
+            margin-bottom: 5px;
         }
-        .section-title {
-            font-size: 10pt;
-            font-weight: bold;
-            color: #0f172a;
-            margin-bottom: 4px;
-            display: inline-block;
-        }
-        .party-name {
+        .company-name {
             font-size: 11pt;
             font-weight: bold;
             color: #0f172a;
             margin-bottom: 2px;
-            display: inline-block;
         }
-        .text-right {
+        .company-info {
+            font-size: 8.5pt;
+            color: #334155;
+            line-height: 1.35;
+        }
+        .doc-title {
+            font-size: 18pt;
+            font-weight: bold;
+            color: #0f172a;
             text-align: right;
         }
-        .text-center {
-            text-align: center;
-        }
-        .dates-block {
-            font-size: 9pt;
+        .header-divider {
+            border-bottom: 1px solid #cbd5e1;
             margin-bottom: 15px;
-            color: #334155;
         }
-        .dates-block strong {
-            color: #0f172a;
-        }
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            margin-bottom: 15px;
-            border-bottom: 1.5px solid #0f172a;
-        }
-        .items-table th {
-            border-top: 1.5px solid #0f172a;
-            border-bottom: 1.5px solid #0f172a;
-            color: #0f172a;
-            font-weight: bold;
-            text-align: left;
-            padding: 8px 4px;
-            font-size: 8pt;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .items-table td {
-            padding: 8px 4px;
-            border-bottom: 1px solid #e2e8f0;
-            font-size: 9pt;
-            vertical-align: middle;
-        }
-        .dim-cell {
-            text-align: center;
-            vertical-align: middle;
-            padding: 5px;
-            width: 70px;
-        }
-        .dim-box {
-            width: 32px;
-            height: 32px;
-            border: 1px solid #cbd5e1;
-            margin: 0 auto 3px auto;
-            background-color: #f8fafc;
-        }
-        .dim-text {
-            font-size: 7pt;
-            font-weight: bold;
-            color: #475569;
-            white-space: nowrap;
-        }
-        .summary-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-            page-break-inside: avoid;
-        }
-        .comments-box {
-            vertical-align: top;
-            border: 1.5px solid #0f172a;
-            padding: 10px;
-            font-size: 8.5pt;
-        }
-        .totals-box {
-            vertical-align: top;
-            border: 1.5px solid #0f172a;
-            padding: 10px;
-            background-color: #f8fafc;
-        }
-        .grand-total-label {
+
+        /* Seção Dados da Venda */
+        .section-header {
             font-size: 10pt;
             font-weight: bold;
             color: #0f172a;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
         }
-        .grand-total-val {
-            font-size: 16pt;
-            font-weight: bold;
-            color: #0f172a;
-            margin-top: 2px;
+        .venda-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 9pt;
         }
-        .tax-info {
-            font-size: 7.5pt;
-            font-weight: bold;
-            color: #475569;
-            margin-top: 2px;
+        .venda-table td {
+            vertical-align: top;
+            padding-bottom: 3px;
         }
-        .summary-line {
-            font-size: 8.5pt;
+        .info-label {
             color: #334155;
+        }
+        .info-value {
+            color: #0f172a;
+            font-weight: 500;
+        }
+
+        /* Tabela de Itens */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .items-table th {
+            background-color: #00b8a9;
+            color: #ffffff;
+            font-size: 8.5pt;
+            font-weight: bold;
+            padding: 8px 6px;
+            text-align: left;
+            border: none;
+        }
+        .items-table th.text-center { text-align: center; }
+        .items-table th.text-right { text-align: right; }
+        
+        .items-table td {
+            padding: 7px 6px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 8.5pt;
+            color: #0f172a;
+            vertical-align: middle;
+        }
+        .items-table tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+        .items-table td.text-center { text-align: center; }
+        .items-table td.text-right { text-align: right; }
+
+        /* Linha de Total da Tabela */
+        .total-row td {
+            font-weight: bold;
+            background-color: #e2e8f0 !important;
+            border-top: 1.5px solid #cbd5e1;
+            border-bottom: 1.5px solid #cbd5e1;
+            font-size: 9pt;
+        }
+
+        /* Seção Financeiro & Observações */
+        .block-section {
+            margin-bottom: 18px;
+        }
+        .block-subtitle {
+            font-size: 9pt;
+            color: #334155;
+            margin-bottom: 4px;
+        }
+        .block-content {
+            font-size: 9pt;
+            color: #0f172a;
+            line-height: 1.4;
+        }
+        .observacoes-text {
+            white-space: pre-wrap;
+            font-family: inherit;
+            font-size: 8.5pt;
+            color: #1e293b;
+            line-height: 1.5;
             margin-top: 4px;
         }
+
+        /* Quebra de página */
         .page-break {
             page-break-before: always;
         }
+        
+        /* Termos de Fornecimento (Página 2) */
         .terms-section {
-            border: 1.5px solid #0f172a;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
             padding: 15px;
             margin-top: 10px;
         }
         .terms-title {
             font-weight: bold;
-            font-size: 10.5pt;
+            font-size: 10pt;
             color: #0f172a;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid #cbd5e1;
+            border-bottom: 1px solid #e2e8f0;
             padding-bottom: 4px;
         }
         .terms-list {
             list-style-type: decimal;
-            padding-left: 20px;
+            padding-left: 18px;
             margin: 0 0 15px 0;
         }
         .terms-list li {
             font-size: 8pt;
             color: #334155;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             line-height: 1.35;
-        }
-        .terms-sublist {
-            list-style-type: disc;
-            padding-left: 15px;
-            margin-top: 4px;
-        }
-        .terms-sublist li {
-            font-size: 8pt;
-            color: #334155;
-            margin-bottom: 3px;
         }
         .terms-details-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
+            margin-top: 10px;
         }
         .terms-details-table td {
-            padding: 5px 0;
+            padding: 4px 0;
             font-size: 8.5pt;
-            line-height: 1.4;
             border-bottom: 1px solid #f1f5f9;
-        }
-        .terms-label {
-            font-weight: bold;
-            color: #0f172a;
-        }
-        .terms-value {
-            color: #334155;
         }
     </style>
 </head>
 <body>
 
     <!-- ================= PÁGINA 1: DETALHES DO ORÇAMENTO ================= -->
-    <div class="header">
-        <table>
-            <tr>
-                <td>
-                    <div class="logo-box">
-                        {% if configs_globais and configs_globais.logo_base64 %}
-                            <img src="{{ configs_globais.logo_base64 }}" alt="Logo" style="max-height: 75px; max-width: 150px; object-fit: contain;" />
-                        {% else %}
-                            <div class="logo-placeholder">
-                                <div class="logo-placeholder-dot">
-                                    <span class="logo-plus">+</span>
-                                    <span class="logo-text-ph">INSERIR LOGO</span>
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
-                </td>
-                <td style="text-align: right; vertical-align: middle;">
-                    <div class="budget-number">Nº Orçamento : {{ orcamento.numero }}</div>
-                </td>
-            </tr>
-        </table>
-    </div>
-
-    <table class="parties-table">
+    <table class="header-table">
         <tr>
-            <td class="party-box" style="width: 50%;">
-                <span class="section-title">Cliente:</span><br>
-                <span class="party-name">{{ orcamento.cliente.nome }}</span><br>
-                {{ orcamento.cliente.endereco or '' }}<br>
-                {{ orcamento.cliente.cidade or '' }} - {{ orcamento.cliente.estado }}<br>
-                Telefone: {{ orcamento.cliente.telefone or '' }}
-            </td>
-            <td class="party-box" style="width: 50%; padding-left: 20px;">
-                <span class="section-title">Preparado Por:</span><br>
-                <span class="party-name">
+            <td style="width: 60%;">
+                {% if configs_globais and configs_globais.logo_base64 %}
+                    <img src="{{ configs_globais.logo_base64 }}" alt="Logo" class="company-logo" />
+                {% endif %}
+                <div class="company-name">
                     {%- if configs_globais and configs_globais.empresa_nome -%}
                         {{ configs_globais.empresa_nome }}
                     {%- else -%}
-                        MetalCut Pro Admin
+                        FF CALDEIRARIA LTDA
                     {%- endif -%}
-                </span><br>
-                {% if configs_globais and configs_globais.empresa_cnpj %}CNPJ: {{ configs_globais.empresa_cnpj }}<br>{% endif %}
-                {% if configs_globais and configs_globais.empresa_endereco -%}
-                    {{ configs_globais.empresa_endereco }}
-                {%- else -%}
-                    Sorocaba/SP
-                {%- endif -%}<br>
-                Email: {% if configs_globais and configs_globais.empresa_email %}{{ configs_globais.empresa_email }}{% else %}contato@metalcut.com.br{% endif %} | Tel: {% if configs_globais and configs_globais.empresa_telefone %}{{ configs_globais.empresa_telefone }}{% else %}(15) 99999-9999{% endif %}
+                </div>
+                <div class="company-info">
+                    {% if configs_globais and configs_globais.empresa_cnpj %}CNPJ - {{ configs_globais.empresa_cnpj }}<br>{% else %}CNPJ - 29.391.618/0001-01<br>{% endif %}
+                    {% if configs_globais and configs_globais.empresa_endereco %}{{ configs_globais.empresa_endereco }}<br>{% else %}Rua Lúcia Piffer Baptistella, 320, VILA RITA<br>{% endif %}
+                    Fone: {% if configs_globais and configs_globais.empresa_telefone %}{{ configs_globais.empresa_telefone }}{% else %}(11) 4487-7164{% endif %}
+                </div>
+            </td>
+            <td style="width: 40%; vertical-align: top;">
+                <div class="doc-title">Orçamento N° {{ orcamento.numero }}</div>
             </td>
         </tr>
     </table>
 
-    <div class="dates-block">
-        <strong>Data de Criação:</strong> 
-        {% if orcamento.created_at is string %}
-            {{ orcamento.created_at[:10] }}
-        {% elif orcamento.created_at %}
-            {{ orcamento.created_at.strftime("%d/%m/%Y") }}
-        {% else %}
-            {{ datetime.now().strftime("%d/%m/%Y") }}
-        {% endif %}<br>
-        <strong>Data de Vencimento:</strong> {{ validade_data }}
-    </div>
+    <div class="header-divider"></div>
 
+    <!-- DADOS DA VENDA -->
+    <div class="section-header">DADOS DA VENDA</div>
+    <table class="venda-table">
+        <tr>
+            <td style="width: 55%;">
+                <span class="info-label">Cliente:</span> <span class="info-value">{{ orcamento.cliente.nome }}</span><br>
+                <span class="info-label">Telefone:</span> <span class="info-value">{{ orcamento.cliente.telefone or '' }}</span><br>
+                <span class="info-label">E-mail:</span> <span class="info-value">{{ orcamento.cliente.email or '' }}</span><br>
+                <span class="info-label">Endereço:</span> <span class="info-value">{{ orcamento.cliente.endereco or '' }}{% if orcamento.cliente.cidade %}, {{ orcamento.cliente.cidade }}{% endif %}{% if orcamento.cliente.estado %} - {{ orcamento.cliente.estado }}{% endif %}</span>
+            </td>
+            <td style="width: 45%;">
+                <span class="info-label">Data:</span> <span class="info-value">
+                    {% if orcamento.created_at is string %}
+                        {{ orcamento.created_at[:10] }}
+                    {% elif orcamento.created_at %}
+                        {{ orcamento.created_at.strftime("%d/%m/%Y") }}
+                    {% else %}
+                        {{ datetime.now().strftime("%d/%m/%Y") }}
+                    {% endif %}
+                </span><br>
+                <span class="info-label">Situação:</span> <span class="info-value">
+                    {% if orcamento.status == 'rascunho' %}Rascunho
+                    {% elif orcamento.status == 'pendente' %}Em espera
+                    {% elif orcamento.status == 'aprovado' %}Aprovado
+                    {% else %}{{ orcamento.status|title }}{% endif %}
+                </span><br>
+                <span class="info-label">Vendedor:</span> <span class="info-value">
+                    {%- if configs_globais and configs_globais.empresa_nome -%}
+                        {{ configs_globais.empresa_nome }}
+                    {%- else -%}
+                        Diego Delfino
+                    {%- endif -%}
+                </span>
+            </td>
+        </tr>
+    </table>
+
+    <!-- ITENS DA VENDA -->
+    <div class="section-header">ITENS DA VENDA</div>
     <table class="items-table">
         <thead>
             <tr>
-                <th style="width: 5%;" class="text-center">Item</th>
-                <th style="width: 12%;" class="text-center">Dimensão</th>
-                <th style="width: 30%;">Produto / Descrição</th>
-                <th style="width: 10%;" class="text-center">Peso (Kg)</th>
-                <th style="width: 15%;">Material</th>
-                <th style="width: 6%;" class="text-center">Qtde.</th>
-                <th style="width: 11%;" class="text-center">Valor Unit.</th>
-                <th style="width: 11%;" class="text-center">Valor Total</th>
+                <th style="width: 8%;" class="text-center">Item</th>
+                <th style="width: 18%;" class="text-center">Dimensão</th>
+                <th style="width: 44%;">Descrição</th>
+                <th style="width: 12%;" class="text-right">Preço unit.</th>
+                <th style="width: 6%;" class="text-center">Quant.</th>
+                <th style="width: 12%;" class="text-right">Total</th>
             </tr>
         </thead>
         <tbody>
+            {% set total_qtd = namespace(value=0) %}
             {% for item in orcamento.itens %}
+            {% set total_qtd.value = total_qtd.value + item.quantidade %}
             <tr>
-                <td class="text-center">{{ loop.index }}</td>
-                <td class="dim-cell">
-                    <div class="dim-box"></div>
-                    <div class="dim-text">{{ ("%.2f"|format(item.largura))|replace('.', ',') }} X {{ ("%.2f"|format(item.comprimento))|replace('.', ',') }}</div>
+                <td class="text-center">Item {{ loop.index }}</td>
+                <td class="text-center" style="white-space: nowrap;">
+                    {{ ("%.2f"|format(item.largura))|replace('.', ',') }} X {{ ("%.2f"|format(item.comprimento))|replace('.', ',') }}
                 </td>
-                <td style="white-space: nowrap;">
-                    <strong>{{ item.descricao }}</strong><br>
-                    <span style="font-size: 7.5pt; color: #64748b; white-space: nowrap;">
-                        Processos: {% set ns = namespace(primeiro=true) %}{%- if item.tempo_corte_laser > 0 or item.tempo_corte > 0 %}Laser{% set ns.primeiro = false %}{% endif %}{%- for op in item.operacoes %}{%- if op.tempo_min > 0 and op.nome|upper != 'CORTE LASER' %}{%- if not ns.primeiro %}, {% endif %}{{- op.nome|title -}}{%- set ns.primeiro = false -%}{%- endif %}{%- endfor %}
+                <td>
+                    <strong>{{ item.descricao }}</strong>
+                    {%- set mat_upper = (item.material or '')|upper -%}
+                    {%- set mat_nome = 'Aço Carbono' if ('CARBONO' in mat_upper or 'CARBON' in mat_upper) else ('Inox' if 'INOX' in mat_upper else ('Alumínio' if 'ALUM' in mat_upper else item.material|title)) -%}
+                    <br>
+                    <span style="font-size: 7.5pt; color: #475569; white-space: nowrap;">
+                        {{ mat_nome }} {{ ("%.2f"|format(item.espessura))|replace('.00', '') }}mm | Processos: {% set ns = namespace(primeiro=true) %}{%- if item.tempo_corte_laser > 0 or item.tempo_corte > 0 %}Laser{% set ns.primeiro = false %}{% endif %}{%- for op in item.operacoes %}{%- if op.tempo_min > 0 and op.nome|upper != 'CORTE LASER' %}{%- if not ns.primeiro %}, {% endif %}{{- op.nome|title -}}{%- set ns.primeiro = false -%}{%- endif %}{%- endfor %}
                     </span>
                     {% if item.beneficiamento %}
-                    <br><span style="font-size: 7.5pt; color: #475569; font-weight: bold; white-space: nowrap;">Material Fornecido Pelo Cliente</span>
+                    <br><span style="font-size: 7.5pt; color: #334155; font-weight: bold; white-space: nowrap;">Material Fornecido Pelo Cliente</span>
                     {% endif %}
                 </td>
-                <td class="text-center" style="white-space: nowrap;">{{ ("%.2f"|format(item.peso_total))|replace('.', ',') }}</td>
-                <td class="text-center" style="white-space: nowrap;">
-                    {%- set mat_upper = (item.material or '')|upper -%}
-                    {%- if 'CARBONO' in mat_upper or 'CARBON' in mat_upper -%}
-                        Aço Carbono
-                    {%- elif 'INOX' in mat_upper -%}
-                        Inox
-                    {%- elif 'ALUM' in mat_upper -%}
-                        Alumínio
-                    {%- else -%}
-                        {{ item.material|title }}
-                    {%- endif %} {{ ("%.2f"|format(item.espessura))|replace('.00', '') }}mm
-                </td>
+                <td class="text-right" style="white-space: nowrap;">{{ ("%.2f"|format(item.preco_unitario_com_imp))|replace('.', ',') }}</td>
                 <td class="text-center">{{ item.quantidade }}</td>
-                <td class="text-center" style="white-space: nowrap;">R$ {{ ("%.2f"|format(item.preco_unitario_com_imp))|replace('.', ',') }}</td>
-                <td class="text-center" style="white-space: nowrap;">R$ {{ ("%.2f"|format(item.preco_total))|replace('.', ',') }}</td>
+                <td class="text-right" style="white-space: nowrap;">{{ ("%.2f"|format(item.preco_total))|replace('.', ',') }}</td>
             </tr>
             {% endfor %}
+            <tr class="total-row">
+                <td colspan="3">TOTAL</td>
+                <td class="text-right"></td>
+                <td class="text-center">{{ total_qtd.value }}</td>
+                <td class="text-right" style="white-space: nowrap;">R$ {{ ("%.2f"|format(orcamento.total_preco))|replace('.', ',') }}</td>
+            </tr>
         </tbody>
     </table>
 
-    <table class="summary-table">
-        <tr>
-            <td class="comments-box" style="width: 55%;">
-                <strong>Comentários:</strong><br>
-                <div style="margin-top: 5px; color: #475569; line-height: 1.4;">
-                    {{ orcamento.observacoes or 'Proposta comercial de corte a laser.' }}
-                </div>
-            </td>
-            <td style="width: 5%;"></td>
-            <td class="totals-box" style="width: 40%;">
-                <div class="grand-total-label">VALOR TOTAL :</div>
-                <div class="grand-total-val">R$ {{ ("%.2f"|format(orcamento.total_preco))|replace('.', ',') }}</div>
-                <div class="tax-info">
-                    (Venda IPI - {{ ("%.2f"|format(orcamento.ipi_rate * 100))|replace('.', ',') }}% / Benef. Isento)
-                </div>
-                <div class="summary-line" style="margin-top: 10px;">
-                    Total de {{ orcamento.itens|length }} peças
-                </div>
-                <div class="summary-line">
-                    Peso total do orçamento {{ ("%.2f"|format(orcamento.total_peso))|replace('.', ',') }} Kg
-                </div>
-            </td>
-        </tr>
-    </table>
+    <!-- FINANCEIRO -->
+    <div class="block-section">
+        <div class="section-header">FINANCEIRO</div>
+        <div class="block-subtitle">Resumo do financeiro:</div>
+        <div class="block-content">{{ orcamento.condicao_pagamento or 'A combinar' }}</div>
+    </div>
+
+    <!-- OBSERVAÇÕES GERAIS -->
+    <div class="block-section">
+        <div class="section-header">Observações gerais</div>
+        <div class="observacoes-text">
+{%- if orcamento.observacoes and orcamento.observacoes.strip() -%}
+{{ orcamento.observacoes }}
+{%- else -%}
+Tolerância de corte: 0,2mm +/-
+Tolerância de dobra: 1,5mm +/-
+
+Horário de retirada de materiais: 07h às 12h | 13h às 17h
+
+IMPOSTOS INCLUSOS
+FORMA DE PAGAMENTO: {{ orcamento.condicao_pagamento or 'A combinar' }}
+PRAZO: {{ orcamento.prazo_entrega or 'ATÉ 10 DIAS ÚTEIS' }}
+FRETE: FOB
+{%- endif -%}
+        </div>
+    </div>
 
     <!-- ================= PÁGINA 2: CONDIÇÕES DE FORNECIMENTO ================= -->
     <div class="page-break"></div>
 
-    <div class="header">
-        <table>
-            <tr>
-                <td>
-                    <div class="logo-box">
-                        {% if configs_globais and configs_globais.logo_base64 %}
-                            <img src="{{ configs_globais.logo_base64 }}" alt="Logo" style="max-height: 75px; max-width: 150px; object-fit: contain;" />
-                        {% else %}
-                            <div class="logo-placeholder">
-                                <div class="logo-placeholder-dot">
-                                    <span class="logo-plus">+</span>
-                                    <span class="logo-text-ph">INSERIR LOGO</span>
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
-                </td>
-                <td style="text-align: right; vertical-align: middle;">
-                    <div class="budget-number">Nº Orçamento : {{ orcamento.numero }}</div>
-                </td>
-            </tr>
-        </table>
-    </div>
+    <table class="header-table">
+        <tr>
+            <td style="width: 60%;">
+                {% if configs_globais and configs_globais.logo_base64 %}
+                    <img src="{{ configs_globais.logo_base64 }}" alt="Logo" class="company-logo" />
+                {% endif %}
+                <div class="company-name">
+                    {%- if configs_globais and configs_globais.empresa_nome -%}
+                        {{ configs_globais.empresa_nome }}
+                    {%- else -%}
+                        FF CALDEIRARIA LTDA
+                    {%- endif -%}
+                </div>
+            </td>
+            <td style="width: 40%; vertical-align: top;">
+                <div class="doc-title">Orçamento N° {{ orcamento.numero }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="header-divider"></div>
 
     <div class="terms-section">
         <div class="terms-title">CONDIÇÕES GERAIS DE FORNECIMENTO</div>
         <ol class="terms-list">
             <li>Os desenhos deverão ser fornecidos no formato .DXF ou .DWG em escala 1:1 com a respectiva indicação de revisão. Peças cortadas fora da sua verdadeira grandeza serão de responsabilidade do cliente.</li>
-            <li>TOLERANCIA CORTE &lt;=0,2mm e &lt;=1,00mm | TOLERÂNCIA DOBRA: +/- 1,5mm.</li>
+            <li>TOLERÂNCIA CORTE &lt;=0,2mm e &lt;=1,00mm | TOLERÂNCIA DOBRA: +/- 1,5mm.</li>
             <li>Furos com diâmetro menor que a espessura da chapa serão somente marcados.</li>
             <li>A produção somente será iniciada quando:
-                <ul class="terms-sublist">
+                <ul style="list-style-type: disc; padding-left: 15px; margin-top: 3px;">
                     <li>Recebido pedido do cliente E / OU recebimento da matéria-prima (no caso de beneficiamento).</li>
                     <li>Recebido a confirmação por e-mail aprovando a proposta comercial.</li>
                 </ul>
             </li>
-            <li>Horário para entrega e retirada de mercadorias: 08h às 12h | 14h às 17h.</li>
+            <li>Horário para entrega e retirada de mercadorias: 07h às 12h | 13h às 17h.</li>
             <li>No processo de corte pode haver empenamento das peças (algo normal devida a alta temperatura). O cliente deve especificar no ato da cotação a necessidade de mantê-las planas.</li>
             <li>Prezados clientes, concluído o pedido de BENEFICIAMENTO, a sucata gerada será mantida em até, no máximo, 4 dias úteis. Após este período será descartada junto com outras sucatas pelo motivo de logística e espaço. Dessa forma, tornando-se de propriedade da contratada/fabricante.</li>
         </ol>
         
         <table class="terms-details-table">
             <tr>
-                <td class="terms-label" style="width: 25%;">Prazo de Entrega:</td>
-                <td class="terms-value" style="width: 75%;">{{ orcamento.prazo_entrega or '7 Dias úteis após recebimento do pedido de compra' }}</td>
+                <td style="font-weight: bold; width: 25%;">Prazo de Entrega:</td>
+                <td style="color: #334155; width: 75%;">{{ orcamento.prazo_entrega or 'ATÉ 10 DIAS ÚTEIS' }}</td>
             </tr>
             <tr>
-                <td class="terms-label">Forma de Pagamento:</td>
-                <td class="terms-value">{{ orcamento.condicao_pagamento or 'A Combinar' }}</td>
+                <td style="font-weight: bold;">Forma de Pagamento:</td>
+                <td style="color: #334155;">{{ orcamento.condicao_pagamento or 'A combinar' }}</td>
             </tr>
             <tr>
-                <td class="terms-label">Pedido Mínimo:</td>
-                <td class="terms-value">R$ 500,00</td>
+                <td style="font-weight: bold;">Frete:</td>
+                <td style="color: #334155;">FOB</td>
             </tr>
             <tr>
-                <td class="terms-label">Frete:</td>
-                <td class="terms-value">FOB</td>
-            </tr>
-            <tr>
-                <td class="terms-label">Impostos:</td>
-                <td class="terms-value">
-                    ICMS INCLUSO - PIS/COFINS INCLUSO<br>
-                    IPI: {{ ("%.2f"|format(orcamento.ipi_rate * 100))|replace('.', ',') }}% A INCLUIR
+                <td style="font-weight: bold;">Impostos:</td>
+                <td style="color: #334155;">
+                    IMPOSTOS INCLUSOS (Venda IPI - {{ ("%.2f"|format(orcamento.ipi_rate * 100))|replace('.', ',') }}%)
                 </td>
             </tr>
         </table>
