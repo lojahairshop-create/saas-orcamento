@@ -105,6 +105,7 @@ function NovoOrcamentoWizardContent() {
     preco_kg: 2.00,
     margem_lucro: 0.30,
     origem_material: "chapa_inteira",
+    beneficiamento: false,
     tempo_corte: 0.0,
     custo_extra: 0.0,
     
@@ -261,6 +262,7 @@ function NovoOrcamentoWizardContent() {
           preco_kg: it.preco_kg || 0,
           margem_lucro: it.margem_lucro || 0.3,
           origem_material: it.origem_material || "chapa_inteira",
+          beneficiamento: !!it.beneficiamento,
           tempo_corte: it.tempo_corte || 0.0,
           custo_extra: it.custo_extra || 0.0,
           tempo_setup: getTempo(it.operacoes || [], "SET-UP"),
@@ -308,6 +310,7 @@ function NovoOrcamentoWizardContent() {
       num_entradas: 1,
       quantidade: 1,
       origem_material: "chapa_inteira",
+      beneficiamento: false,
       tempo_corte: 0,
       custo_extra: 0,
       tempo_setup: 6.0,
@@ -345,6 +348,7 @@ function NovoOrcamentoWizardContent() {
       preco_kg: item.preco_kg ?? 2.00,
       margem_lucro: item.margem_lucro ?? 0.30,
       origem_material: item.origem_material || "chapa_inteira",
+      beneficiamento: !!item.beneficiamento,
       tempo_corte: item.tempo_corte ?? 0,
       custo_extra: item.custo_extra ?? 0,
       tempo_setup: item.tempo_setup ?? 0,
@@ -490,6 +494,7 @@ function NovoOrcamentoWizardContent() {
         chapa_c: 2400,
         preco_kg: defaultMaterial ? defaultMaterial.preco_kg : 2.00,
         margem_lucro: 0.30,
+        beneficiamento: false,
         origem_material: "chapa_inteira",
         
         // Tempos padrão (iniciam em 0 para peças importadas por DXF)
@@ -564,7 +569,8 @@ function NovoOrcamentoWizardContent() {
       const retalho = sobra * pesoUnit;
 
       // 5. Custo Matéria Prima (com IPI rate)
-      const custoMp = calcularCustoMP(pesoTotal, item.preco_kg, ipiRate);
+      const beneficiamento = !!item.beneficiamento;
+      const custoMp = beneficiamento ? 0.0 : calcularCustoMP(pesoTotal, item.preco_kg, ipiRate);
 
       // 6. Fabricação (tempos e custos de hora reais ou default R$ 10.00/h)
       const getCusto = (nome: string) => custosOperacao[nome] ?? 10.00;
@@ -596,6 +602,7 @@ function NovoOrcamentoWizardContent() {
 
       return {
         ...item,
+        beneficiamento,
         peso_total: pesoTotal,
         preco_unitario_com_imp: precoUnitComImp,
         preco_total: precoTotalItem,
@@ -656,6 +663,7 @@ function NovoOrcamentoWizardContent() {
           preco_kg: it.preco_kg,
           margem_lucro: it.margem_lucro,
           origem_material: it.origem_material || "chapa_inteira",
+          beneficiamento: !!it.beneficiamento,
           custo_extra: it.custo_extra,
           tempo_corte: it.tempo_corte,
           operacoes: [
@@ -892,6 +900,7 @@ function NovoOrcamentoWizardContent() {
                           <th className="py-3 px-2">Material</th>
                           <th className="py-3 px-2 w-16">Esp. (mm)</th>
                           <th className="py-3 px-2 w-16">Qtd</th>
+                          <th className="py-3 px-2 w-24 text-center">Beneficiamento</th>
                           <th className="py-3 px-2 w-20">Preço Kg</th>
                           <th className="py-3 px-2 w-20">Margem %</th>
                           <th className="py-3 px-2 w-20">Dobra (min)</th>
@@ -967,6 +976,19 @@ function NovoOrcamentoWizardContent() {
                                   updated[idx].quantidade = parseInt(e.target.value) || 1;
                                   setDxfItemsToConfigure(updated);
                                 }}
+                              />
+                            </td>
+                            <td className="py-3 px-2 text-center">
+                              <input
+                                type="checkbox"
+                                checked={!!item.beneficiamento}
+                                onChange={(e) => {
+                                  const updated = [...dxfItemsToConfigure];
+                                  updated[idx].beneficiamento = e.target.checked;
+                                  setDxfItemsToConfigure(updated);
+                                }}
+                                className="rounded border-gray-300 text-teal-600 focus:ring-teal-500 cursor-pointer h-4 w-4"
+                                title="Beneficiamento (Material Fornecido Pelo Cliente)"
                               />
                             </td>
                             <td className="py-3 px-2">
@@ -1199,6 +1221,23 @@ function NovoOrcamentoWizardContent() {
                 />
               </div>
 
+              {/* Opção de Beneficiamento */}
+              <div className="flex items-center gap-2 mt-4 bg-teal-50/80 border border-teal-200 p-3 rounded-xl">
+                <input
+                  type="checkbox"
+                  id="checkbox-beneficiamento"
+                  checked={!!novaPeca.beneficiamento}
+                  onChange={e => setNovaPeca({ ...novaPeca, beneficiamento: e.target.checked })}
+                  className="rounded border-gray-300 text-teal-600 focus:ring-teal-500 cursor-pointer h-4 w-4"
+                />
+                <label htmlFor="checkbox-beneficiamento" className="text-xs font-bold text-slate-800 cursor-pointer select-none">
+                  Beneficiamento (Material Fornecido Pelo Cliente)
+                  <span className="block text-[10px] text-slate-500 font-normal">
+                    Ao selecionar essa opção, o custo da matéria-prima será desconsiderado no cálculo (R$ 0,00) e serão cobrados apenas os processos de fabricação.
+                  </span>
+                </label>
+              </div>
+
               {/* Origem de Chapa e Estoque */}
               <div className="border-t border-gray-200 pt-4 mt-4">
                 <h4 className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wider">
@@ -1348,6 +1387,7 @@ function NovoOrcamentoWizardContent() {
                         preco_kg: 2.00,
                         margem_lucro: 0.30,
                         origem_material: "chapa_inteira",
+                        beneficiamento: false,
                         tempo_corte: 0.0,
                         custo_extra: 0.0,
                         tempo_setup: 6.0,
@@ -1448,7 +1488,16 @@ function NovoOrcamentoWizardContent() {
                             </TableCell>
                             <TableCell className="font-bold">{idx + 1}</TableCell>
                             <TableCell>{item.descricao}</TableCell>
-                            <TableCell>{item.material} {item.espessura}mm</TableCell>
+                            <TableCell>
+                              <div className="flex flex-col gap-0.5">
+                                <span>{item.material} {item.espessura}mm</span>
+                                {item.beneficiamento && (
+                                  <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded w-max">
+                                    Beneficiamento (Mat. Cliente)
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
                             <TableCell className="text-center">{item.quantidade}</TableCell>
                             <TableCell>
                               <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-gray-50 border border-gray-200 text-slate-600">
@@ -1536,7 +1585,14 @@ function NovoOrcamentoWizardContent() {
                       <TableCell className="font-semibold text-slate-800">{item.descricao}</TableCell>
                       <TableCell className="text-center">{item.quantidade}</TableCell>
                       <TableCell>{item.peso_total.toFixed(2)} kg</TableCell>
-                      <TableCell>{formatCurrency(item.custo_mp)}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span>{formatCurrency(item.custo_mp)}</span>
+                          {item.beneficiamento && (
+                            <span className="text-[10px] text-amber-600 font-semibold">Beneficiamento</span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>{formatCurrency(item.total_fabricacao)}</TableCell>
                       <TableCell>{formatCurrency(item.preco_unitario_com_imp * (1 - 0.2393) * item.quantidade)}</TableCell>
                       <TableCell className="font-bold text-slate-800">{formatCurrency(item.preco_total)}</TableCell>

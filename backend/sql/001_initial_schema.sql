@@ -130,6 +130,7 @@ CREATE TABLE IF NOT EXISTS public.orcamento_itens (
     chapa_c DECIMAL(8,2) DEFAULT 2400.00 NOT NULL,
     preco_kg DECIMAL(10,2) NOT NULL,
     margem_lucro DECIMAL(6,4) NOT NULL,
+    beneficiamento BOOLEAN DEFAULT FALSE NOT NULL,
     
     -- Metadados calculados
     velocidade DECIMAL(8,2) NOT NULL,

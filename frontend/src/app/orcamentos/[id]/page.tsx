@@ -332,6 +332,11 @@ export default function OrcamentoDetailPage() {
                     <TableCell>
                       <div>
                         <span className="font-semibold text-slate-800">{item.descricao}</span>
+                        {(item as any).beneficiamento && (
+                          <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded inline-block ml-2">
+                            Beneficiamento (Material do Cliente)
+                          </span>
+                        )}
                         {item.observacoes && (
                           <span className="text-[10px] text-slate-500 block mt-0.5">Obs: {item.observacoes}</span>
                         )}

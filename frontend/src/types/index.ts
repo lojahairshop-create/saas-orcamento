@@ -37,6 +37,7 @@ export interface OrcamentoItem {
   chapa_c: number;
   preco_kg: number;
   margem_lucro: number;
+  beneficiamento?: boolean;
   operacoes: OperacaoItem[];
   observacoes?: string | null;
 

@@ -240,11 +240,13 @@ class CalculoEngine:
         sobra = calcular_sobra(pecas_por_chapa, qtd_chapas, quantidade)
         retalho = calcular_retalho(sobra, peso_unitario)
 
+        beneficiamento = bool(item_data.get("beneficiamento", False))
+
         # 7. Peso total (com margem de max(espessura, 5mm)) e custo MP (com IPI)
         pad = max(espessura, 5.0)
         peso_total = quantidade * (espessura * (largura + pad) * (comprimento + pad) * densidade / 1000000.0)
         ipi_rate = float(config.get("ipi_rate", 0.05))
-        custo_mp = calcular_custo_mp(peso_total, preco_kg, ipi_rate)
+        custo_mp = 0.0 if beneficiamento else calcular_custo_mp(peso_total, preco_kg, ipi_rate)
 
         # 8. Montagem dos tempos e custos de operação
         tempos_min: Dict[str, float] = {}
@@ -311,6 +313,7 @@ class CalculoEngine:
         comissao = calcular_comissao(taxa_comissao, valor_venda_sem_imp)
 
         return {
+            "beneficiamento": beneficiamento,
             # Parâmetros laser
             "velocidade": velocidade,
             "peck": peck,
