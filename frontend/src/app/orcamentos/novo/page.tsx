@@ -123,18 +123,19 @@ function NovoOrcamentoWizardContent() {
   const [sugestaoEstoque, setSugestaoEstoque] = useState<any>(null);
   const [margemGeralPct, setMargemGeralPct] = useState<number>(30);
 
-  const handleUpdateMargemGeral = (pct: number) => {
-    setMargemGeralPct(pct);
-    const decimal = pct / 100;
-    setItens(prev => {
-      const updated = prev.map(it => ({
-        ...it,
-        margem_lucro: decimal,
-      }));
-      const res = processarCalculoLocal(updated);
-      setCalculado(res);
-      return updated;
-    });
+  const handleUpdateMargemGeral = (val: string | number) => {
+    const num = typeof val === "number" ? val : parseFloat(val);
+    const safePct = isNaN(num) ? 0 : num;
+    setMargemGeralPct(safePct);
+
+    const decimal = safePct / 100;
+    const updated = itens.map(it => ({
+      ...it,
+      margem_lucro: decimal,
+    }));
+    setItens(updated);
+    const res = processarCalculoLocal(updated);
+    setCalculado(res);
   };
 
   // Carregar materiais e custos padrão do backend no início
@@ -1494,8 +1495,8 @@ function NovoOrcamentoWizardContent() {
                           type="number"
                           step="1"
                           className="w-16 bg-white border border-gray-300 rounded px-2 py-1 text-xs font-bold text-slate-800 text-center focus:border-teal-500 focus:outline-none"
-                          value={margemGeralPct}
-                          onChange={(e) => handleUpdateMargemGeral(parseFloat(e.target.value) || 0)}
+                          value={margemGeralPct === 0 ? "" : margemGeralPct}
+                          onChange={(e) => handleUpdateMargemGeral(e.target.value)}
                         />
                       </div>
                       <Button onClick={() => {
@@ -1612,8 +1613,8 @@ function NovoOrcamentoWizardContent() {
                       type="number"
                       step="1"
                       className="w-16 bg-white border border-gray-300 rounded px-2 py-1 text-xs font-bold text-slate-800 text-center focus:border-teal-500 focus:outline-none"
-                      value={margemGeralPct}
-                      onChange={(e) => handleUpdateMargemGeral(parseFloat(e.target.value) || 0)}
+                      value={margemGeralPct === 0 ? "" : margemGeralPct}
+                      onChange={(e) => handleUpdateMargemGeral(e.target.value)}
                     />
                   </div>
 

@@ -190,12 +190,20 @@
                     
                     <div class="cad-piece {% if peca.rotacionado %}cad-piece-rotated{% endif %}" 
                          style="left: {{ left_pct }}%; top: {{ top_pct }}%; width: {{ width_pct }}%; height: {{ height_pct }}%;">
-                        <span class="piece-label {% if peca.rotacionado %}piece-label-rotated{% endif %}">
-                            {{ peca.id }}
-                        </span>
-                        <span class="piece-dims">
-                            {{ "%.0f"|format(peca.w) }}x{{ "%.0f"|format(peca.h) }}
-                        </span>
+                        {% if peca.vetor_svg %}
+                            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+                                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; {% if peca.rotacionado %}transform: rotate(90deg);{% endif %} color: {% if peca.rotacionado %}#d97706{% else %}#2563eb{% endif %};">
+                                    {{ peca.vetor_svg|safe }}
+                                </div>
+                            </div>
+                        {% else %}
+                            <span class="piece-label {% if peca.rotacionado %}piece-label-rotated{% endif %}">
+                                {{ peca.id }}
+                            </span>
+                            <span class="piece-dims">
+                                {{ "%.0f"|format(peca.w) }}x{{ "%.0f"|format(peca.h) }}
+                            </span>
+                        {% endif %}
                     </div>
                 {% endfor %}
             </div>
