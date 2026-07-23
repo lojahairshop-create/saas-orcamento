@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -785,13 +785,13 @@ export default function ArranjoChapasPage() {
           {/* Coluna Esquerda: Filtros e Seleção */}
           <div className="lg:col-span-1 flex flex-col gap-6">
             {/* Card 1: Seleção de Orçamentos */}
-            <Card header="Seletor de Orçamentos" className="h-[320px] flex flex-col">
-              <div className="flex flex-col gap-4 h-full">
+            <Card header="Seletor de Orçamentos" className="min-h-[340px] flex flex-col">
+              <div className="flex flex-col gap-3 flex-1 min-h-0">
                 <div className="flex gap-2">
                   <div className="flex-1">
                     <Input
                       placeholder="Buscar por cliente/número..."
-                      icon={<Search className="h-4 w-4" />}
+                      icon={<Search className="h-4 w-4 text-slate-600" />}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="h-9 text-xs"
@@ -813,18 +813,18 @@ export default function ArranjoChapasPage() {
                 </div>
 
                 {/* Orcamentos Checkbox List */}
-                <div className="flex-1 overflow-y-auto border border-gray-200 bg-black/10 rounded-lg p-3 space-y-2">
+                <div className="flex-1 max-h-[220px] overflow-y-auto border border-gray-200 bg-gray-50/70 rounded-lg p-2.5 space-y-1">
                   {loadingOrcamentos ? (
-                    <div className="h-full flex items-center justify-center">
-                      <RefreshCw className="h-5 w-5 text-slate-600 animate-spin" />
+                    <div className="h-28 flex items-center justify-center">
+                      <RefreshCw className="h-5 w-5 text-teal-500 animate-spin" />
                     </div>
                   ) : filteredOrcamentos.length === 0 ? (
-                    <div className="h-full flex items-center justify-center text-xs text-slate-500 font-medium">
+                    <div className="h-28 flex items-center justify-center text-xs text-slate-600 font-medium">
                       Nenhum orçamento encontrado.
                     </div>
                   ) : (
                     <>
-                      <label className="flex items-center gap-2.5 px-2 py-1.5 hover:bg-gray-50 rounded transition-colors text-xs font-bold text-slate-400 border-b border-gray-200 cursor-pointer">
+                      <label className="flex items-center gap-2.5 px-2 py-1.5 hover:bg-gray-100/80 rounded transition-colors text-xs font-bold text-slate-700 border-b border-gray-200 cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={
@@ -832,16 +832,16 @@ export default function ArranjoChapasPage() {
                             selectedOrcamentos.length === filteredOrcamentos.length
                           }
                           onChange={(e) => handleSelectAll(e.target.checked)}
-                          className="rounded border-gray-200 bg-slate-950/40 text-blue-600 focus:ring-blue-500"
+                          className="rounded border-gray-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
                         />
                         Selecionar Todos
                       </label>
                       {filteredOrcamentos.map((orc) => (
                         <label
                           key={orc.id}
-                          className={`flex items-center justify-between gap-2 px-2 py-2 hover:bg-gray-50 rounded cursor-pointer transition-all ${
+                          className={`flex items-center justify-between gap-2 px-2 py-2 hover:bg-gray-100/80 rounded cursor-pointer transition-all select-none ${
                             selectedOrcamentos.includes(orc.id)
-                              ? "bg-blue-600/5 border border-teal-200"
+                              ? "bg-teal-50/90 border border-teal-300"
                               : "border border-transparent"
                           }`}
                         >
@@ -850,10 +850,10 @@ export default function ArranjoChapasPage() {
                               type="checkbox"
                               checked={selectedOrcamentos.includes(orc.id)}
                               onChange={(e) => handleSelectOne(orc.id, e.target.checked)}
-                              className="rounded border-gray-200 bg-slate-950/40 text-blue-600 focus:ring-blue-500"
+                              className="rounded border-gray-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
                             />
                             <div className="flex flex-col min-w-0">
-                              <span className="text-xs font-bold text-slate-700 truncate">
+                              <span className="text-xs font-bold text-slate-800 truncate">
                                 {orc.cliente_nome}
                               </span>
                               <span className="text-[10px] text-slate-500 font-semibold mt-0.5">
@@ -871,23 +871,23 @@ export default function ArranjoChapasPage() {
             </Card>
 
             {/* Card 2: Seleção de Materiais e Espessuras */}
-            <Card header="Materiais & Espessuras" className="h-[320px] flex flex-col">
-              <div className="flex flex-col gap-3 h-full">
+            <Card header="Materiais & Espessuras" className="min-h-[340px] flex flex-col">
+              <div className="flex flex-col gap-3 flex-1 min-h-0">
                 {selectedOrcamentos.length === 0 ? (
-                  <div className="flex-1 flex items-center justify-center text-center text-xs text-slate-500 font-semibold p-4">
+                  <div className="flex-1 flex items-center justify-center text-center text-xs text-slate-600 font-semibold p-4">
                     Selecione primeiro os orçamentos para listar os materiais disponíveis.
                   </div>
                 ) : loadingItems ? (
                   <div className="flex-1 flex items-center justify-center">
-                    <RefreshCw className="h-5 w-5 text-slate-600 animate-spin" />
+                    <RefreshCw className="h-5 w-5 text-teal-500 animate-spin" />
                   </div>
                 ) : Object.keys(groupedItems).length === 0 ? (
-                  <div className="flex-1 flex items-center justify-center text-center text-xs text-slate-500 font-semibold p-4">
+                  <div className="flex-1 flex items-center justify-center text-center text-xs text-slate-600 font-semibold p-4">
                     Nenhum material encontrado nas peças dos orçamentos selecionados.
                   </div>
                 ) : (
-                  <div className="flex-1 overflow-y-auto border border-gray-200 bg-black/10 rounded-lg p-3 space-y-2">
-                    <label className="flex items-center gap-2.5 px-2 py-1.5 hover:bg-gray-50 rounded transition-colors text-xs font-bold text-slate-400 border-b border-gray-200 cursor-pointer">
+                  <div className="flex-1 max-h-[220px] overflow-y-auto border border-gray-200 bg-gray-50/70 rounded-lg p-2.5 space-y-1">
+                    <label className="flex items-center gap-2.5 px-2 py-1.5 hover:bg-gray-100/80 rounded transition-colors text-xs font-bold text-slate-700 border-b border-gray-200 cursor-pointer select-none">
                       <input
                         type="checkbox"
                         checked={
@@ -895,16 +895,16 @@ export default function ArranjoChapasPage() {
                           selectedGroups.length === Object.keys(groupedItems).length
                         }
                         onChange={(e) => handleSelectGroupAll(e.target.checked)}
-                        className="rounded border-gray-200 bg-slate-950/40 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
                       />
                       Selecionar Todos os Grupos
                     </label>
                     {Object.entries(groupedItems).map(([groupKey, groupItems]) => (
                       <label
                         key={groupKey}
-                        className={`flex items-center justify-between gap-2 px-2 py-2 hover:bg-gray-50 rounded cursor-pointer transition-all ${
+                        className={`flex items-center justify-between gap-2 px-2 py-2 hover:bg-gray-100/80 rounded cursor-pointer transition-all select-none ${
                           selectedGroups.includes(groupKey)
-                            ? "bg-blue-600/5 border border-teal-200"
+                            ? "bg-teal-50/90 border border-teal-300"
                             : "border border-transparent"
                         }`}
                       >
@@ -913,10 +913,10 @@ export default function ArranjoChapasPage() {
                             type="checkbox"
                             checked={selectedGroups.includes(groupKey)}
                             onChange={(e) => handleSelectGroupOne(groupKey, e.target.checked)}
-                            className="rounded border-gray-200 bg-slate-950/40 text-blue-600 focus:ring-blue-500"
+                            className="rounded border-gray-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
                           />
                           <div className="flex flex-col min-w-0">
-                            <span className="text-xs font-bold text-slate-700 truncate">
+                            <span className="text-xs font-bold text-slate-800 truncate">
                               {groupKey}
                             </span>
                             <span className="text-[10px] text-slate-500 font-semibold mt-0.5">
@@ -938,7 +938,7 @@ export default function ArranjoChapasPage() {
               <div className="h-[660px] flex flex-col items-center justify-center text-center p-8 bg-white border border-gray-200 rounded-xl text-slate-500 gap-3">
                 <Boxes className="h-10 w-10 text-slate-600" />
                 <div>
-                  <h3 className="text-sm font-bold text-slate-400">Nenhum orçamento selecionado</h3>
+                  <h3 className="text-sm font-bold text-slate-600">Nenhum orçamento selecionado</h3>
                   <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
                     Selecione um ou mais orçamentos na lista lateral para agrupar as peças e calcular a disposição de chapas.
                   </p>
@@ -953,7 +953,7 @@ export default function ArranjoChapasPage() {
               <div className="h-[660px] flex flex-col items-center justify-center p-8 bg-white border border-gray-200 rounded-xl text-slate-500 gap-3">
                 <Boxes className="h-10 w-10 text-slate-600" />
                 <div>
-                  <h3 className="text-sm font-bold text-slate-400">Nenhuma peça disponível</h3>
+                  <h3 className="text-sm font-bold text-slate-600">Nenhuma peça disponível</h3>
                   <p className="text-xs text-slate-500 mt-1">
                     Os orçamentos selecionados não possuem peças válidas com dimensões cadastradas.
                   </p>
@@ -963,7 +963,7 @@ export default function ArranjoChapasPage() {
               <div className="h-[660px] flex flex-col items-center justify-center text-center p-8 bg-white border border-gray-200 rounded-xl text-slate-500 gap-3">
                 <Layers className="h-10 w-10 text-slate-600" />
                 <div>
-                  <h3 className="text-sm font-bold text-slate-400">Nenhum material selecionado</h3>
+                  <h3 className="text-sm font-bold text-slate-600">Nenhum material selecionado</h3>
                   <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
                     Selecione pelo menos um material/espessura na lista lateral esquerda para calcular o nesting correspondente.
                   </p>
@@ -994,7 +994,7 @@ export default function ArranjoChapasPage() {
                         }
                       }}
                       onChange={(e) => handleToggleSelectAllGroup(groupKey, e.target.checked)}
-                      className="rounded border-gray-200 bg-slate-950/40 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      className="rounded border-gray-200 bg-white border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                     />,
                     "Orçamento",
                     "Peça",
@@ -1012,7 +1012,7 @@ export default function ArranjoChapasPage() {
                         <div className="flex justify-between items-center w-full">
                           <button
                             onClick={() => toggleGroup(groupKey)}
-                            className="flex items-center gap-2 font-bold text-slate-700 text-sm hover:text-white transition-colors cursor-pointer"
+                            className="flex items-center gap-2 font-bold text-slate-700 text-sm hover:text-teal-600 transition-colors cursor-pointer"
                           >
                             <span className="bg-teal-50 border border-teal-200 text-teal-600 px-2 py-0.5 rounded text-[10px]">
                               {groupItems.length} Peça(s)
@@ -1028,7 +1028,7 @@ export default function ArranjoChapasPage() {
                             )}
                             <button
                               onClick={() => toggleGroup(groupKey)}
-                              className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                              className="text-slate-600 hover:text-slate-700 cursor-pointer"
                             >
                               {expanded ? (
                                 <Minimize2 className="h-4 w-4" />
@@ -1044,7 +1044,7 @@ export default function ArranjoChapasPage() {
                         <div className="flex flex-col gap-4 mt-2">
                           {/* Barra de Ações para Edição em Massa */}
                           <div className="flex justify-between items-center bg-gray-50 border border-gray-200 px-4 py-2 rounded-lg text-xs">
-                            <span className="text-slate-400 font-semibold">
+                            <span className="text-slate-600 font-semibold">
                               Selecione peças na tabela para habilitar a edição em massa.
                             </span>
                             {groupSelectedCount > 0 && (
@@ -1080,10 +1080,10 @@ export default function ArranjoChapasPage() {
                                       type="checkbox"
                                       checked={selectedItemIds.includes(item.id)}
                                       onChange={() => handleToggleSelectItem(item.id)}
-                                      className="rounded border-gray-200 bg-slate-950/40 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                      className="rounded border-gray-200 bg-white border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                     />
                                   </TableCell>
-                                  <TableCell className="font-semibold text-slate-400 text-xs">
+                                  <TableCell className="font-semibold text-slate-600 text-xs">
                                     {item.orcamento_numero}
                                   </TableCell>
                                   <TableCell>
@@ -1091,7 +1091,7 @@ export default function ArranjoChapasPage() {
                                       <Input
                                         value={editFields.descricao}
                                         onChange={(e) => setEditFields({ ...editFields, descricao: e.target.value })}
-                                        className="h-8 text-xs bg-slate-950/40 border-gray-200"
+                                        className="h-8 text-xs bg-white border-gray-300 border-gray-200"
                                       />
                                     ) : (
                                       <div className="flex flex-col">
@@ -1109,14 +1109,14 @@ export default function ArranjoChapasPage() {
                                           type="number"
                                           value={editFields.largura}
                                           onChange={(e) => setEditFields({ ...editFields, largura: parseFloat(e.target.value) || 0 })}
-                                          className="h-8 w-16 text-xs bg-slate-950/40 border-gray-200"
+                                          className="h-8 w-16 text-xs bg-white border-gray-300 border-gray-200"
                                         />
                                         <span className="text-[10px] text-slate-500">x</span>
                                         <Input
                                           type="number"
                                           value={editFields.comprimento}
                                           onChange={(e) => setEditFields({ ...editFields, comprimento: parseFloat(e.target.value) || 0 })}
-                                          className="h-8 w-16 text-xs bg-slate-950/40 border-gray-200"
+                                          className="h-8 w-16 text-xs bg-white border-gray-300 border-gray-200"
                                         />
                                       </div>
                                     ) : (
@@ -1129,7 +1129,7 @@ export default function ArranjoChapasPage() {
                                         type="number"
                                         value={editFields.quantidade}
                                         onChange={(e) => setEditFields({ ...editFields, quantidade: parseInt(e.target.value) || 0 })}
-                                        className="h-8 w-16 text-xs bg-slate-950/40 border-gray-200 mx-auto text-center"
+                                        className="h-8 w-16 text-xs bg-white border-gray-300 border-gray-200 mx-auto text-center"
                                       />
                                     ) : (
                                       item.quantidade
@@ -1256,7 +1256,7 @@ export default function ArranjoChapasPage() {
 
                               {/* Ações do Nesting Calculado */}
                               <div className="flex justify-between items-center bg-white border border-gray-200 p-3 rounded-lg text-xs">
-                                <div className="text-slate-400 font-semibold">
+                                <div className="text-slate-600 font-semibold">
                                   Origem configurada: <span className="text-teal-600 font-bold uppercase">{result.tipo_chapa === 'automatico' ? 'Automático (Remanescentes + Chapas)' : result.tipo_chapa === 'cliente' ? 'Chapas do Cliente' : result.tipo_chapa === 'inteira' ? 'Estoque (Chapas Inteiras)' : 'Estoque (Retalhos)'}</span>
                                 </div>
                                 <div className="flex gap-2">
@@ -1290,10 +1290,10 @@ export default function ArranjoChapasPage() {
                                   return (
                                     <div
                                       key={cIdx}
-                                      className="flex flex-col gap-3 bg-black/20 border border-gray-200 p-4 rounded-xl"
+                                      className="flex flex-col gap-3 bg-gray-50 border border-gray-200 border border-gray-200 p-4 rounded-xl"
                                     >
                                       <div className="flex justify-between items-center text-xs font-bold">
-                                        <span className="text-slate-400">
+                                        <span className="text-slate-600">
                                           Layout da Chapa #{cIdx + 1} ({chRealC}x{chRealL}mm - {chapa.tipo_registro === 'retalho' ? 'Retalho' : 'Chapa Inteira'})
                                           {chapa.fora_de_estoque && <span className="text-red-500 font-bold ml-1.5">(⚠️ FORA DE ESTOQUE)</span>}
                                         </span>
@@ -1381,7 +1381,7 @@ export default function ArranjoChapasPage() {
                                                       <span className="text-[6px] md:text-[7.5px] font-bold text-slate-600 truncate max-w-[90%] bg-slate-950/80 px-1 border border-gray-200 rounded">
                                                         {peca.id.split("|")[1]?.trim() || peca.id}
                                                       </span>
-                                                      <span className="text-[5px] md:text-[6.5px] text-slate-400 font-bold mt-0.5 bg-slate-950/80 px-1 border border-gray-200 rounded">
+                                                      <span className="text-[5px] md:text-[6.5px] text-slate-600 font-bold mt-0.5 bg-slate-950/80 px-1 border border-gray-200 rounded">
                                                         {Math.round(peca.w)}x{Math.round(peca.h)}
                                                       </span>
                                                     </div>
@@ -1450,7 +1450,7 @@ export default function ArranjoChapasPage() {
 
                 return (
                   <div className="bg-blue-950/20 border border-teal-200 rounded-lg p-3 text-xs flex flex-col gap-1">
-                    <span className="text-slate-400 font-semibold">Disponível no Estoque para {mat} - {esp}mm:</span>
+                    <span className="text-slate-600 font-semibold">Disponível no Estoque para {mat} - {esp}mm:</span>
                     <div className="flex gap-4 font-bold mt-1">
                       <span className="text-slate-700">🗂️ Chapas Inteiras: <span className="text-teal-600">{chapasInteiras} un</span></span>
                       <span className="text-slate-700">✂️ Retalhos: <span className="text-teal-500">{retalhos} un</span></span>
@@ -1460,9 +1460,9 @@ export default function ArranjoChapasPage() {
               })()}
 
               <div className="flex flex-col gap-4">
-                <span className="text-xs font-bold text-slate-400">Opções de Chapas:</span>
+                <span className="text-xs font-bold text-slate-600">Opções de Chapas:</span>
                 <div className="grid grid-cols-1 gap-2.5">
-                  <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${modalTipoChapa === "automatico" ? "bg-blue-600/5 border-blue-500" : "bg-black/20 border-gray-200 hover:bg-gray-50"}`}>
+                  <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${modalTipoChapa === "automatico" ? "bg-blue-600/5 border-blue-500" : "bg-gray-50 border border-gray-200 border-gray-200 hover:bg-gray-50"}`}>
                     <input
                       type="radio"
                       name="tipoChapa"
@@ -1477,7 +1477,7 @@ export default function ArranjoChapasPage() {
                     </div>
                   </label>
 
-                  <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${modalTipoChapa === "inteira" ? "bg-blue-600/5 border-blue-500" : "bg-black/20 border-gray-200 hover:bg-gray-50"}`}>
+                  <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${modalTipoChapa === "inteira" ? "bg-blue-600/5 border-blue-500" : "bg-gray-50 border border-gray-200 border-gray-200 hover:bg-gray-50"}`}>
                     <input
                       type="radio"
                       name="tipoChapa"
@@ -1492,7 +1492,7 @@ export default function ArranjoChapasPage() {
                     </div>
                   </label>
 
-                  <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${modalTipoChapa === "retalho" ? "bg-blue-600/5 border-blue-500" : "bg-black/20 border-gray-200 hover:bg-gray-50"}`}>
+                  <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${modalTipoChapa === "retalho" ? "bg-blue-600/5 border-blue-500" : "bg-gray-50 border border-gray-200 border-gray-200 hover:bg-gray-50"}`}>
                     <input
                       type="radio"
                       name="tipoChapa"
@@ -1507,7 +1507,7 @@ export default function ArranjoChapasPage() {
                     </div>
                   </label>
 
-                  <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${modalTipoChapa === "cliente" ? "bg-blue-600/5 border-blue-500" : "bg-black/20 border-gray-200 hover:bg-gray-50"}`}>
+                  <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${modalTipoChapa === "cliente" ? "bg-blue-600/5 border-blue-500" : "bg-gray-50 border border-gray-200 border-gray-200 hover:bg-gray-50"}`}>
                     <input
                       type="radio"
                       name="tipoChapa"
@@ -1527,14 +1527,14 @@ export default function ArranjoChapasPage() {
                             type="number"
                             value={modalChapaClienteL}
                             onChange={(e) => setModalChapaClienteL(parseFloat(e.target.value) || 0)}
-                            className="h-8 text-xs bg-slate-950/40"
+                            className="h-8 text-xs bg-white border-gray-300"
                           />
                           <Input
                             label="Comprimento Chapa (mm)"
                             type="number"
                             value={modalChapaClienteC}
                             onChange={(e) => setModalChapaClienteC(parseFloat(e.target.value) || 0)}
-                            className="h-8 text-xs bg-slate-950/40"
+                            className="h-8 text-xs bg-white border-gray-300"
                           />
                         </div>
                       )}
@@ -1710,7 +1710,7 @@ export default function ArranjoChapasPage() {
                 onClick={() => {
                   setSelectedItemIds([]);
                 }}
-                className="h-8 text-xs cursor-pointer border-gray-200 text-slate-400 hover:text-slate-700"
+                className="h-8 text-xs cursor-pointer border-gray-200 text-slate-600 hover:text-slate-700"
               >
                 Limpar
               </Button>

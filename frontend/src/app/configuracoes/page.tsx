@@ -266,7 +266,7 @@ export default function ConfiguracoesPage() {
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-150 ${
               activeTab === "impostos"
                 ? "bg-blue-600 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-700 hover:bg-gray-50"
+                : "text-slate-600 hover:text-slate-700 hover:bg-gray-50"
             }`}
           >
             <FileText className="h-4.5 w-4.5" /> Impostos / UFs
@@ -276,7 +276,7 @@ export default function ConfiguracoesPage() {
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-150 ${
               activeTab === "empresa"
                 ? "bg-blue-600 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-700 hover:bg-gray-50"
+                : "text-slate-600 hover:text-slate-700 hover:bg-gray-50"
             }`}
           >
             <Building className="h-4.5 w-4.5" /> Dados da Empresa
@@ -286,7 +286,7 @@ export default function ConfiguracoesPage() {
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-150 ${
               activeTab === "materiais"
                 ? "bg-blue-600 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-700 hover:bg-gray-50"
+                : "text-slate-600 hover:text-slate-700 hover:bg-gray-50"
             }`}
           >
             <DollarSign className="h-4.5 w-4.5" /> Materiais
@@ -296,7 +296,7 @@ export default function ConfiguracoesPage() {
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-150 ${
               activeTab === "laser"
                 ? "bg-blue-600 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-700 hover:bg-gray-50"
+                : "text-slate-600 hover:text-slate-700 hover:bg-gray-50"
             }`}
           >
             <Zap className="h-4.5 w-4.5" /> Laser / Peck
@@ -306,7 +306,7 @@ export default function ConfiguracoesPage() {
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-150 ${
               activeTab === "custos"
                 ? "bg-blue-600 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-700 hover:bg-gray-50"
+                : "text-slate-600 hover:text-slate-700 hover:bg-gray-50"
             }`}
           >
             <Clock className="h-4.5 w-4.5" /> Custos / Hora
@@ -717,7 +717,7 @@ export default function ConfiguracoesPage() {
 
                 {/* Bloco de Upload da Logo */}
                 <div className="flex flex-col items-center justify-center border border-gray-200 bg-white rounded-xl p-6 gap-4">
-                  <span className="text-xs font-bold text-slate-400 self-start">LOGO DA EMPRESA (PDF / HTML)</span>
+                  <span className="text-xs font-bold text-slate-600 self-start">LOGO DA EMPRESA (PDF / HTML)</span>
                   
                   {configsGlobais.logo_base64 ? (
                     <div className="relative w-full h-44 border border-gray-200 rounded-xl bg-gray-50 flex items-center justify-center p-4">
@@ -743,7 +743,7 @@ export default function ConfiguracoesPage() {
                   ) : (
                     <label className="w-full h-44 border-2 border-dashed border-gray-200 hover:border-blue-500 rounded-xl bg-white flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors">
                       <Image className="h-10 w-10 text-slate-500" />
-                      <span className="text-xs font-bold text-slate-400">Selecionar Imagem</span>
+                      <span className="text-xs font-bold text-slate-600">Selecionar Imagem</span>
                       <span className="text-[10px] text-slate-600">Recomendado: PNG ou JPG até 1MB</span>
                       <input
                         type="file"

@@ -362,29 +362,29 @@
                 <td>
                     <strong>{{ item.descricao }}</strong><br>
                     <span style="font-size: 7.5pt; color: #64748b;">
-                        Processos: 
-                        {%- set ns = namespace(primeiro=true) -%}
-                        {%- if item.tempo_corte_laser > 0 -%}
-                            Laser
-                            {%- set ns.primeiro = false -%}
-                        {%- endif -%}
-                        {%- for op in item.operacoes -%}
-                            {%- if op.tempo_min > 0 -%}
-                                {%- if not ns.primeiro -%}, {% endif -%}
-                                {{- op.nome|capitalize -}}
+                        Processos: {% set ns = namespace(primeiro=true) %}
+                        {%- if item.tempo_corte_laser > 0 or item.tempo_corte > 0 %}Laser{% set ns.primeiro = false %}{% endif %}
+                        {%- for op in item.operacoes %}
+                            {%- if op.tempo_min > 0 and op.nome|upper != 'CORTE LASER' %}
+                                {%- if not ns.primeiro %}, {% endif %}
+                                {{- op.nome|title -}}
                                 {%- set ns.primeiro = false -%}
-                            {%- endif -%}
-                        {%- endfor -%}
+                            {%- endif %}
+                        {%- endfor %}
                     </span>
                 </td>
                 <td class="text-center">{{ ("%.2f"|format(item.peso_total))|replace('.', ',') }}</td>
                 <td>
-                    {% if item.tipo_material %}
-                        {{ item.tipo_material }}
-                    {% else %}
-                        {{ item.material }}
-                    {% endif %}
-                    {{ ("%.2f"|format(item.espessura))|replace('.', ',') }}mm
+                    {%- set mat_upper = (item.material or '')|upper -%}
+                    {%- if 'CARBONO' in mat_upper or 'CARBON' in mat_upper -%}
+                        Aço Carbono
+                    {%- elif 'INOX' in mat_upper -%}
+                        Inox
+                    {%- elif 'ALUM' in mat_upper -%}
+                        Alumínio
+                    {%- else -%}
+                        {{ item.material|title }}
+                    {%- endif %} {{ ("%.2f"|format(item.espessura))|replace('.00', '') }}mm
                 </td>
                 <td class="text-center">{{ item.quantidade }}</td>
                 <td class="text-center" style="white-space: nowrap;">R$ {{ ("%.2f"|format(item.preco_unitario_com_imp))|replace('.', ',') }}</td>

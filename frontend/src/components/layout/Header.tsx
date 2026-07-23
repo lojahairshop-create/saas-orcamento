@@ -40,7 +40,7 @@ export const Header: React.FC = () => {
       
       <div className="flex items-center gap-4">
         <div className="relative hidden md:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600" />
           <input 
             type="text" 
             placeholder="Buscar..." 
@@ -48,7 +48,7 @@ export const Header: React.FC = () => {
           />
         </div>
         
-        <button className="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-gray-50 rounded-full transition-colors">
+        <button className="relative p-2 text-slate-600 hover:text-slate-600 hover:bg-gray-50 rounded-full transition-colors">
           <Bell className="h-5 w-5" />
           <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-red-500 rounded-full border border-white"></span>
         </button>

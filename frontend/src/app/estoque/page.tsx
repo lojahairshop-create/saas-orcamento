@@ -167,7 +167,7 @@ export default function EstoquePage() {
               <Database className="h-8 w-8 text-teal-500" />
               Controle de Estoque de Chapas
             </h1>
-            <p className="text-sm text-slate-400 mt-2">
+            <p className="text-sm text-slate-600 mt-2">
               Gerencie chapas inteiras e retalhos. Os consumos e sobras úteis serão atualizados automaticamente na aprovação de ordens de produção.
             </p>
           </div>
@@ -216,7 +216,7 @@ export default function EstoquePage() {
 
             <form onSubmit={handleAddOrUpdate} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
                   Material
                 </label>
                 <Select
@@ -231,7 +231,7 @@ export default function EstoquePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
                   Tipo/Liga (Opcional)
                 </label>
                 <Input
@@ -244,7 +244,7 @@ export default function EstoquePage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
                     Espessura (mm) *
                   </label>
                   <Input
@@ -259,7 +259,7 @@ export default function EstoquePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
                     Tipo Registro *
                   </label>
                   <Select
@@ -275,7 +275,7 @@ export default function EstoquePage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
                     Largura (mm) *
                   </label>
                   <Input
@@ -290,7 +290,7 @@ export default function EstoquePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
                     Comprimento (mm) *
                   </label>
                   <Input
@@ -306,7 +306,7 @@ export default function EstoquePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
                   Quantidade *
                 </label>
                 <Input
@@ -324,7 +324,7 @@ export default function EstoquePage() {
                   <Button
                     type="button"
                     variant="ghost"
-                    className="flex-1 border-gray-200 text-slate-400 hover:text-slate-700"
+                    className="flex-1 border-gray-200 text-slate-600 hover:text-slate-700"
                     onClick={cancelEdit}
                   >
                     <X className="h-4 w-4 mr-2" />
@@ -365,7 +365,7 @@ export default function EstoquePage() {
                         <TableCell className="py-4 pl-4 font-semibold text-slate-600">
                           {item.material}
                         </TableCell>
-                        <TableCell className="py-4 text-slate-400">
+                        <TableCell className="py-4 text-slate-600">
                           {item.tipo_material || "-"}
                         </TableCell>
                         <TableCell className="py-4">
@@ -393,14 +393,14 @@ export default function EstoquePage() {
                             <button
                               onClick={() => handleEdit(item)}
                               title="Editar"
-                              className="text-slate-400 hover:text-teal-600 transition-colors p-1"
+                              className="text-slate-600 hover:text-teal-600 transition-colors p-1"
                             >
                               <Edit className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(item.id)}
                               title="Excluir"
-                              className="text-slate-400 hover:text-red-400 transition-colors p-1"
+                              className="text-slate-600 hover:text-red-400 transition-colors p-1"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>

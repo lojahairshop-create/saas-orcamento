@@ -45,7 +45,7 @@ function LoginContent() {
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
             Metal<span className="text-teal-500">Cut</span> Pro
           </h1>
-          <p className="text-slate-400 text-xs mt-1.5 font-medium">
+          <p className="text-slate-600 text-xs mt-1.5 font-medium">
             Sistema de Orçamentos Metalúrgicos
           </p>
         </div>

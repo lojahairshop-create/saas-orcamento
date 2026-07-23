@@ -55,7 +55,7 @@ export const Sidebar: React.FC = () => {
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-xs font-semibold text-slate-800 truncate">{user.nome || "Usuário"}</span>
-              <span className="text-[10px] text-slate-400 truncate">{user.email}</span>
+              <span className="text-[10px] text-slate-600 truncate">{user.email}</span>
             </div>
           </div>
           <button onClick={logout}

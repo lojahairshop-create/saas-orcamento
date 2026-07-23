@@ -38,7 +38,7 @@ export const KPICard: React.FC<KPICardProps> = ({
   return (
     <Card className={`${borderColors[color]} flex items-center justify-between p-6`} hoverEffect>
       <div className="flex flex-col gap-1">
-        <span className="text-xs font-semibold text-slate-400 tracking-wider uppercase">
+        <span className="text-xs font-semibold text-slate-600 tracking-wider uppercase">
           {label}
         </span>
         <span className="text-2xl font-bold text-slate-800 tracking-tight mt-1">

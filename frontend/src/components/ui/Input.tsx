@@ -27,7 +27,7 @@ export const Input: React.FC<InputProps> = ({
       )}
       <div className="relative flex items-center">
         {icon && (
-          <div className="absolute left-3 text-slate-400 flex items-center pointer-events-none">
+          <div className="absolute left-3 text-slate-600 flex items-center pointer-events-none">
             {icon}
           </div>
         )}

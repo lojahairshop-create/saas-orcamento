@@ -64,7 +64,7 @@ export default function DashboardPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-xl font-bold text-slate-800">Painel de Resumo</h1>
-            <p className="text-xs text-slate-400 mt-1">Acompanhe seus orçamentos e conversão comercial</p>
+            <p className="text-xs text-slate-600 mt-1">Acompanhe seus orçamentos e conversão comercial</p>
           </div>
           <Link href="/orcamentos/novo">
             <Button size="sm">Novo Orçamento</Button>

@@ -8,38 +8,42 @@
   --color-primary-light: #e6f7f6;
   --color-secondary: #4f9cf7;
   
-  --color-text-title: #1a1d26;
-  --color-text-body: #5a5f72;
-  --color-text-muted: #9ca3af;
+  --color-text-title: #0f172a;
+  --color-text-body: #334155;
+  --color-text-muted: #64748b;
   
   --color-bg-main: #f8f9fc;
   --color-bg-card: #ffffff;
-  --color-bg-input: #f1f3f9;
+  --color-bg-input: #ffffff;
   
-  --color-border: #d1d5db;
+  --color-border: #e2e8f0;
 }
 
 @layer utilities {
   .glass-card {
     background: #ffffff;
     border-radius: 16px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
     border: 1px solid var(--color-border);
   }
 
   .glass-input {
-    background: var(--color-bg-input);
-    border: 1px solid var(--color-border);
-    color: var(--color-text-title);
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #0f172a;
     border-radius: 8px;
     padding: 0.5rem 1rem;
     transition: all 0.2s ease;
+  }
+
+  .glass-input::placeholder {
+    color: #94a3b8;
   }
   
   .glass-input:focus {
     outline: none;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px var(--color-primary-light);
+    box-shadow: 0 0 0 3px rgba(46, 196, 182, 0.15);
   }
 }
 

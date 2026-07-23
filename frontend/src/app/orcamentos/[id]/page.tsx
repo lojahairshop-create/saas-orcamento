@@ -162,7 +162,7 @@ export default function OrcamentoDetailPage() {
       <div className="flex flex-col gap-6">
         {/* Header Navigation */}
         <div className="flex justify-between items-center">
-          <Link href="/orcamentos" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-100 font-semibold transition-colors">
+          <Link href="/orcamentos" className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 font-semibold transition-colors">
             <ArrowLeft className="h-4 w-4" /> Voltar para lista
           </Link>
           
@@ -228,7 +228,7 @@ export default function OrcamentoDetailPage() {
             </span>
           </div>
 
-          <div className="flex gap-6 text-xs text-slate-400">
+          <div className="flex gap-6 text-xs text-slate-600">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-blue-500" />
               <div className="flex flex-col">
@@ -256,7 +256,7 @@ export default function OrcamentoDetailPage() {
             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-150 ${
               activeTab === "resumo"
                 ? "bg-blue-600 text-white shadow-[0_0_15px_rgba(59,130,246,0.15)]"
-                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/5"
             }`}
           >
             Resumo Comercial
@@ -266,7 +266,7 @@ export default function OrcamentoDetailPage() {
             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-150 ${
               activeTab === "nesting"
                 ? "bg-blue-600 text-white shadow-[0_0_15px_rgba(59,130,246,0.15)]"
-                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/5"
             }`}
           >
             Arranjo de Chapas (Nesting)
@@ -359,7 +359,7 @@ export default function OrcamentoDetailPage() {
               <div className="md:col-span-2 flex flex-col gap-6">
                 {orcamento.observacoes && (
                   <Card header="Observações Gerais">
-                    <p className="text-sm text-slate-400 leading-relaxed">{orcamento.observacoes}</p>
+                    <p className="text-sm text-slate-600 leading-relaxed">{orcamento.observacoes}</p>
                   </Card>
                 )}
               </div>
@@ -393,7 +393,7 @@ export default function OrcamentoDetailPage() {
                   <div className="border-t border-white/5 my-3" />
 
                   <div className="flex justify-between items-baseline">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">VALOR PRODUTOS:</span>
+                    <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">VALOR PRODUTOS:</span>
                     <span className="text-lg font-extrabold text-blue-400">{formatCurrency(orcamento.total_preco)}</span>
                   </div>
 
@@ -407,7 +407,7 @@ export default function OrcamentoDetailPage() {
                   )}
 
                   <div className="bg-blue-600/10 border border-blue-500/20 rounded-xl p-4 mt-4 flex flex-col gap-1.5 shadow-[0_0_15px_rgba(59,130,246,0.05)]">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                    <span className="text-[10px] text-slate-600 font-bold uppercase tracking-wider">
                       TOTAL NOTA FISCAL (c/ IPI)
                     </span>
                     <span className="text-2xl font-black text-slate-100">
@@ -446,19 +446,19 @@ export default function OrcamentoDetailPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs bg-white/[0.01] border border-white/5 p-4 rounded-xl">
                       <div>
                         <span className="text-slate-500 block font-semibold mb-0.5">Medida da Chapa</span>
-                        <span className="font-bold text-slate-300">{res.chapa_l} x {res.chapa_c} mm</span>
+                        <span className="font-bold text-slate-700">{res.chapa_l} x {res.chapa_c} mm</span>
                       </div>
                       <div>
                         <span className="text-slate-500 block font-semibold mb-0.5">Chapas Ocupadas</span>
-                        <span className="font-bold text-slate-300">{res.total_chapas} chapa(s)</span>
+                        <span className="font-bold text-slate-700">{res.total_chapas} chapa(s)</span>
                       </div>
                       <div>
                         <span className="text-slate-500 block font-semibold mb-0.5">Espaçamento (Gap)</span>
-                        <span className="font-bold text-slate-300">5.0 mm</span>
+                        <span className="font-bold text-slate-700">5.0 mm</span>
                       </div>
                       <div>
                         <span className="text-slate-500 block font-semibold mb-0.5">Disposição Visual</span>
-                        <span className="font-bold text-slate-300">Horizontal (Comprimento X Largura)</span>
+                        <span className="font-bold text-slate-700">Horizontal (Comprimento X Largura)</span>
                       </div>
                     </div>
 
@@ -467,7 +467,7 @@ export default function OrcamentoDetailPage() {
                       {res.chapas.map((chapa: any, cIdx: number) => (
                         <div key={cIdx} className="flex flex-col gap-3 bg-white/[0.01] border border-white/5 p-5 rounded-xl">
                           <div className="flex justify-between items-center text-xs font-bold">
-                            <span className="text-slate-300">Layout da Chapa #{cIdx + 1}</span>
+                            <span className="text-slate-700">Layout da Chapa #{cIdx + 1}</span>
                             <span className="text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">
                               Eficiência: {chapa.aproveitamento}%
                             </span>
@@ -508,7 +508,7 @@ export default function OrcamentoDetailPage() {
                                   title={`${peca.id}: ${Math.round(peca.w)}x${Math.round(peca.h)}mm ${peca.rotacionado ? '(Rotacionado 90°)' : ''}`}
                                 >
                                   <div className="flex flex-col items-center justify-center text-center select-none w-full h-full">
-                                    <span className="text-[8px] md:text-[9.5px] font-bold text-slate-300 truncate max-w-full leading-none">
+                                    <span className="text-[8px] md:text-[9.5px] font-bold text-slate-700 truncate max-w-full leading-none">
                                       {peca.id}
                                     </span>
                                     <span className="text-[7px] md:text-[8px] text-slate-500 font-bold mt-0.5">

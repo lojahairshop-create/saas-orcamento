@@ -864,7 +864,7 @@ function NovoOrcamentoWizardContent() {
                   <div className="overflow-y-auto max-h-[50vh] pr-2">
                     <table className="w-full text-left border-collapse min-w-[1200px]">
                       <thead>
-                        <tr className="border-b border-gray-200 text-xs font-semibold text-slate-400">
+                        <tr className="border-b border-gray-200 text-xs font-semibold text-slate-600">
                           <th className="py-3 px-2">Desenho / Descrição</th>
                           <th className="py-3 px-2">Dimensões (mm)</th>
                           <th className="py-3 px-2">Material</th>
@@ -901,7 +901,7 @@ function NovoOrcamentoWizardContent() {
                                 />
                               </div>
                             </td>
-                            <td className="py-3 px-2 text-xs font-medium text-slate-400">
+                            <td className="py-3 px-2 text-xs font-medium text-slate-600">
                               {item.largura} x {item.comprimento}
                             </td>
                             <td className="py-3 px-2">
@@ -1185,7 +1185,7 @@ function NovoOrcamentoWizardContent() {
 
               {/* Origem de Chapa e Estoque */}
               <div className="border-t border-gray-200 pt-4 mt-4">
-                <h4 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">
+                <h4 className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wider">
                   Configuração de Material e Origem
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1255,7 +1255,7 @@ function NovoOrcamentoWizardContent() {
 
               {/* Tempos operacionais */}
               <div className="border-t border-gray-200 pt-4 mt-4">
-                <h4 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">
+                <h4 className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wider">
                   Tempos de Operação Adicionais (minutos)
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-8 gap-3">
@@ -1344,7 +1344,7 @@ function NovoOrcamentoWizardContent() {
                         observacoes: "",
                       });
                     }} 
-                    className="text-slate-400 hover:text-slate-700 select-none cursor-pointer"
+                    className="text-slate-600 hover:text-slate-700 select-none cursor-pointer"
                   >
                     Cancelar Edição
                   </Button>
@@ -1366,7 +1366,7 @@ function NovoOrcamentoWizardContent() {
                 <div className="flex flex-col gap-4">
                   {/* Barra de Ações para Edição em Massa */}
                   <div className="flex justify-between items-center bg-gray-50 border border-gray-200 px-4 py-2 rounded-lg text-xs">
-                    <span className="text-slate-400 font-semibold">
+                    <span className="text-slate-600 font-semibold">
                       Selecione peças na tabela para habilitar a edição em massa.
                     </span>
                     {selectedItemIds.length > 0 && (
@@ -1402,7 +1402,7 @@ function NovoOrcamentoWizardContent() {
                             setSelectedItemIds([]);
                           }
                         }}
-                        className="rounded border-gray-200 bg-slate-950/40 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        className="rounded border-gray-200 bg-white border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                       />,
                       "Item",
                       "Descrição",
@@ -1427,7 +1427,7 @@ function NovoOrcamentoWizardContent() {
                                     prev.includes(item.id) ? prev.filter(id => id !== item.id) : [...prev, item.id]
                                   );
                                 }}
-                                className="rounded border-gray-200 bg-slate-950/40 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                className="rounded border-gray-200 bg-white border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                               />
                             </TableCell>
                             <TableCell className="font-bold">{idx + 1}</TableCell>
@@ -1555,26 +1555,26 @@ function NovoOrcamentoWizardContent() {
               >
                 <div className="space-y-4">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Total Matéria-Prima:</span>
+                    <span className="text-slate-600">Total Matéria-Prima:</span>
                     <span className="font-medium text-slate-700">{formatCurrency(calculado.total_custo_mp)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Total Fabricação:</span>
+                    <span className="text-slate-600">Total Fabricação:</span>
                     <span className="font-medium text-slate-700">{formatCurrency(calculado.total_fabricacao)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Peso Total Orçado:</span>
+                    <span className="text-slate-600">Peso Total Orçado:</span>
                     <span className="font-medium text-slate-700">{calculado.total_peso.toFixed(2)} kg</span>
                   </div>
 
                   <div className="border-t border-gray-200 my-3" />
 
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Total Impostos (Embutidos):</span>
+                    <span className="text-slate-600">Total Impostos (Embutidos):</span>
                     <span className="font-medium text-red-400">{formatCurrency(calculado.total_tributos)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Comissão Vendedor (3%):</span>
+                    <span className="text-slate-600">Comissão Vendedor (3%):</span>
                     <span className="font-medium text-amber-500">{formatCurrency(calculado.total_comissao)}</span>
                   </div>
 
@@ -1587,13 +1587,13 @@ function NovoOrcamentoWizardContent() {
                   
                   {ipiRate > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">IPI ({ipiRate * 100}% por fora):</span>
+                      <span className="text-slate-600">IPI ({ipiRate * 100}% por fora):</span>
                       <span className="font-medium text-slate-700">{formatCurrency(calculado.total_nf - calculado.total_preco)}</span>
                     </div>
                   )}
 
                   <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 mt-4 flex flex-col gap-1">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                    <span className="text-[10px] text-slate-600 font-bold uppercase tracking-wider">
                       TOTAL NOTA FISCAL (c/ IPI)
                     </span>
                     <span className="text-2xl font-black text-slate-800">
@@ -1699,7 +1699,7 @@ function NovoOrcamentoWizardContent() {
 
                 {/* Tempos de Operação */}
                 <div className="border-t border-gray-200 pt-4 mt-2">
-                  <h4 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">
+                  <h4 className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wider">
                     Alterar Tempos de Operação (minutos)
                   </h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

@@ -164,7 +164,7 @@ export default function OrcamentosListPage() {
                     <TableCell className="flex items-center gap-2">
                       <Link href={`/orcamentos/${orc.id}`}>
                         <Button size="sm" variant="ghost" className="p-2" title="Visualizar">
-                          <Eye className="h-4 w-4 text-slate-400 hover:text-slate-800" />
+                          <Eye className="h-4 w-4 text-slate-600 hover:text-slate-800" />
                         </Button>
                       </Link>
 
