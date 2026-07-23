@@ -65,6 +65,7 @@ function NovoOrcamentoWizardContent() {
   const [prazoEntrega, setPrazoEntrega] = useState("15 dias úteis");
   const [validade, setValidade] = useState(30);
   const [observacoes, setObservacoes] = useState("");
+  const [numeroOrcamento, setNumeroOrcamento] = useState("");
 
   // --- Step 2: Lista de Peças ---
   const [itens, setItens] = useState<any[]>([]);
@@ -238,6 +239,7 @@ function NovoOrcamentoWizardContent() {
         setPrazoEntrega(data.prazo_entrega || "15 dias úteis");
         setValidade(data.validade ?? 30);
         setObservacoes(data.observacoes || "");
+        setNumeroOrcamento(data.numero || "");
 
         // Mapear itens de volta
         const getTempo = (ops: any[], name: string) => {
@@ -652,6 +654,7 @@ function NovoOrcamentoWizardContent() {
     setLoading(true);
     try {
       const payload = {
+        numero: numeroOrcamento.trim() || undefined,
         cliente: clientePayload,
         tipo_venda: tipoVenda,
         ipi_rate: ipiRate,
@@ -765,10 +768,16 @@ function NovoOrcamentoWizardContent() {
           <Card header="1. Identificação do Cliente">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="Nome do Cliente/Empresa"
-                placeholder="Ex: Indústrias Metalúrgicas Alfa LTDA"
+                label="Nome do Cliente / Razão Social"
+                placeholder="Ex: Indústria Metalúrgica Silva LTDA"
                 value={cliente.nome}
                 onChange={e => setCliente({ ...cliente, nome: e.target.value })}
+              />
+              <Input
+                label="Número do Orçamento (Opcional)"
+                placeholder="Ex: 1960 ou N° Personalizado"
+                value={numeroOrcamento}
+                onChange={e => setNumeroOrcamento(e.target.value)}
               />
               <Input
                 label="CNPJ / CPF"

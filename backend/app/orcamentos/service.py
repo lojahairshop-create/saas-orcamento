@@ -141,7 +141,7 @@ async def create_orcamento(
     resultado = engine.calcular_orcamento(items_dicts, config)
 
     # Gerar número
-    numero = _generate_numero_orcamento()
+    numero = data.numero.strip() if (data.numero and data.numero.strip()) else _generate_numero_orcamento()
 
     # Inserir orçamento
     orc_data = {
@@ -480,6 +480,8 @@ async def update_orcamento(
         update_data["prazo_entrega"] = data.prazo_entrega
     if data.validade is not None:
         update_data["validade"] = data.validade
+    if data.numero and data.numero.strip():
+        update_data["numero"] = data.numero.strip()
     if data.observacoes is not None:
         update_data["observacoes"] = data.observacoes
 

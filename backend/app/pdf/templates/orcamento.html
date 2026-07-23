@@ -25,8 +25,23 @@
             font-size: 9pt;
             line-height: 1.4;
             background-color: #ffffff;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .items-table th {
+                background-color: #00b8a9 !important;
+                color: #ffffff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+
         /* Cabeçalho Superior */
         .header-table {
             width: 100%;
@@ -37,10 +52,10 @@
             vertical-align: top;
         }
         .company-logo {
-            max-height: 60px;
-            max-width: 180px;
+            max-height: 65px;
+            max-width: 220px;
             object-fit: contain;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
         .company-name {
             font-size: 11pt;
@@ -58,6 +73,7 @@
             font-weight: bold;
             color: #0f172a;
             text-align: right;
+            white-space: nowrap;
         }
         .header-divider {
             border-bottom: 1px solid #cbd5e1;
@@ -98,8 +114,10 @@
             margin-bottom: 20px;
         }
         .items-table th {
-            background-color: #00b8a9;
-            color: #ffffff;
+            background-color: #00b8a9 !important;
+            color: #ffffff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
             font-size: 8.5pt;
             font-weight: bold;
             padding: 8px 6px;
@@ -129,29 +147,6 @@
             border-top: 1.5px solid #cbd5e1;
             border-bottom: 1.5px solid #cbd5e1;
             font-size: 9pt;
-        }
-
-        /* Seção Financeiro & Observações */
-        .block-section {
-            margin-bottom: 18px;
-        }
-        .block-subtitle {
-            font-size: 9pt;
-            color: #334155;
-            margin-bottom: 4px;
-        }
-        .block-content {
-            font-size: 9pt;
-            color: #0f172a;
-            line-height: 1.4;
-        }
-        .observacoes-text {
-            white-space: pre-wrap;
-            font-family: inherit;
-            font-size: 8.5pt;
-            color: #1e293b;
-            line-height: 1.5;
-            margin-top: 4px;
         }
 
         /* Quebra de página */
@@ -196,16 +191,26 @@
             font-size: 8.5pt;
             border-bottom: 1px solid #f1f5f9;
         }
+        .observacoes-page2 {
+            white-space: pre-wrap;
+            font-family: inherit;
+            font-size: 8.5pt;
+            color: #1e293b;
+            line-height: 1.5;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
 
-    <!-- ================= PÁGINA 1: DETALHES DO ORÇAMENTO ================= -->
+    <!-- ================= PÁGINA 1: DETALHES DO ORÇAMENTO E ITENS ================= -->
     <table class="header-table">
         <tr>
             <td style="width: 60%;">
                 {% if configs_globais and configs_globais.logo_base64 %}
                     <img src="{{ configs_globais.logo_base64 }}" alt="Logo" class="company-logo" />
+                {% elif logo_default_b64 %}
+                    <img src="{{ logo_default_b64 }}" alt="FF Caldeiraria" class="company-logo" />
                 {% endif %}
                 <div class="company-name">
                     {%- if configs_globais and configs_globais.empresa_nome -%}
@@ -248,19 +253,7 @@
                         {{ datetime.now().strftime("%d/%m/%Y") }}
                     {% endif %}
                 </span><br>
-                <span class="info-label">Situação:</span> <span class="info-value">
-                    {% if orcamento.status == 'rascunho' %}Rascunho
-                    {% elif orcamento.status == 'pendente' %}Em espera
-                    {% elif orcamento.status == 'aprovado' %}Aprovado
-                    {% else %}{{ orcamento.status|title }}{% endif %}
-                </span><br>
-                <span class="info-label">Vendedor:</span> <span class="info-value">
-                    {%- if configs_globais and configs_globais.empresa_nome -%}
-                        {{ configs_globais.empresa_nome }}
-                    {%- else -%}
-                        Diego Delfino
-                    {%- endif -%}
-                </span>
+                <span class="info-label">Validade:</span> <span class="info-value">{{ validade_data }} ({{ orcamento.validade }} dias)</span>
             </td>
         </tr>
     </table>
@@ -273,8 +266,8 @@
                 <th style="width: 8%;" class="text-center">Item</th>
                 <th style="width: 18%;" class="text-center">Dimensão</th>
                 <th style="width: 44%;">Descrição</th>
-                <th style="width: 12%;" class="text-right">Preço unit.</th>
-                <th style="width: 6%;" class="text-center">Quant.</th>
+                <th style="width: 8%;" class="text-center">Quant.</th>
+                <th style="width: 10%;" class="text-right">Preço unit.</th>
                 <th style="width: 12%;" class="text-right">Total</th>
             </tr>
         </thead>
@@ -299,48 +292,21 @@
                     <br><span style="font-size: 7.5pt; color: #334155; font-weight: bold; white-space: nowrap;">Material Fornecido Pelo Cliente</span>
                     {% endif %}
                 </td>
-                <td class="text-right" style="white-space: nowrap;">{{ ("%.2f"|format(item.preco_unitario_com_imp))|replace('.', ',') }}</td>
                 <td class="text-center">{{ item.quantidade }}</td>
+                <td class="text-right" style="white-space: nowrap;">{{ ("%.2f"|format(item.preco_unitario_com_imp))|replace('.', ',') }}</td>
                 <td class="text-right" style="white-space: nowrap;">{{ ("%.2f"|format(item.preco_total))|replace('.', ',') }}</td>
             </tr>
             {% endfor %}
             <tr class="total-row">
                 <td colspan="3">TOTAL</td>
-                <td class="text-right"></td>
                 <td class="text-center">{{ total_qtd.value }}</td>
+                <td class="text-right"></td>
                 <td class="text-right" style="white-space: nowrap;">R$ {{ ("%.2f"|format(orcamento.total_preco))|replace('.', ',') }}</td>
             </tr>
         </tbody>
     </table>
 
-    <!-- FINANCEIRO -->
-    <div class="block-section">
-        <div class="section-header">FINANCEIRO</div>
-        <div class="block-subtitle">Resumo do financeiro:</div>
-        <div class="block-content">{{ orcamento.condicao_pagamento or 'A combinar' }}</div>
-    </div>
-
-    <!-- OBSERVAÇÕES GERAIS -->
-    <div class="block-section">
-        <div class="section-header">Observações gerais</div>
-        <div class="observacoes-text">
-{%- if orcamento.observacoes and orcamento.observacoes.strip() -%}
-{{ orcamento.observacoes }}
-{%- else -%}
-Tolerância de corte: 0,2mm +/-
-Tolerância de dobra: 1,5mm +/-
-
-Horário de retirada de materiais: 07h às 12h | 13h às 17h
-
-IMPOSTOS INCLUSOS
-FORMA DE PAGAMENTO: {{ orcamento.condicao_pagamento or 'A combinar' }}
-PRAZO: {{ orcamento.prazo_entrega or 'ATÉ 10 DIAS ÚTEIS' }}
-FRETE: FOB
-{%- endif -%}
-        </div>
-    </div>
-
-    <!-- ================= PÁGINA 2: CONDIÇÕES DE FORNECIMENTO ================= -->
+    <!-- ================= PÁGINA 2: CONDIÇÕES DE FORNECIMENTO E OBSERVAÇÕES ================= -->
     <div class="page-break"></div>
 
     <table class="header-table">
@@ -348,14 +314,9 @@ FRETE: FOB
             <td style="width: 60%;">
                 {% if configs_globais and configs_globais.logo_base64 %}
                     <img src="{{ configs_globais.logo_base64 }}" alt="Logo" class="company-logo" />
+                {% elif logo_default_b64 %}
+                    <img src="{{ logo_default_b64 }}" alt="FF Caldeiraria" class="company-logo" />
                 {% endif %}
-                <div class="company-name">
-                    {%- if configs_globais and configs_globais.empresa_nome -%}
-                        {{ configs_globais.empresa_nome }}
-                    {%- else -%}
-                        FF CALDEIRARIA LTDA
-                    {%- endif -%}
-                </div>
             </td>
             <td style="width: 40%; vertical-align: top;">
                 <div class="doc-title">Orçamento N° {{ orcamento.numero }}</div>
@@ -366,7 +327,7 @@ FRETE: FOB
     <div class="header-divider"></div>
 
     <div class="terms-section">
-        <div class="terms-title">CONDIÇÕES GERAIS DE FORNECIMENTO</div>
+        <div class="terms-title">CONDIÇÕES GERAIS DE FORNECIMENTO & OBSERVAÇÕES</div>
         <ol class="terms-list">
             <li>Os desenhos deverão ser fornecidos no formato .DXF ou .DWG em escala 1:1 com a respectiva indicação de revisão. Peças cortadas fora da sua verdadeira grandeza serão de responsabilidade do cliente.</li>
             <li>TOLERÂNCIA CORTE &lt;=0,2mm e &lt;=1,00mm | TOLERÂNCIA DOBRA: +/- 1,5mm.</li>
@@ -392,6 +353,10 @@ FRETE: FOB
                 <td style="color: #334155;">{{ orcamento.condicao_pagamento or 'A combinar' }}</td>
             </tr>
             <tr>
+                <td style="font-weight: bold;">Validade da Proposta:</td>
+                <td style="color: #334155;">{{ validade_data }} ({{ orcamento.validade }} dias)</td>
+            </tr>
+            <tr>
                 <td style="font-weight: bold;">Frete:</td>
                 <td style="color: #334155;">FOB</td>
             </tr>
@@ -402,6 +367,13 @@ FRETE: FOB
                 </td>
             </tr>
         </table>
+
+        {% if orcamento.observacoes and orcamento.observacoes.strip() %}
+        <div style="margin-top: 15px; border-top: 1px solid #e2e8f0; padding-top: 8px;">
+            <div style="font-weight: bold; font-size: 9pt; color: #0f172a; margin-bottom: 4px;">OBSERVAÇÕES ADICIONAIS:</div>
+            <div class="observacoes-page2">{{ orcamento.observacoes }}</div>
+        </div>
+        {% endif %}
     </div>
 
 </body>

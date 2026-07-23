@@ -154,6 +154,7 @@ class ClienteInfo(BaseModel):
 # ---------------------------------------------------------------------------
 
 class OrcamentoCreate(BaseModel):
+    numero: Optional[str] = None
     cliente: ClienteInfo
     itens: List[ItemCreate]
     tipo_venda: str = "pecas"
@@ -166,6 +167,7 @@ class OrcamentoCreate(BaseModel):
 
 
 class OrcamentoUpdate(BaseModel):
+    numero: Optional[str] = None
     cliente: Optional[ClienteInfo] = None
     itens: Optional[List[ItemCreate]] = None
     tipo_venda: Optional[str] = None

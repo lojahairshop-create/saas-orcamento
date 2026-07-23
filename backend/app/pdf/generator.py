@@ -46,6 +46,16 @@ class PDFGenerator:
         validade_dt = created_at_dt + timedelta(days=validade_dias)
         validade_str = validade_dt.strftime("%d/%m/%Y")
 
+        # Carregar logo padrão aprimorada se não houver no banco
+        logo_default_b64 = ""
+        logo_b64_path = os.path.join(template_dir, "logo_base64.txt")
+        if os.path.exists(logo_b64_path):
+            try:
+                with open(logo_b64_path, "r", encoding="utf-8") as f:
+                    logo_default_b64 = f.read().strip()
+            except Exception:
+                pass
+
         # Carregar as configurações gerais do banco (inclui a logo e dados da empresa)
         from app.database import get_supabase_service_client
         try:
@@ -61,7 +71,8 @@ class PDFGenerator:
             orcamento=orcamento_response,
             validade_data=validade_str,
             datetime=datetime,
-            configs_globais=configs_globais
+            configs_globais=configs_globais,
+            logo_default_b64=logo_default_b64,
         )
 
         if WEASYPRINT_DISPONIVEL:
