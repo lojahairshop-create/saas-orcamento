@@ -134,8 +134,11 @@ function NovoOrcamentoWizardContent() {
       margem_lucro: decimal,
     }));
     setItens(updated);
-    const res = processarCalculoLocal(updated);
-    setCalculado(res);
+    try {
+      processarCalculoLocal(updated);
+    } catch (err) {
+      console.error("Erro ao recalcular margem geral:", err);
+    }
   };
 
   // Carregar materiais e custos padrão do backend no início
@@ -519,9 +522,10 @@ function NovoOrcamentoWizardContent() {
     const est7 = ["AC", "AL", "AP", "AM", "BA", "CE", "ES", "GO", "MA", "MT", "MS", "PA", "PB", "PE", "PI", "RN", "RO", "RR", "SE", "TO", "ZFM"];
     const est12 = ["MG", "PR", "RJ", "RS", "SC"];
     
-    if (est7.includes(cliente.estado)) {
+    const estado = cliente?.estado || "SP";
+    if (est7.includes(estado)) {
       icmsRate = 0.07;
-    } else if (est12.includes(cliente.estado) || (cliente.estado === "SP" && tipoVenda === "equipamento")) {
+    } else if (est12.includes(estado) || (estado === "SP" && tipoVenda === "equipamento")) {
       icmsRate = 0.12;
     }
 
@@ -534,17 +538,18 @@ function NovoOrcamentoWizardContent() {
     let totalPeso = 0.0;
 
     const itensCalculados = targetItens.map((item) => {
+      const matNome = item.material || "AÇO CARBONO";
       // 1. Velocidade de avanço baseada em material e espessura do cadastro de parâmetros laser
-      const { velocidade: avanco, peck } = obterParametrosLaser(item.material, item.espessura);
+      const { velocidade: avanco, peck } = obterParametrosLaser(matNome, item.espessura || 0);
 
       // 2. Tempo corte laser (retorna tempo total do lote arredondado para cima, ou usa o tempo_corte manual)
       const tempoCorteManual = item.tempo_corte || 0.0;
       const tempoLaserTotal = tempoCorteManual > 0.0
-        ? tempoCorteManual * item.quantidade
-        : calcularTempoCorteLaser(item.perimetro, avanco, item.num_entradas, peck, item.quantidade);
+        ? tempoCorteManual * (item.quantidade || 1)
+        : calcularTempoCorteLaser(item.perimetro || 0, avanco, item.num_entradas || 1, peck, item.quantidade || 1);
 
       // 3. Área e Peso
-      const mat = item.material.toUpperCase().trim();
+      const mat = matNome.toUpperCase().trim();
       const densidade = mat.includes("INOX") ? 8.2 : (mat.includes("ALUM") ? 3.2 : 7.86);
       const area = calcularArea(item.largura, item.comprimento);
       const pesoUnit = calcularPesoUnitario(item.largura, item.comprimento, item.espessura);
