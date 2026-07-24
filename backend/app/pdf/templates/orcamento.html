@@ -297,8 +297,8 @@
                     {% endif %}
                 </td>
                 <td class="text-center">{{ item.quantidade }}</td>
-                <td class="text-right" style="white-space: nowrap;">{{ fmt(item.preco_unitario_com_imp) }}</td>
-                <td class="text-right" style="white-space: nowrap;">{{ fmt(item.preco_total) }}</td>
+                <td class="text-right" style="white-space: nowrap;">R$ {{ fmt(item.preco_unitario_com_imp) }}</td>
+                <td class="text-right" style="white-space: nowrap;">R$ {{ fmt(item.preco_total) }}</td>
             </tr>
             {% endfor %}
             <tr class="total-row">
