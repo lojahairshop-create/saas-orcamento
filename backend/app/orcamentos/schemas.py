@@ -162,6 +162,7 @@ class OrcamentoCreate(BaseModel):
     taxa_comissao: float = 0.03
     condicao_pagamento: Optional[str] = None
     prazo_entrega: Optional[str] = None
+    frete: Optional[str] = "FOB"
     validade: Optional[int] = 30
     observacoes: Optional[str] = None
 
@@ -175,6 +176,7 @@ class OrcamentoUpdate(BaseModel):
     taxa_comissao: Optional[float] = None
     condicao_pagamento: Optional[str] = None
     prazo_entrega: Optional[str] = None
+    frete: Optional[str] = None
     validade: Optional[int] = None
     observacoes: Optional[str] = None
 
@@ -194,6 +196,7 @@ class OrcamentoResponse(BaseModel):
     taxa_comissao: float = 0.03
     condicao_pagamento: Optional[str] = None
     prazo_entrega: Optional[str] = None
+    frete: Optional[str] = "FOB"
     validade: Optional[int] = 30
     observacoes: Optional[str] = None
 

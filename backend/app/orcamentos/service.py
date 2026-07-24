@@ -159,6 +159,7 @@ async def create_orcamento(
         "taxa_comissao": data.taxa_comissao,
         "condicao_pagamento": data.condicao_pagamento or "",
         "prazo_entrega": data.prazo_entrega or "",
+        "frete": data.frete or "FOB",
         "validade": data.validade or 30,
         "observacoes": data.observacoes or "",
         "total_preco": resultado["total_preco"],
@@ -254,6 +255,7 @@ async def create_orcamento(
         taxa_comissao=data.taxa_comissao,
         condicao_pagamento=data.condicao_pagamento,
         prazo_entrega=data.prazo_entrega,
+        frete=data.frete or "FOB",
         validade=data.validade,
         observacoes=data.observacoes,
         total_preco=resultado["total_preco"],
@@ -368,6 +370,7 @@ async def get_orcamento(orcamento_id: str, user_id: str) -> OrcamentoResponse:
         taxa_comissao=orc.get("taxa_comissao", 0.03),
         condicao_pagamento=orc.get("condicao_pagamento"),
         prazo_entrega=orc.get("prazo_entrega"),
+        frete=orc.get("frete", "FOB"),
         validade=orc.get("validade", 30),
         observacoes=orc.get("observacoes"),
         total_preco=orc.get("total_preco", 0),
@@ -478,6 +481,8 @@ async def update_orcamento(
         update_data["condicao_pagamento"] = data.condicao_pagamento
     if data.prazo_entrega is not None:
         update_data["prazo_entrega"] = data.prazo_entrega
+    if data.frete is not None:
+        update_data["frete"] = data.frete
     if data.validade is not None:
         update_data["validade"] = data.validade
     if data.numero and data.numero.strip():

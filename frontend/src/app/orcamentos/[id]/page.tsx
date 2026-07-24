@@ -316,6 +316,10 @@ export default function OrcamentoDetailPage() {
                     <span className="font-medium text-slate-800">{orcamento.prazo_entrega || "A combinar"}</span>
                   </div>
                   <div>
+                    <span className="text-xs text-slate-500 block font-semibold mb-0.5">Frete</span>
+                    <span className="font-medium text-slate-800">{orcamento.frete || "FOB"}</span>
+                  </div>
+                  <div>
                     <span className="text-xs text-slate-500 block font-semibold mb-0.5">Validade da Proposta</span>
                     <span className="font-medium text-slate-800">{orcamento.validade} dias corridos</span>
                   </div>

@@ -89,6 +89,7 @@ export interface Orcamento {
   taxa_comissao: number;
   condicao_pagamento?: string;
   prazo_entrega?: string;
+  frete?: string;
   validade: number;
   observacoes?: string;
   

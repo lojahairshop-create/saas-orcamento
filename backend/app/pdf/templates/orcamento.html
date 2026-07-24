@@ -336,7 +336,7 @@
         <div class="terms-category">4. Prazos de Entrega e Faturamento</div>
         <ul class="terms-sublist">
             <li>O prazo de produção é contado em dias úteis a partir da aprovação comercial da proposta e do recebimento dos arquivos técnicos finais sem pendências.</li>
-            <li><strong>Frete e Descarga:</strong> Modalidade FOB (coleta e descarga por conta e risco do cliente no nosso galpão), salvo se explicitado como CIF na proposta.</li>
+            <li><strong>Frete e Descarga:</strong> Modalidade {{ orcamento.frete or 'FOB' }} ({{ 'entrega por nossa conta no endereço do cliente' if (orcamento.frete and 'CIF' in orcamento.frete|upper) else 'coleta e descarga por conta e risco do cliente no nosso galpão' }}).</li>
         </ul>
         
         <table class="terms-details-table">
@@ -354,7 +354,7 @@
             </tr>
             <tr>
                 <td style="font-weight: bold;">Frete:</td>
-                <td style="color: #334155;">FOB</td>
+                <td style="color: #334155;">{{ orcamento.frete or 'FOB' }}</td>
             </tr>
             <tr>
                 <td style="font-weight: bold;">Impostos:</td>

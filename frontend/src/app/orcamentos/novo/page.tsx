@@ -66,6 +66,7 @@ function NovoOrcamentoWizardContent() {
   const [validade, setValidade] = useState(30);
   const [observacoes, setObservacoes] = useState("");
   const [numeroOrcamento, setNumeroOrcamento] = useState("");
+  const [frete, setFrete] = useState("FOB");
 
   // --- Step 2: Lista de Peças ---
   const [itens, setItens] = useState<any[]>([]);
@@ -240,6 +241,7 @@ function NovoOrcamentoWizardContent() {
         setValidade(data.validade ?? 30);
         setObservacoes(data.observacoes || "");
         setNumeroOrcamento(data.numero || "");
+        setFrete(data.frete || "FOB");
 
         // Mapear itens de volta
         const getTempo = (ops: any[], name: string) => {
@@ -661,6 +663,7 @@ function NovoOrcamentoWizardContent() {
         taxa_comissao: taxaComissao,
         condicao_pagamento: condicaoPagamento,
         prazo_entrega: prazoEntrega,
+        frete,
         validade,
         observacoes,
         itens: itens.map(it => ({
@@ -1623,7 +1626,7 @@ function NovoOrcamentoWizardContent() {
               </Card>
 
               <Card header="Informações Adicionais e Observações">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Input
                     label="Condição de Pagamento"
                     value={condicaoPagamento}
@@ -1634,8 +1637,17 @@ function NovoOrcamentoWizardContent() {
                     value={prazoEntrega}
                     onChange={e => setPrazoEntrega(e.target.value)}
                   />
+                  <Select
+                    label="Frete"
+                    value={frete}
+                    onChange={e => setFrete(e.target.value)}
+                    options={[
+                      { value: "FOB", label: "FOB (Retirada pelo cliente)" },
+                      { value: "CIF", label: "CIF (Entrega no destino)" },
+                    ]}
+                  />
                   <Input
-                    label="Validade da Proposta (dias)"
+                    label="Validade (dias)"
                     type="number"
                     value={validade}
                     onChange={e => setValidade(parseInt(e.target.value) || 30)}
