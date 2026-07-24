@@ -33,9 +33,9 @@ def fmt_dim(val):
     try:
         val_f = float(val)
         if val_f.is_integer():
-            return str(int(val_f))
-        formatted = f"{val_f:.2f}".rstrip('0').rstrip('.')
-        return formatted.replace(".", ",")
+            return f"{int(val_f):,}".replace(",", ".")
+        s = f"{val_f:,.2f}".rstrip("0").rstrip(".")
+        return s.replace(",", "X").replace(".", ",").replace("X", ".")
     except Exception:
         return "0"
 
