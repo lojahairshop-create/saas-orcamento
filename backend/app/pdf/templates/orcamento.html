@@ -166,15 +166,22 @@
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 4px;
         }
-        .terms-list {
-            list-style-type: decimal;
-            padding-left: 18px;
-            margin: 0 0 15px 0;
+        .terms-category {
+            font-weight: bold;
+            font-size: 8.5pt;
+            color: #0f172a;
+            margin-top: 8px;
+            margin-bottom: 3px;
         }
-        .terms-list li {
-            font-size: 8pt;
+        .terms-sublist {
+            list-style-type: disc;
+            padding-left: 16px;
+            margin: 0 0 8px 0;
+        }
+        .terms-sublist li {
+            font-size: 7.8pt;
             color: #334155;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
             line-height: 1.35;
         }
         .terms-details-table {
@@ -302,23 +309,35 @@
         </tbody>
     </table>
 
-    <!-- CONDIÇÕES GERAIS DE FORNECIMENTO & OBSERVAÇÕES -->
+    <!-- CONDIÇÕES GERAIS DE FORNECIMENTO -->
     <div class="terms-section">
-        <div class="terms-title">CONDIÇÕES GERAIS DE FORNECIMENTO & OBSERVAÇÕES</div>
-        <ol class="terms-list">
-            <li>Os desenhos deverão ser fornecidos no formato .DXF ou .DWG em escala 1:1 com a respectiva indicação de revisão. Peças cortadas fora da sua verdadeira grandeza serão de responsabilidade do cliente.</li>
-            <li>TOLERÂNCIA CORTE &lt;=0,2mm e &lt;=1,00mm | TOLERÂNCIA DOBRA: +/- 1,5mm.</li>
-            <li>Furos com diâmetro menor que a espessura da chapa serão somente marcados.</li>
-            <li>A produção somente será iniciada quando:
-                <ul style="list-style-type: disc; padding-left: 15px; margin-top: 3px;">
-                    <li>Recebido pedido do cliente E / OU recebimento da matéria-prima (no caso de beneficiamento).</li>
-                    <li>Recebido a confirmação por e-mail aprovando a proposta comercial.</li>
-                </ul>
-            </li>
-            <li>Horário para entrega e retirada de mercadorias: 07h às 12h | 13h às 17h.</li>
-            <li>No processo de corte pode haver empenamento das peças (algo normal devida a alta temperatura). O cliente deve especificar no ato da cotação a necessidade de mantê-las planas.</li>
-            <li>Prezados clientes, concluído o pedido de BENEFICIAMENTO, a sucata gerada será mantida em até, no máximo, 4 dias úteis. Após este período será descartada junto com outras sucatas pelo motivo de logística e espaço. Dessa forma, tornando-se de propriedade da contratada/fabricante.</li>
-        </ol>
+        <div class="terms-title">CONDIÇÕES GERAIS DE FORNECIMENTO</div>
+        
+        <div class="terms-category">1. Tolerâncias Dimensionais e Processos</div>
+        <ul class="terms-sublist">
+            <li><strong>Corte Laser:</strong> Tolerância dimensional para peças cortadas a laser de ±0,2 mm em relação ao desenho nominal aprovado.</li>
+            <li><strong>Dobra / Conformação:</strong> Tolerância dimensional de dobra de até 2,0 mm, devido ao efeito mola (springback) e variações intrínsecas de espessura das usinas siderúrgicas.</li>
+            <li><strong>Chanfros e Solda:</strong> Preparação de juntas e montagens de caldeiraria seguem as tolerâncias padrão de fabricação industrial (normas ABNT/ISO aplicáveis).</li>
+        </ul>
+
+        <div class="terms-category">2. Arquivos, Projetos e Aprovação Técnica</div>
+        <ul class="terms-sublist">
+            <li>Os orçamentos são elaborados com base nos arquivos (.DXF, .DWG, .STEP) ou desenhos fornecidos pelo cliente. A conferência e a validação das dimensões finais nos arquivos são de responsabilidade do contratante.</li>
+            <li>Eventuais alterações de projeto efetuadas após a aprovação da proposta e emissão da Ordem de Serviço sujeitam-se ao recalculo de custos e revisão de prazo de entrega.</li>
+            <li>Peças que exijam montagem, furações roscadas ou rebaixos específicos devem estar claramente indicadas no desenho técnico nominal.</li>
+        </ul>
+
+        <div class="terms-category">3. Matéria-Prima e Acabamento</div>
+        <ul class="terms-sublist">
+            <li>As chapas e perfis utilizados seguem os padrões de usina. Marcas superficiais decorrentes de manuseio, laminação ou oxidação superficial leve são inerentes ao estado bruto do material e não configuram defeito de fabricação.</li>
+            <li><strong>Proteção Antitravamento / Antiferrugem:</strong> Salvo indicação em contrário na proposta, os itens são fornecidos em estado bruto de fabricação (sem pintura, zincagem ou tratamento de superfície).</li>
+        </ul>
+
+        <div class="terms-category">4. Prazos de Entrega e Faturamento</div>
+        <ul class="terms-sublist">
+            <li>O prazo de produção é contado em dias úteis a partir da aprovação comercial da proposta e do recebimento dos arquivos técnicos finais sem pendências.</li>
+            <li><strong>Frete e Descarga:</strong> Modalidade FOB (coleta e descarga por conta e risco do cliente no nosso galpão), salvo se explicitado como CIF na proposta.</li>
+        </ul>
         
         <table class="terms-details-table">
             <tr>
