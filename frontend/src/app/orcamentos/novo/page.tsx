@@ -682,12 +682,10 @@ function NovoOrcamentoWizardContent() {
           custo_extra: it.custo_extra || 0,
           tempo_corte: it.tempo_corte || 0,
           operacoes: [
-            { nome: "SET-UP", tempo_min: it.tempo_setup || 0 },
             { nome: "DOBRA", tempo_min: it.tempo_dobra || 0 },
-            { nome: "CALDEIRARIA", tempo_min: it.tempo_caldeiraria || 0 },
             { nome: "SOLDA", tempo_min: it.tempo_solda || 0 },
             { nome: "GUILHOTINA", tempo_min: it.tempo_guilhotina || 0 },
-            { nome: "USINAGEM INTERNA", tempo_min: it.tempo_usinagem || 0 },
+            { nome: "USINAGEM", tempo_min: it.tempo_usinagem || 0 },
             { nome: "MONTAGEM", tempo_min: it.tempo_montagem || 0 },
           ]
         }))

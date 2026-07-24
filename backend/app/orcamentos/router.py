@@ -219,12 +219,15 @@ async def exportar_html(
             print(f"Erro ao carregar configuracoes gerais para o HTML: {err}")
             configs_globais = None
 
+        from app.pdf.generator import fmt_br
+
         html_rendered = template.render(
             orcamento=orc,
             validade_data=validade_str,
             datetime=datetime,
             configs_globais=configs_globais,
             logo_default_b64=logo_default_b64,
+            fmt=fmt_br,
         )
         
         # Adiciona um script JS simples no final do HTML para disparar a janela de impressão automaticamente

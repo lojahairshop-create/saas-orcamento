@@ -15,6 +15,18 @@ except Exception:
     WEASYPRINT_DISPONIVEL = False
 
 
+def fmt_br(val, decimals=2):
+    if val is None:
+        return "0,00"
+    try:
+        val_f = float(val)
+        fmt_str = f"{{:,.{decimals}f}}"
+        res = fmt_str.format(val_f)
+        return res.replace(",", "X").replace(".", ",").replace("X", ".")
+    except Exception:
+        return "0,00"
+
+
 class PDFGenerator:
     """Gera arquivos PDF profissionais para orçamentos comerciais."""
 
@@ -73,6 +85,7 @@ class PDFGenerator:
             datetime=datetime,
             configs_globais=configs_globais,
             logo_default_b64=logo_default_b64,
+            fmt=fmt_br,
         )
 
         if WEASYPRINT_DISPONIVEL:
