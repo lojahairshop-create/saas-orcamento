@@ -27,6 +27,19 @@ def fmt_br(val, decimals=2):
         return "0,00"
 
 
+def fmt_dim(val):
+    if val is None:
+        return "0"
+    try:
+        val_f = float(val)
+        if val_f.is_integer():
+            return str(int(val_f))
+        formatted = f"{val_f:.2f}".rstrip('0').rstrip('.')
+        return formatted.replace(".", ",")
+    except Exception:
+        return "0"
+
+
 class PDFGenerator:
     """Gera arquivos PDF profissionais para orçamentos comerciais."""
 
@@ -86,6 +99,7 @@ class PDFGenerator:
             configs_globais=configs_globais,
             logo_default_b64=logo_default_b64,
             fmt=fmt_br,
+            fmt_dim=fmt_dim,
         )
 
         if WEASYPRINT_DISPONIVEL:

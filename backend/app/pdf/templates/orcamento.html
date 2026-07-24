@@ -248,15 +248,16 @@
             </td>
             <td style="width: 45%;">
                 <span class="info-label">Data:</span> <span class="info-value">
-                    {% if orcamento.created_at is string %}
-                        {{ orcamento.created_at[:10] }}
-                    {% elif orcamento.created_at %}
-                        {{ orcamento.created_at.strftime("%d/%m/%Y") }}
+                    {% set date_ref = orcamento.updated_at or orcamento.created_at %}
+                    {% if date_ref is string %}
+                        {{ date_ref[:10] }}
+                    {% elif date_ref %}
+                        {{ date_ref.strftime("%d/%m/%Y") }}
                     {% else %}
                         {{ datetime.now().strftime("%d/%m/%Y") }}
                     {% endif %}
                 </span><br>
-                <span class="info-label">Validade:</span> <span class="info-value">{{ validade_data }} ({{ orcamento.validade }} dias)</span>
+                <span class="info-label">Validade:</span> <span class="info-value">{{ orcamento.validade or 30 }} dias úteis</span>
             </td>
         </tr>
     </table>
@@ -279,9 +280,9 @@
             {% for item in orcamento.itens %}
             {% set total_qtd.value = total_qtd.value + item.quantidade %}
             <tr>
-                <td class="text-center">Item {{ loop.index }}</td>
+                <td class="text-center">{{ loop.index }}</td>
                 <td class="text-center" style="white-space: nowrap;">
-                    {{ fmt(item.largura) }} X {{ fmt(item.comprimento) }}
+                    {{ fmt_dim(item.largura) }} X {{ fmt_dim(item.comprimento) }}
                 </td>
                 <td>
                     <strong>{{ item.descricao }}</strong>
@@ -350,7 +351,7 @@
             </tr>
             <tr>
                 <td style="font-weight: bold;">Validade da Proposta:</td>
-                <td style="color: #334155;">{{ validade_data }} ({{ orcamento.validade }} dias)</td>
+                <td style="color: #334155;">{{ orcamento.validade or 30 }} dias úteis</td>
             </tr>
             <tr>
                 <td style="font-weight: bold;">Frete:</td>
