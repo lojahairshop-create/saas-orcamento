@@ -38,6 +38,7 @@ export interface OrcamentoItem {
   preco_kg: number;
   margem_lucro: number;
   beneficiamento?: boolean;
+  preco_pintura_kg?: number;
   operacoes: OperacaoItem[];
   observacoes?: string | null;
 

@@ -276,8 +276,10 @@ class CalculoEngine:
                 tempos_min[nome] = tempo * quantidade
                 custos_hora[nome] = custo
 
-        # 9. Total fabricação e custo básico (adiciona o custo_extra)
-        total_fabricacao = calcular_total_fabricacao(tempos_min, custos_hora)
+        # 9. Total fabricação e custo básico (adiciona pintura e custo_extra)
+        preco_pintura_kg = float(item_data.get("preco_pintura_kg", 0.0))
+        custo_pintura = peso_total * preco_pintura_kg
+        total_fabricacao = calcular_total_fabricacao(tempos_min, custos_hora) + custo_pintura
         custo_extra = float(item_data.get("custo_extra", 0.0))
         custo_basico = calcular_custo_basico(total_fabricacao, custo_mp) + (custo_extra * quantidade)
 
@@ -320,6 +322,7 @@ class CalculoEngine:
             "tempo_corte_laser": tempo_corte_laser,
             "custo_extra": float(item_data.get("custo_extra", 0.0)),
             "tempo_corte": float(item_data.get("tempo_corte", 0.0)),
+            "preco_pintura_kg": float(item_data.get("preco_pintura_kg", 0.0)),
             # Geometria / Peso
             "area": area,
             "peso_unitario": peso_unitario,

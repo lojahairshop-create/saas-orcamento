@@ -98,6 +98,7 @@ def _build_item_response(
         observacoes=item_input.get("observacoes"),
         custo_extra=float(item_input.get("custo_extra", 0.0)),
         tempo_corte=float(item_input.get("tempo_corte", 0.0)),
+        preco_pintura_kg=float(item_input.get("preco_pintura_kg", 0.0)),
     )
 
 
@@ -204,6 +205,7 @@ async def create_orcamento(
             "origem_material": item_input.get("origem_material", "chapa_inteira"),
             "custo_extra": item_input.get("custo_extra", 0.0),
             "tempo_corte": item_input.get("tempo_corte", 0.0),
+            "preco_pintura_kg": item_input.get("preco_pintura_kg", 0.0),
             "vetor_svg": item_input.get("vetor_svg"),
             "velocidade": calc.get("velocidade", 0),
             "peck": calc.get("peck", 0),
@@ -348,6 +350,7 @@ async def get_orcamento(orcamento_id: str, user_id: str) -> OrcamentoResponse:
                 observacoes=item_db.get("observacoes"),
                 custo_extra=float(item_db.get("custo_extra", 0.0)),
                 tempo_corte=float(item_db.get("tempo_corte", 0.0)),
+                preco_pintura_kg=float(item_db.get("preco_pintura_kg", 0.0)),
             )
         )
 

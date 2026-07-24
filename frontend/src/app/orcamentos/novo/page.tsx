@@ -111,14 +111,15 @@ function NovoOrcamentoWizardContent() {
     tempo_corte: 0.0,
     custo_extra: 0.0,
     
-    // Tempos das operações (minutos)
-    tempo_setup: 6.0,
-    tempo_dobra: 6.0,
-    tempo_caldeiraria: 6.0,
-    tempo_solda: 6.0,
-    tempo_guilhotina: 6.0,
-    tempo_usinagem: 6.0,
-    tempo_montagem: 6.0,
+    // Tempos das operações (minutos) e Pintura (R$/kg)
+    preco_pintura_kg: 0.0,
+    tempo_setup: 0.0,
+    tempo_dobra: 0.0,
+    tempo_caldeiraria: 0.0,
+    tempo_solda: 0.0,
+    tempo_guilhotina: 0.0,
+    tempo_usinagem: 0.0,
+    tempo_montagem: 0.0,
     
     observacoes: "",
   });
@@ -317,13 +318,14 @@ function NovoOrcamentoWizardContent() {
       beneficiamento: false,
       tempo_corte: 0,
       custo_extra: 0,
-      tempo_setup: 6.0,
-      tempo_dobra: 6.0,
-      tempo_caldeiraria: 6.0,
-      tempo_solda: 6.0,
-      tempo_guilhotina: 6.0,
-      tempo_usinagem: 6.0,
-      tempo_montagem: 6.0,
+      preco_pintura_kg: 0.0,
+      tempo_setup: 0.0,
+      tempo_dobra: 0.0,
+      tempo_caldeiraria: 0.0,
+      tempo_solda: 0.0,
+      tempo_guilhotina: 0.0,
+      tempo_usinagem: 0.0,
+      tempo_montagem: 0.0,
       observacoes: ""
     }));
   };
@@ -355,6 +357,7 @@ function NovoOrcamentoWizardContent() {
       beneficiamento: !!item.beneficiamento,
       tempo_corte: item.tempo_corte ?? 0,
       custo_extra: item.custo_extra ?? 0,
+      preco_pintura_kg: item.preco_pintura_kg ?? 0,
       tempo_setup: item.tempo_setup ?? 0,
       tempo_dobra: item.tempo_dobra ?? 0,
       tempo_caldeiraria: item.tempo_caldeiraria ?? 0,
@@ -576,20 +579,21 @@ function NovoOrcamentoWizardContent() {
       const beneficiamento = !!item.beneficiamento;
       const custoMp = beneficiamento ? 0.0 : calcularCustoMP(pesoTotal, item.preco_kg, ipiRate);
 
-      // 6. Fabricação (tempos e custos de hora reais ou default R$ 10.00/h)
+      // 6. Fabricação (tempos e custos de hora reais ou default R$ 10.00/h + Pintura R$/kg)
       const getCusto = (nome: string) => custosOperacao[nome] ?? 10.00;
 
       const operacoes = [
         { tempo_min: tempoLaserTotal, custo_hora: getCusto("CORTE LASER") },
-        { tempo_min: item.tempo_setup * item.quantidade, custo_hora: getCusto("SET-UP") },
-        { tempo_min: item.tempo_dobra * item.quantidade, custo_hora: getCusto("DOBRA") },
-        { tempo_min: item.tempo_caldeiraria * item.quantidade, custo_hora: getCusto("CALDEIRARIA") },
-        { tempo_min: item.tempo_solda * item.quantidade, custo_hora: getCusto("SOLDA") },
-        { tempo_min: item.tempo_guilhotina * item.quantidade, custo_hora: getCusto("GUILHOTINA") },
-        { tempo_min: item.tempo_usinagem * item.quantidade, custo_hora: getCusto("USINAGEM INTERNA") },
-        { tempo_min: item.tempo_montagem * item.quantidade, custo_hora: getCusto("MONTAGEM") },
+        { tempo_min: (item.tempo_setup || 0) * item.quantidade, custo_hora: getCusto("SET-UP") },
+        { tempo_min: (item.tempo_dobra || 0) * item.quantidade, custo_hora: getCusto("DOBRA") },
+        { tempo_min: (item.tempo_caldeiraria || 0) * item.quantidade, custo_hora: getCusto("CALDEIRARIA") },
+        { tempo_min: (item.tempo_solda || 0) * item.quantidade, custo_hora: getCusto("SOLDA") },
+        { tempo_min: (item.tempo_guilhotina || 0) * item.quantidade, custo_hora: getCusto("GUILHOTINA") },
+        { tempo_min: (item.tempo_usinagem || 0) * item.quantidade, custo_hora: getCusto("USINAGEM INTERNA") },
+        { tempo_min: (item.tempo_montagem || 0) * item.quantidade, custo_hora: getCusto("MONTAGEM") },
       ];
-      const totalFab = calcularTotalFabricacao(operacoes);
+      const custoPintura = pesoTotal * (item.preco_pintura_kg || 0.0);
+      const totalFab = calcularTotalFabricacao(operacoes) + custoPintura;
 
       // 7. Pricing (adiciona o custo_extra)
       const custoExtraTotal = (item.custo_extra || 0.0) * item.quantidade;
@@ -684,6 +688,7 @@ function NovoOrcamentoWizardContent() {
           beneficiamento: !!it.beneficiamento,
           custo_extra: it.custo_extra || 0,
           tempo_corte: it.tempo_corte || 0,
+          preco_pintura_kg: it.preco_pintura_kg || 0,
           operacoes: [
             { nome: "DOBRA", tempo_min: it.tempo_dobra || 0 },
             { nome: "SOLDA", tempo_min: it.tempo_solda || 0 },
@@ -1337,7 +1342,7 @@ function NovoOrcamentoWizardContent() {
                 <h4 className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wider">
                   Tempos de Operação Adicionais (minutos)
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-8 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                   <Input
                     label="CORTE (min)"
                     type="number"
@@ -1345,22 +1350,10 @@ function NovoOrcamentoWizardContent() {
                     onChange={e => setNovaPeca({ ...novaPeca, tempo_corte: parseFloat(e.target.value) || 0 })}
                   />
                   <Input
-                    label="SET-UP"
-                    type="number"
-                    value={novaPeca.tempo_setup}
-                    onChange={e => setNovaPeca({ ...novaPeca, tempo_setup: parseFloat(e.target.value) || 0 })}
-                  />
-                  <Input
                     label="DOBRA"
                     type="number"
                     value={novaPeca.tempo_dobra}
                     onChange={e => setNovaPeca({ ...novaPeca, tempo_dobra: parseFloat(e.target.value) || 0 })}
-                  />
-                  <Input
-                    label="CALDEIRARIA"
-                    type="number"
-                    value={novaPeca.tempo_caldeiraria}
-                    onChange={e => setNovaPeca({ ...novaPeca, tempo_caldeiraria: parseFloat(e.target.value) || 0 })}
                   />
                   <Input
                     label="SOLDA"
@@ -1385,6 +1378,13 @@ function NovoOrcamentoWizardContent() {
                     type="number"
                     value={novaPeca.tempo_montagem}
                     onChange={e => setNovaPeca({ ...novaPeca, tempo_montagem: parseFloat(e.target.value) || 0 })}
+                  />
+                  <Input
+                    label="PINTURA (R$/kg)"
+                    type="number"
+                    placeholder="0.00"
+                    value={novaPeca.preco_pintura_kg}
+                    onChange={e => setNovaPeca({ ...novaPeca, preco_pintura_kg: parseFloat(e.target.value) || 0 })}
                   />
                 </div>
               </div>
@@ -1414,13 +1414,14 @@ function NovoOrcamentoWizardContent() {
                         beneficiamento: false,
                         tempo_corte: 0.0,
                         custo_extra: 0.0,
-                        tempo_setup: 6.0,
-                        tempo_dobra: 6.0,
-                        tempo_caldeiraria: 6.0,
-                        tempo_solda: 6.0,
-                        tempo_guilhotina: 6.0,
-                        tempo_usinagem: 6.0,
-                        tempo_montagem: 6.0,
+                        preco_pintura_kg: 0.0,
+                        tempo_setup: 0.0,
+                        tempo_dobra: 0.0,
+                        tempo_caldeiraria: 0.0,
+                        tempo_solda: 0.0,
+                        tempo_guilhotina: 0.0,
+                        tempo_usinagem: 0.0,
+                        tempo_montagem: 0.0,
                         observacoes: "",
                       });
                     }} 
@@ -1838,29 +1839,13 @@ function NovoOrcamentoWizardContent() {
                   <h4 className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wider">
                     Alterar Tempos de Operação (minutos)
                   </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <Input
-                      label="SET-UP"
-                      type="number"
-                      placeholder="Manter original"
-                      value={bulkTempoSetup}
-                      onChange={(e) => setBulkTempoSetup(e.target.value)}
-                      className="h-9 text-xs"
-                    />
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                     <Input
                       label="DOBRA"
                       type="number"
                       placeholder="Manter original"
                       value={bulkTempoDobra}
                       onChange={(e) => setBulkTempoDobra(e.target.value)}
-                      className="h-9 text-xs"
-                    />
-                    <Input
-                      label="CALDEIRARIA"
-                      type="number"
-                      placeholder="Manter original"
-                      value={bulkTempoCaldeiraria}
-                      onChange={(e) => setBulkTempoCaldeiraria(e.target.value)}
                       className="h-9 text-xs"
                     />
                     <Input
