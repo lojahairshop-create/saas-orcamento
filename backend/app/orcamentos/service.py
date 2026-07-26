@@ -264,17 +264,8 @@ async def create_orcamento(
         total_nf=resultado["total_nf"],
         total_tributos=resultado["total_tributos"],
         total_comissao=resultado["total_comissao"],
-        total_peso=resultado["total_peso"],
-        total_custo_mp=resultado["total_custo_mp"],
-        total_fabricacao=resultado["total_fabricacao"],
-        created_at=orc_record.get("created_at"),
-        updated_at=orc_record.get("updated_at"),
-        created_by=user_id,
-    )
-
-
 async def get_orcamento(orcamento_id: str, user_id: str) -> OrcamentoResponse:
-    """Busca um orçamento pelo ID com seus itens."""
+    """Busca um orçamento pelo ID com seus itens e recalcula os totais com base nas taxas vigentes."""
     supabase = get_supabase_service_client()
 
     orc_result = (
@@ -294,95 +285,155 @@ async def get_orcamento(orcamento_id: str, user_id: str) -> OrcamentoResponse:
         .execute()
     )
 
+    # Carregar custos de operação atuais do banco
+    custos_res = supabase.table("custos_operacao").select("operacao, custo_hora").execute()
+    custos_op = {c["operacao"]: float(c["custo_hora"]) for c in custos_res.data} if custos_res.data else {}
+
+    config = {
+        "estado": orc.get("cliente_estado") or "SP",
+        "tipo_venda": orc.get("tipo_venda") or "pecas",
+        "ipi_rate": float(orc.get("ipi_rate") or 0.0),
+        "custos_operacao": custos_op,
+    }
+
     itens_response: List[ItemCalculadoResponse] = []
+    tot_peso = 0.0
+    tot_custo_mp = 0.0
+    tot_fabricacao = 0.0
+    tot_preco = 0.0
+    tot_tributos = 0.0
+    tot_nf = 0.0
+    tot_comissao = 0.0
+
+    taxa_comissao = float(orc.get("taxa_comissao") or 0.0)
+
     for item_db in items_result.data:
         operacoes_raw = item_db.get("operacoes", "[]")
         if isinstance(operacoes_raw, str):
-            operacoes_list = json.loads(operacoes_raw)
+            try:
+                operacoes_list = json.loads(operacoes_raw)
+            except Exception:
+                operacoes_list = []
         else:
             operacoes_list = operacoes_raw or []
 
-        operacoes_model = [OperacaoItem(**op) for op in operacoes_list]
+        operacoes_model = [OperacaoItem(**op) for op in operacoes_list if isinstance(op, dict)]
+
+        # Recalcular item com os parâmetros armazenados e regras atualizadas
+        item_dict = {
+            "descricao": item_db.get("descricao", ""),
+            "material": item_db.get("material", "AÇO CARBONO"),
+            "tipo_material": item_db.get("tipo_material"),
+            "espessura": float(item_db.get("espessura") or 0),
+            "largura": float(item_db.get("largura") or 0),
+            "comprimento": float(item_db.get("comprimento") or 0),
+            "perimetro": float(item_db.get("perimetro") or 0),
+            "num_entradas": int(item_db.get("num_entradas") or 1),
+            "quantidade": int(item_db.get("quantidade") or 1),
+            "chapa_l": float(item_db.get("chapa_l") or 1200),
+            "chapa_c": float(item_db.get("chapa_c") or 2400),
+            "preco_kg": float(item_db.get("preco_kg") or 0),
+            "margem_lucro": float(item_db.get("margem_lucro") or 0.30),
+            "beneficiamento": bool(item_db.get("beneficiamento", False)),
+            "origem_material": item_db.get("origem_material", "chapa_inteira"),
+            "custo_extra": float(item_db.get("custo_extra") or 0),
+            "tempo_corte": float(item_db.get("tempo_corte") or 0),
+            "preco_pintura_kg": float(item_db.get("preco_pintura_kg") or 0),
+            "taxa_comissao": taxa_comissao,
+            "operacoes": [op.model_dump() for op in operacoes_model],
+        }
+
+        calc = engine.calcular_item(item_dict, config)
+
+        tot_peso += calc.get("peso_total", 0.0)
+        tot_custo_mp += calc.get("custo_mp", 0.0)
+        tot_fabricacao += calc.get("total_fabricacao", 0.0)
+        tot_preco += calc.get("preco_total", 0.0)
+        tot_tributos += calc.get("total_tributos", 0.0)
+        tot_nf += calc.get("total_nf", 0.0)
+        tot_comissao += calc.get("comissao", 0.0)
 
         itens_response.append(
             ItemCalculadoResponse(
-                descricao=item_db.get("descricao", ""),
-                material=item_db.get("material", ""),
-                tipo_material=item_db.get("tipo_material"),
-                espessura=item_db.get("espessura", 0),
-                largura=item_db.get("largura", 0),
-                comprimento=item_db.get("comprimento", 0),
-                perimetro=item_db.get("perimetro", 0),
-                num_entradas=item_db.get("num_entradas", 1),
-                quantidade=item_db.get("quantidade", 1),
-                chapa_l=item_db.get("chapa_l", 1200),
-                chapa_c=item_db.get("chapa_c", 2400),
-                preco_kg=item_db.get("preco_kg", 0),
-                margem_lucro=item_db.get("margem_lucro", 0.30),
-                beneficiamento=item_db.get("beneficiamento", False),
-                origem_material=item_db.get("origem_material", "chapa_inteira"),
+                descricao=item_dict["descricao"],
+                material=item_dict["material"],
+                tipo_material=item_dict["tipo_material"],
+                espessura=item_dict["espessura"],
+                largura=item_dict["largura"],
+                comprimento=item_dict["comprimento"],
+                perimetro=item_dict["perimetro"],
+                num_entradas=item_dict["num_entradas"],
+                quantidade=item_dict["quantidade"],
+                chapa_l=item_dict["chapa_l"],
+                chapa_c=item_dict["chapa_c"],
+                preco_kg=item_dict["preco_kg"],
+                margem_lucro=item_dict["margem_lucro"],
+                beneficiamento=item_dict["beneficiamento"],
+                origem_material=item_dict["origem_material"],
                 vetor_svg=item_db.get("vetor_svg"),
-                velocidade=item_db.get("velocidade", 0),
-                peck=item_db.get("peck", 0),
-                tempo_corte_laser=item_db.get("tempo_corte_laser", 0),
-                area=item_db.get("area", 0),
-                peso_unitario=item_db.get("peso_unitario", 0),
-                peso_chapa=item_db.get("peso_chapa", 0),
-                pecas_por_chapa=item_db.get("pecas_por_chapa", 0),
-                qtd_chapas=item_db.get("qtd_chapas", 0),
-                sobra=item_db.get("sobra", 0),
-                retalho=item_db.get("retalho", 0),
-                peso_total=item_db.get("peso_total", 0),
-                custo_mp=item_db.get("custo_mp", 0),
-                total_fabricacao=item_db.get("total_fabricacao", 0),
-                custo_basico=item_db.get("custo_basico", 0),
-                valor_venda_sem_imp=item_db.get("valor_venda_sem_imp", 0),
-                preco_unitario_com_imp=item_db.get("preco_unitario_com_imp", 0),
-                preco_total=item_db.get("preco_total", 0),
-                icms=item_db.get("icms_valor", 0),
-                ipi=item_db.get("ipi_valor", 0),
-                pis=item_db.get("pis_valor", 0),
-                cofins=item_db.get("cofins_valor", 0),
-                total_tributos=item_db.get("total_tributos", 0),
-                total_nf=item_db.get("total_nf", 0),
-                comissao=item_db.get("comissao", 0),
+                velocidade=calc.get("velocidade", 0),
+                peck=calc.get("peck", 0),
+                tempo_corte_laser=calc.get("tempo_corte_laser", 0),
+                area=calc.get("area", 0),
+                peso_unitario=calc.get("peso_unitario", 0),
+                peso_chapa=calc.get("peso_chapa", 0),
+                pecas_por_chapa=calc.get("pecas_por_chapa", 0),
+                qtd_chapas=calc.get("qtd_chapas", 0),
+                sobra=calc.get("sobra", 0),
+                retalho=calc.get("retalho", 0),
+                peso_total=calc.get("peso_total", 0),
+                custo_mp=calc.get("custo_mp", 0),
+                total_fabricacao=calc.get("total_fabricacao", 0),
+                custo_basico=calc.get("custo_basico", 0),
+                valor_venda_sem_imp=calc.get("valor_venda_sem_imp", 0),
+                preco_unitario_com_imp=calc.get("preco_unitario_com_imp", 0),
+                preco_total=calc.get("preco_total", 0),
+                icms=calc.get("icms", 0),
+                ipi=calc.get("ipi", 0),
+                pis=calc.get("pis", 0),
+                cofins=calc.get("cofins", 0),
+                total_tributos=calc.get("total_tributos", 0),
+                total_nf=calc.get("total_nf", 0),
+                comissao=calc.get("comissao", 0),
                 operacoes=operacoes_model,
                 observacoes=item_db.get("observacoes"),
-                custo_extra=float(item_db.get("custo_extra", 0.0)),
-                tempo_corte=float(item_db.get("tempo_corte", 0.0)),
-                preco_pintura_kg=float(item_db.get("preco_pintura_kg", 0.0)),
+                custo_extra=item_dict["custo_extra"],
+                tempo_corte=item_dict["tempo_corte"],
+                preco_pintura_kg=item_dict["preco_pintura_kg"],
             )
         )
 
+    cliente_info = ClienteInfo(
+        nome=orc.get("cliente_nome", ""),
+        email=orc.get("cliente_email", ""),
+        telefone=orc.get("cliente_telefone", ""),
+        cnpj=orc.get("cliente_cnpj", ""),
+        endereco=orc.get("cliente_endereco", ""),
+        cidade=orc.get("cliente_cidade", ""),
+        estado=orc.get("cliente_estado", "SP"),
+    )
+
     return OrcamentoResponse(
-        id=orc["id"],
+        id=orc.get("id"),
         numero=orc.get("numero"),
         status=orc.get("status", "rascunho"),
-        cliente=ClienteInfo(
-            nome=orc.get("cliente_nome", ""),
-            email=orc.get("cliente_email"),
-            telefone=orc.get("cliente_telefone"),
-            cnpj=orc.get("cliente_cnpj"),
-            endereco=orc.get("cliente_endereco"),
-            cidade=orc.get("cliente_cidade"),
-            estado=orc.get("cliente_estado", "SP"),
-        ),
+        cliente=cliente_info,
         itens=itens_response,
         tipo_venda=orc.get("tipo_venda", "pecas"),
-        ipi_rate=orc.get("ipi_rate", 0.05),
-        taxa_comissao=orc.get("taxa_comissao", 0.03),
-        condicao_pagamento=orc.get("condicao_pagamento"),
-        prazo_entrega=orc.get("prazo_entrega"),
+        ipi_rate=float(orc.get("ipi_rate") or 0.0),
+        taxa_comissao=float(orc.get("taxa_comissao") or 0.0),
+        condicao_pagamento=orc.get("condicao_pagamento", "28ddl"),
+        prazo_entrega=orc.get("prazo_entrega", "10 dias úteis"),
         frete=orc.get("frete", "FOB"),
-        validade=orc.get("validade", 30),
+        validade=int(orc.get("validade") or 7),
         observacoes=orc.get("observacoes"),
-        total_preco=orc.get("total_preco", 0),
-        total_nf=orc.get("total_nf", 0),
-        total_tributos=orc.get("total_tributos", 0),
-        total_comissao=orc.get("total_comissao", 0),
-        total_peso=orc.get("total_peso", 0),
-        total_custo_mp=orc.get("total_custo_mp", 0),
-        total_fabricacao=orc.get("total_fabricacao", 0),
+        total_preco=tot_preco,
+        total_nf=tot_nf,
+        total_tributos=tot_tributos,
+        total_comissao=tot_comissao,
+        total_peso=tot_peso,
+        total_custo_mp=tot_custo_mp,
+        total_fabricacao=tot_fabricacao,
         created_at=orc.get("created_at"),
         updated_at=orc.get("updated_at"),
         created_by=orc.get("created_by"),
