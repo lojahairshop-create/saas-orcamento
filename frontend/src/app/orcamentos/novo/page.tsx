@@ -709,7 +709,7 @@ function NovoOrcamentoWizardContent() {
             { nome: "DOBRA", tempo_min: it.tempo_dobra || 0 },
             { nome: "SOLDA", tempo_min: it.tempo_solda || 0 },
             { nome: "GUILHOTINA", tempo_min: it.tempo_guilhotina || 0 },
-            { nome: "USINAGEM", tempo_min: it.tempo_usinagem || 0 },
+            { nome: "USINAGEM INTERNA", tempo_min: it.tempo_usinagem || 0 },
             { nome: "MONTAGEM", tempo_min: it.tempo_montagem || 0 },
           ]
         }))
