@@ -383,8 +383,8 @@ export default function OrcamentoDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 flex flex-col gap-6">
                 {orcamento.observacoes && (
-                  <Card header="Observações Gerais">
-                    <p className="text-sm text-slate-600 leading-relaxed">{orcamento.observacoes}</p>
+                  <Card header="Condições Gerais de Fornecimento">
+                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{orcamento.observacoes}</p>
                   </Card>
                 )}
               </div>

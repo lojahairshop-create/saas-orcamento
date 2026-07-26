@@ -1642,7 +1642,7 @@ function NovoOrcamentoWizardContent() {
                 </Table>
               </Card>
 
-              <Card header="Informações Adicionais e Observações">
+              <Card header="Condições de Fornecimento e Entrega">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Input
                     label="Condição de Pagamento"
@@ -1672,7 +1672,7 @@ function NovoOrcamentoWizardContent() {
                 </div>
                 <div className="mt-4">
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                    Observações do Orçamento
+                    Condições Gerais de Fornecimento
                   </label>
                   <textarea
                     rows={5}
