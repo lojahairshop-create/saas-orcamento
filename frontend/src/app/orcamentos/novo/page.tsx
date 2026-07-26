@@ -61,12 +61,10 @@ function NovoOrcamentoWizardContent() {
   const [tipoVenda, setTipoVenda] = useState("pecas");
   const [ipiRate, setIpiRate] = useState(0.05);
   const [taxaComissao, setTaxaComissao] = useState(0.03);
-  const [condicaoPagamento, setCondicaoPagamento] = useState("30 dias");
-  const [prazoEntrega, setPrazoEntrega] = useState("15 dias úteis");
-  const [validade, setValidade] = useState(30);
-  const [observacoes, setObservacoes] = useState(`CONDIÇÕES GERAIS DE FORNECIMENTO
-
-1. Tolerâncias Dimensionais e Processos
+  const [condicaoPagamento, setCondicaoPagamento] = useState("28ddl");
+  const [prazoEntrega, setPrazoEntrega] = useState("10 dias úteis");
+  const [validade, setValidade] = useState(7);
+  const [observacoes, setObservacoes] = useState(`1. Tolerâncias Dimensionais e Processos
 • Corte Laser: Tolerância dimensional para peças cortadas a laser de ±0,2 mm em relação ao desenho nominal aprovado.
 • Dobra / Conformação: Tolerância dimensional de dobra de até 2,0 mm, devido ao efeito mola (springback) e variações intrínsecas de espessura das usinas siderúrgicas.
 • Chanfros e Solda: Preparação de juntas e montagens de caldeiraria seguem as tolerâncias padrão de fabricação industrial (normas ABNT/ISO aplicáveis).
