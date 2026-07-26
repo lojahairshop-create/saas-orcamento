@@ -83,6 +83,14 @@ export default function OrcamentoDetailPage() {
     window.open(printUrl, "_blank");
   };
 
+  const handleDownloadRelatorio = () => {
+    if (!orcamento) return;
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const token = localStorage.getItem("token") || "";
+    const printUrl = `${apiBaseUrl}/orcamentos/${orcamento.id}/relatorio-html?token=${encodeURIComponent(token)}`;
+    window.open(printUrl, "_blank");
+  };
+
   const runNestingAnalysis = async () => {
     if (!orcamento || orcamento.itens.length === 0) return;
     setNestingLoading(true);
@@ -195,11 +203,7 @@ export default function OrcamentoDetailPage() {
 
             <Button
               variant="secondary"
-              onClick={() => {
-                const token = localStorage.getItem("token");
-                const url = `http://localhost:8000/api/orcamentos/${orcamento.id}/relatorio-html?token=${token}`;
-                window.open(url, "_blank");
-              }}
+              onClick={handleDownloadRelatorio}
               className="flex items-center gap-1.5 bg-slate-700 hover:bg-slate-800 text-white border-none"
             >
               <FileDown className="h-4 w-4" /> Relatório de Custos

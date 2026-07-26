@@ -199,9 +199,9 @@
                         {{ item.material }} {{ ("%.2f"|format(item.espessura))|replace('.00', '')|replace('.', ',') }}mm
                     </span>
                     <div class="process-list">
-                        {%- if item.tempo_corte_laser > 0 %}Laser: {{ fmt(item.tempo_corte_laser) }}min<br>{% endif -%}
-                        {%- for op in item.operacoes %}{%- if op.tempo_min > 0 %}{{ op.nome|title }}: {{ fmt(op.tempo_min) }}min<br>{%- endif %}{%- endfor -%}
-                        {%- if item.preco_pintura_kg > 0 %}Pintura: R$ {{ fmt(item.preco_pintura_kg) }}/kg<br>{% endif -%}
+                        {%- if item.tempo_corte_laser and item.tempo_corte_laser > 0 %}Laser: {{ fmt(item.tempo_corte_laser) }}min<br>{% endif -%}
+                        {%- for op in item.operacoes %}{%- if op.tempo_min and op.tempo_min > 0 %}{{ op.nome|title }}: {{ fmt(op.tempo_min) }}min<br>{%- endif %}{%- endfor -%}
+                        {%- if item.preco_pintura_kg and item.preco_pintura_kg > 0 %}Pintura: R$ {{ fmt(item.preco_pintura_kg) }}/kg<br>{% endif -%}
                     </div>
                 </td>
                 <td class="text-center">{{ item.quantidade }}</td>
@@ -209,7 +209,7 @@
                 <td class="text-right">R$ {{ fmt(item.total_fabricacao) }}</td>
                 <td class="text-right">R$ {{ fmt(custo_extra_total) }}</td>
                 <td class="text-right">R$ {{ fmt(impostos) }}</td>
-                <td class="text-right">R$ {{ fmt(valor_lucro) }}<br><span style="font-size:6pt; color:#64748b;">({{ fmt(item.margem_lucro * 100) }}%)</span></td>
+                <td class="text-right">R$ {{ fmt(valor_lucro) }}<br><span style="font-size:6pt; color:#64748b;">({{ fmt((item.margem_lucro or 0) * 100) }}%)</span></td>
                 <td class="text-right">R$ {{ fmt(item.preco_unitario_com_imp) }}</td>
                 <td class="text-right font-bold">R$ {{ fmt(item.preco_total) }}</td>
             </tr>
