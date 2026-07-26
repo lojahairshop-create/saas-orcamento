@@ -275,14 +275,18 @@ async def exportar_relatorio_html(
             except Exception:
                 pass
 
-        # Carregar as configurações gerais do banco
+        # Carregar as configurações gerais e custos do banco
         from app.database import get_supabase_service_client
         try:
             supabase = get_supabase_service_client()
             configs_res = supabase.table("configuracoes").select("*").limit(1).execute()
             configs_globais = configs_res.data[0] if configs_res.data else None
+            
+            custos_res = supabase.table("custos_operacao").select("operacao, custo_hora").execute()
+            custos_op = {c["operacao"]: float(c["custo_hora"]) for c in custos_res.data} if custos_res.data else {}
         except Exception:
             configs_globais = None
+            custos_op = {}
 
         from app.pdf.generator import fmt_br, fmt_dim
 
@@ -290,6 +294,7 @@ async def exportar_relatorio_html(
             orcamento=orc,
             datetime=datetime,
             configs_globais=configs_globais,
+            custos_op=custos_op,
             logo_default_b64=logo_default_b64,
             fmt=fmt_br,
             fmt_dim=fmt_dim,

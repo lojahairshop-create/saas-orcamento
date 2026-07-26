@@ -133,11 +133,7 @@
     <table class="header-table">
         <tr>
             <td style="width: 50%;">
-                {% if logo_default_b64 %}
-                <img src="data:image/png;base64,{{ logo_default_b64 }}" class="company-logo" alt="Logo FF Caldeiraria">
-                {% else %}
                 <div style="font-size: 12pt; font-weight: bold;">FF CALDEIRARIA LTDA</div>
-                {% endif %}
             </td>
             <td style="width: 50%;">
                 <div class="doc-title">Relatório de Custos - N° {{ orcamento.numero }}</div>
@@ -199,9 +195,19 @@
                         {{ item.material }} {{ ("%.2f"|format(item.espessura))|replace('.00', '')|replace('.', ',') }}mm
                     </span>
                     <div class="process-list">
-                        {%- if item.tempo_corte_laser and item.tempo_corte_laser > 0 %}Laser: {{ fmt(item.tempo_corte_laser) }}min<br>{% endif -%}
-                        {%- for op in item.operacoes %}{%- if op.tempo_min and op.tempo_min > 0 %}{{ op.nome|title }}: {{ fmt(op.tempo_min) }}min<br>{%- endif %}{%- endfor -%}
-                        {%- if item.preco_pintura_kg and item.preco_pintura_kg > 0 %}Pintura: R$ {{ fmt(item.preco_pintura_kg) }}/kg<br>{% endif -%}
+                        {%- if item.tempo_corte_laser and item.tempo_corte_laser > 0 %}
+                        {%- set custo_laser = (item.tempo_corte_laser / 60) * custos_op.get('CORTE LASER', 0) %}
+                        Laser: {{ fmt(item.tempo_corte_laser) }}min (R$ {{ fmt(custo_laser) }})<br>
+                        {%- endif -%}
+                        {%- for op in item.operacoes %}{%- if op.tempo_min and op.tempo_min > 0 %}
+                        {%- set chora = op.custo_hora if op.custo_hora is not none else custos_op.get(op.nome, 0) %}
+                        {%- set op_cost = (op.tempo_min * item.quantidade / 60) * chora %}
+                        {{ op.nome|title }}: {{ fmt(op.tempo_min * item.quantidade) }}min (R$ {{ fmt(op_cost) }})<br>
+                        {%- endif %}{%- endfor -%}
+                        {%- if item.preco_pintura_kg and item.preco_pintura_kg > 0 %}
+                        {%- set custo_pint = item.peso_total * item.preco_pintura_kg %}
+                        Pintura: R$ {{ fmt(item.preco_pintura_kg) }}/kg (R$ {{ fmt(custo_pint) }})<br>
+                        {%- endif -%}
                     </div>
                 </td>
                 <td class="text-center">{{ item.quantidade }}</td>
