@@ -192,6 +192,18 @@ export default function OrcamentoDetailPage() {
                 <FileDown className="h-4 w-4" /> PDF do Arranjo
               </Button>
             )}
+
+            <Button
+              variant="secondary"
+              onClick={() => {
+                const token = localStorage.getItem("token");
+                const url = `http://localhost:8000/api/orcamentos/${orcamento.id}/relatorio-html?token=${token}`;
+                window.open(url, "_blank");
+              }}
+              className="flex items-center gap-1.5 bg-slate-700 hover:bg-slate-800 text-white border-none"
+            >
+              <FileDown className="h-4 w-4" /> Relatório de Custos
+            </Button>
             
             {(orcamento.status === OrcamentoStatus.PENDENTE || orcamento.status === OrcamentoStatus.RASCUNHO) && (
               <React.Fragment>

@@ -247,6 +247,70 @@ async def exportar_html(
             detail=f"Erro ao gerar visualização HTML: {str(exc)}"
         )
 
+@router.get("/{orcamento_id}/relatorio-html")
+async def exportar_relatorio_html(
+    orcamento_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Gera e retorna o relatório de custos em HTML com script de impressão automática."""
+    try:
+        orc = await service.get_orcamento(orcamento_id, current_user["id"])
+        
+        # Obter o caminho do template HTML
+        import os
+        from jinja2 import Environment, FileSystemLoader
+        from datetime import datetime
+        
+        template_dir = os.path.join(os.path.dirname(__file__), "..", "pdf", "templates")
+        env = Environment(loader=FileSystemLoader(template_dir))
+        template = env.get_template("relatorio_custos.html")
+        
+        # Carregar logo padrão aprimorada se não houver no banco
+        logo_default_b64 = ""
+        logo_b64_path = os.path.join(template_dir, "logo_base64.txt")
+        if os.path.exists(logo_b64_path):
+            try:
+                with open(logo_b64_path, "r", encoding="utf-8") as f:
+                    logo_default_b64 = f.read().strip()
+            except Exception:
+                pass
+
+        # Carregar as configurações gerais do banco
+        from app.database import get_supabase_service_client
+        try:
+            supabase = get_supabase_service_client()
+            configs_res = supabase.table("configuracoes").select("*").limit(1).execute()
+            configs_globais = configs_res.data[0] if configs_res.data else None
+        except Exception:
+            configs_globais = None
+
+        from app.pdf.generator import fmt_br, fmt_dim
+
+        html_rendered = template.render(
+            orcamento=orc,
+            datetime=datetime,
+            configs_globais=configs_globais,
+            logo_default_b64=logo_default_b64,
+            fmt=fmt_br,
+            fmt_dim=fmt_dim,
+        )
+        
+        # Script de impressão automática
+        html_with_print = html_rendered.replace(
+            "</body>",
+            "<script>window.onload = function() { window.print(); }</script></body>"
+        )
+        
+        return Response(
+            content=html_with_print,
+            media_type="text/html"
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Erro ao gerar relatório de custos: {str(exc)}"
+        )
+
 
 @router.get("/{orcamento_id}/nesting-html")
 async def exportar_nesting_html(

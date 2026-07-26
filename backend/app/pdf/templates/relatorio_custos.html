@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Custos - Orçamento {{ orcamento.numero }}</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin-top: 15mm;
+            margin-left: 10mm;
+            margin-right: 10mm;
+            margin-bottom: 25mm;
+            @bottom-center {
+                content: "FF CALDEIRARIA LTDA — CNPJ: 29.391.618/0001-01 | Rua Lúcia Piffer Baptistella, 320, Vila Rita — Fone: (11) 4487-7164\ATodos os direitos reservados.";
+                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                font-size: 6.5pt;
+                color: #94a3b8;
+                text-align: center;
+                white-space: pre-line;
+            }
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                font-size: 8pt;
+                color: #64748b;
+            }
+        }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #0f172a;
+            font-size: 8pt;
+            line-height: 1.3;
+            background-color: #ffffff;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .items-table th {
+                background-color: #00b8a9 !important;
+                color: #ffffff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        .header-table td {
+            vertical-align: middle;
+        }
+        .company-logo {
+            max-height: 50px;
+            max-width: 180px;
+            object-fit: contain;
+        }
+        .doc-title {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #0f172a;
+            text-align: right;
+        }
+        .header-divider {
+            border-bottom: 1px solid #cbd5e1;
+            margin-bottom: 15px;
+        }
+
+        .section-header {
+            font-size: 10pt;
+            font-weight: bold;
+            color: #0f172a;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .items-table th {
+            background-color: #0f172a !important;
+            color: #ffffff !important;
+            font-size: 7.5pt;
+            font-weight: bold;
+            padding: 6px 4px;
+            text-align: left;
+            border: none;
+        }
+        .items-table th.text-center { text-align: center; }
+        .items-table th.text-right { text-align: right; }
+        
+        .items-table td {
+            padding: 6px 4px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 7.5pt;
+            color: #1e293b;
+            vertical-align: middle;
+        }
+        .items-table tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+        .items-table td.text-center { text-align: center; }
+        .items-table td.text-right { text-align: right; }
+        
+        .total-row td {
+            font-weight: bold;
+            font-size: 8.5pt;
+            background-color: #e2e8f0 !important;
+            color: #0f172a;
+            border-top: 2px solid #cbd5e1;
+            padding: 10px 6px;
+        }
+
+        .process-list {
+            font-size: 6.5pt;
+            color: #475569;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <table class="header-table">
+        <tr>
+            <td style="width: 50%;">
+                {% if logo_default_b64 %}
+                <img src="data:image/png;base64,{{ logo_default_b64 }}" class="company-logo" alt="Logo FF Caldeiraria">
+                {% else %}
+                <div style="font-size: 12pt; font-weight: bold;">FF CALDEIRARIA LTDA</div>
+                {% endif %}
+            </td>
+            <td style="width: 50%;">
+                <div class="doc-title">Relatório de Custos - N° {{ orcamento.numero }}</div>
+                <div style="text-align: right; font-size: 8pt; color: #475569; margin-top: 4px;">
+                    Cliente: <strong>{{ orcamento.cliente.nome }}</strong> | Data: {{ datetime.now().strftime('%d/%m/%Y %H:%M') }}
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="header-divider"></div>
+
+    <div class="section-header">Detalhamento de Custos e Processos</div>
+    
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width: 3%;">Item</th>
+                <th style="width: 25%;">Descrição & Processos</th>
+                <th class="text-center" style="width: 5%;">Qtd</th>
+                <th class="text-right" style="width: 10%;">Matéria-Prima<br>(MP)</th>
+                <th class="text-right" style="width: 10%;">Mão de Obra<br>(Fab.)</th>
+                <th class="text-right" style="width: 10%;">Custo Extra</th>
+                <th class="text-right" style="width: 9%;">Impostos<br>({{ fmt(orcamento.ipi_rate * 100) }}% IPI inc.)</th>
+                <th class="text-right" style="width: 9%;">Lucro Bruto<br>(Vlr. Venda - Custo)</th>
+                <th class="text-right" style="width: 9%;">Preço Unit.</th>
+                <th class="text-right" style="width: 10%;">Preço Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set total_qtd = namespace(value=0) %}
+            {% set total_mp = namespace(value=0) %}
+            {% set total_fab = namespace(value=0) %}
+            {% set total_extra = namespace(value=0) %}
+            {% set total_imp = namespace(value=0) %}
+            {% set total_lucro = namespace(value=0) %}
+            {% set total_venda = namespace(value=0) %}
+
+            {% for item in orcamento.itens %}
+            {% set total_qtd.value = total_qtd.value + item.quantidade %}
+            
+            {% set valor_lucro = item.valor_venda_sem_imp - item.custo_basico %}
+            {% set impostos = item.preco_total - item.valor_venda_sem_imp %}
+            {% set custo_extra_total = item.custo_extra * item.quantidade %}
+            
+            {% set total_mp.value = total_mp.value + item.custo_mp %}
+            {% set total_fab.value = total_fab.value + item.total_fabricacao %}
+            {% set total_extra.value = total_extra.value + custo_extra_total %}
+            {% set total_imp.value = total_imp.value + impostos %}
+            {% set total_lucro.value = total_lucro.value + valor_lucro %}
+            {% set total_venda.value = total_venda.value + item.preco_total %}
+
+            <tr>
+                <td class="text-center">{{ loop.index }}</td>
+                <td>
+                    <strong style="color: #0f172a;">{{ item.descricao }}</strong>
+                    <br>
+                    <span style="font-size: 7pt; color: #475569;">
+                        {{ item.material }} {{ ("%.2f"|format(item.espessura))|replace('.00', '')|replace('.', ',') }}mm
+                    </span>
+                    <div class="process-list">
+                        {%- if item.tempo_corte_laser > 0 %}Laser: {{ fmt(item.tempo_corte_laser) }}min<br>{% endif -%}
+                        {%- for op in item.operacoes %}{%- if op.tempo_min > 0 %}{{ op.nome|title }}: {{ fmt(op.tempo_min) }}min<br>{%- endif %}{%- endfor -%}
+                        {%- if item.preco_pintura_kg > 0 %}Pintura: R$ {{ fmt(item.preco_pintura_kg) }}/kg<br>{% endif -%}
+                    </div>
+                </td>
+                <td class="text-center">{{ item.quantidade }}</td>
+                <td class="text-right">R$ {{ fmt(item.custo_mp) }}</td>
+                <td class="text-right">R$ {{ fmt(item.total_fabricacao) }}</td>
+                <td class="text-right">R$ {{ fmt(custo_extra_total) }}</td>
+                <td class="text-right">R$ {{ fmt(impostos) }}</td>
+                <td class="text-right">R$ {{ fmt(valor_lucro) }}<br><span style="font-size:6pt; color:#64748b;">({{ fmt(item.margem_lucro * 100) }}%)</span></td>
+                <td class="text-right">R$ {{ fmt(item.preco_unitario_com_imp) }}</td>
+                <td class="text-right font-bold">R$ {{ fmt(item.preco_total) }}</td>
+            </tr>
+            {% endfor %}
+            
+            <tr class="total-row">
+                <td colspan="2" class="text-right">TOTAIS GERAIS:</td>
+                <td class="text-center">{{ total_qtd.value }}</td>
+                <td class="text-right">R$ {{ fmt(total_mp.value) }}</td>
+                <td class="text-right">R$ {{ fmt(total_fab.value) }}</td>
+                <td class="text-right">R$ {{ fmt(total_extra.value) }}</td>
+                <td class="text-right">R$ {{ fmt(total_imp.value) }}</td>
+                <td class="text-right">R$ {{ fmt(total_lucro.value) }}</td>
+                <td class="text-right"></td>
+                <td class="text-right">R$ {{ fmt(total_venda.value) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+</body>
+</html>
