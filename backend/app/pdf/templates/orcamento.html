@@ -310,35 +310,13 @@
         </tbody>
     </table>
 
-    <!-- CONDIÇÕES GERAIS DE FORNECIMENTO -->
+    <!-- CONDIÇÕES E OBSERVAÇÕES -->
     <div class="terms-section">
-        <div class="terms-title">CONDIÇÕES GERAIS DE FORNECIMENTO</div>
-        
-        <div class="terms-category">1. Tolerâncias Dimensionais e Processos</div>
-        <ul class="terms-sublist">
-            <li><strong>Corte Laser:</strong> Tolerância dimensional para peças cortadas a laser de ±0,2 mm em relação ao desenho nominal aprovado.</li>
-            <li><strong>Dobra / Conformação:</strong> Tolerância dimensional de dobra de até 2,0 mm, devido ao efeito mola (springback) e variações intrínsecas de espessura das usinas siderúrgicas.</li>
-            <li><strong>Chanfros e Solda:</strong> Preparação de juntas e montagens de caldeiraria seguem as tolerâncias padrão de fabricação industrial (normas ABNT/ISO aplicáveis).</li>
-        </ul>
+        <div class="terms-title">CONDIÇÕES GERAIS DE FORNECIMENTO & OBSERVAÇÕES</div>
 
-        <div class="terms-category">2. Arquivos, Projetos e Aprovação Técnica</div>
-        <ul class="terms-sublist">
-            <li>Os orçamentos são elaborados com base nos arquivos (.DXF, .DWG, .STEP) ou desenhos fornecidos pelo cliente. A conferência e a validação das dimensões finais nos arquivos são de responsabilidade do contratante.</li>
-            <li>Eventuais alterações de projeto efetuadas após a aprovação da proposta e emissão da Ordem de Serviço sujeitam-se ao recalculo de custos e revisão de prazo de entrega.</li>
-            <li>Peças que exijam montagem, furações roscadas ou rebaixos específicos devem estar claramente indicadas no desenho técnico nominal.</li>
-        </ul>
-
-        <div class="terms-category">3. Matéria-Prima e Acabamento</div>
-        <ul class="terms-sublist">
-            <li>As chapas e perfis utilizados seguem os padrões de usina. Marcas superficiais decorrentes de manuseio, laminação ou oxidação superficial leve são inerentes ao estado bruto do material e não configuram defeito de fabricação.</li>
-            <li><strong>Proteção Antitravamento / Antiferrugem:</strong> Salvo indicação em contrário na proposta, os itens são fornecidos em estado bruto de fabricação (sem pintura, zincagem ou tratamento de superfície).</li>
-        </ul>
-
-        <div class="terms-category">4. Prazos de Entrega e Faturamento</div>
-        <ul class="terms-sublist">
-            <li>O prazo de produção é contado em dias úteis a partir da aprovação comercial da proposta e do recebimento dos arquivos técnicos finais sem pendências.</li>
-            <li><strong>Frete e Descarga:</strong> Modalidade {{ orcamento.frete or 'FOB' }} ({{ 'entrega por nossa conta no endereço do cliente' if (orcamento.frete and 'CIF' in orcamento.frete|upper) else 'coleta e descarga por conta e risco do cliente no nosso galpão' }}).</li>
-        </ul>
+        {% if orcamento.observacoes and orcamento.observacoes.strip() %}
+        <div class="observacoes-text">{{ orcamento.observacoes }}</div>
+        {% endif %}
         
         <table class="terms-details-table">
             <tr>
@@ -364,13 +342,6 @@
                 </td>
             </tr>
         </table>
-
-        {% if orcamento.observacoes and orcamento.observacoes.strip() %}
-        <div style="margin-top: 15px; border-top: 1px solid #e2e8f0; padding-top: 8px;">
-            <div style="font-weight: bold; font-size: 9pt; color: #0f172a; margin-bottom: 4px;">OBSERVAÇÕES ADICIONAIS:</div>
-            <div class="observacoes-text">{{ orcamento.observacoes }}</div>
-        </div>
-        {% endif %}
     </div>
 
 </body>

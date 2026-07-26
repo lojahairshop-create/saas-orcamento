@@ -64,7 +64,25 @@ function NovoOrcamentoWizardContent() {
   const [condicaoPagamento, setCondicaoPagamento] = useState("30 dias");
   const [prazoEntrega, setPrazoEntrega] = useState("15 dias úteis");
   const [validade, setValidade] = useState(30);
-  const [observacoes, setObservacoes] = useState("");
+  const [observacoes, setObservacoes] = useState(`CONDIÇÕES GERAIS DE FORNECIMENTO
+
+1. Tolerâncias Dimensionais e Processos
+• Corte Laser: Tolerância dimensional para peças cortadas a laser de ±0,2 mm em relação ao desenho nominal aprovado.
+• Dobra / Conformação: Tolerância dimensional de dobra de até 2,0 mm, devido ao efeito mola (springback) e variações intrínsecas de espessura das usinas siderúrgicas.
+• Chanfros e Solda: Preparação de juntas e montagens de caldeiraria seguem as tolerâncias padrão de fabricação industrial (normas ABNT/ISO aplicáveis).
+
+2. Arquivos, Projetos e Aprovação Técnica
+• Os orçamentos são elaborados com base nos arquivos (.DXF, .DWG, .STEP) ou desenhos fornecidos pelo cliente. A conferência e a validação das dimensões finais nos arquivos são de responsabilidade do contratante.
+• Eventuais alterações de projeto efetuadas após a aprovação da proposta e emissão da Ordem de Serviço sujeitam-se ao recalculo de custos e revisão de prazo de entrega.
+• Peças que exijam montagem, furações roscadas ou rebaixos específicos devem estar claramente indicadas no desenho técnico nominal.
+
+3. Matéria-Prima e Acabamento
+• As chapas e perfis utilizados seguem os padrões de usina. Marcas superficiais decorrentes de manuseio, laminação ou oxidação superficial leve são inerentes ao estado bruto do material e não configuram defeito de fabricação.
+• Proteção Antitravamento / Antiferrugem: Salvo indicação em contrário na proposta, os itens são fornecidos em estado bruto de fabricação (sem pintura, zincagem ou tratamento de superfície).
+
+4. Prazos de Entrega e Faturamento
+• O prazo de produção é contado em dias úteis a partir da aprovação comercial da proposta e do recebimento dos arquivos técnicos finais sem pendências.
+• Frete e Descarga: Modalidade FOB (coleta e descarga por conta e risco do cliente no nosso galpão), salvo se explicitado como CIF na proposta.`);
   const [numeroOrcamento, setNumeroOrcamento] = useState("");
   const [frete, setFrete] = useState("FOB");
 
