@@ -6,24 +6,7 @@
     <style>
         @page {
             size: A4;
-            margin-top: 15mm;
-            margin-left: 15mm;
-            margin-right: 15mm;
-            margin-bottom: 25mm;
-            @bottom-center {
-                content: "FF CALDEIRARIA LTDA — CNPJ: 29.391.618/0001-01 | Rua Lúcia Piffer Baptistella, 320, Vila Rita — Fone: (11) 4487-7164\ATodos os direitos reservados.";
-                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-                font-size: 6.5pt;
-                color: #94a3b8;
-                text-align: center;
-                white-space: pre-line;
-            }
-            @bottom-right {
-                content: "Página " counter(page) " de " counter(pages);
-                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-                font-size: 8pt;
-                color: #64748b;
-            }
+            margin: 15mm;
         }
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -216,7 +199,7 @@
     <!-- ================= CABEÇALHO DO ORÇAMENTO ================= -->
     <table class="header-table">
         <tr>
-            <td style="width: 60%;">
+            <td width="60%">
                 {% if configs_globais and configs_globais.logo_base64 %}
                     <img src="{{ configs_globais.logo_base64 }}" alt="Logo" class="company-logo" />
                 {% elif logo_default_b64 %}
@@ -235,7 +218,7 @@
                     Fone: {% if configs_globais and configs_globais.empresa_telefone %}{{ configs_globais.empresa_telefone }}{% else %}(11) 4487-7164{% endif %}
                 </div>
             </td>
-            <td style="width: 40%; vertical-align: top;">
+            <td width="40%" style="vertical-align: top;">
                 <div class="doc-title">Orçamento N° {{ orcamento.numero }}</div>
             </td>
         </tr>
@@ -247,13 +230,13 @@
     <div class="section-header">DADOS DA VENDA</div>
     <table class="venda-table">
         <tr>
-            <td style="width: 55%;">
+            <td width="55%">
                 <span class="info-label">Cliente:</span> <span class="info-value">{{ orcamento.cliente.nome }}</span><br>
                 <span class="info-label">Telefone:</span> <span class="info-value">{{ orcamento.cliente.telefone or '' }}</span><br>
                 <span class="info-label">E-mail:</span> <span class="info-value">{{ orcamento.cliente.email or '' }}</span><br>
                 <span class="info-label">Endereço:</span> <span class="info-value">{{ orcamento.cliente.endereco or '' }}{% if orcamento.cliente.cidade %}, {{ orcamento.cliente.cidade }}{% endif %}{% if orcamento.cliente.estado %} - {{ orcamento.cliente.estado }}{% endif %}</span>
             </td>
-            <td style="width: 45%;">
+            <td width="45%">
                 <span class="info-label">Data:</span> <span class="info-value">
                     {% set date_ref = orcamento.updated_at or orcamento.created_at %}
                     {% if date_ref is string %}
@@ -349,6 +332,12 @@
                 </td>
             </tr>
         </table>
+    </div>
+
+    <!-- RODAPÉ DA PÁGINA -->
+    <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 10px; text-align: center; font-size: 7.5pt; color: #64748b; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+        FF CALDEIRARIA LTDA — CNPJ: 29.391.618/0001-01 | Rua Lúcia Piffer Baptistella, 320, Vila Rita — Fone: (11) 4487-7164<br>
+        Todos os direitos reservados.
     </div>
 
 </body>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -72,8 +72,8 @@ export default function OrcamentosListPage() {
   const handleDownloadPdf = (id: string, numero: string) => {
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const token = localStorage.getItem("token") || "";
-    const printUrl = `${apiBaseUrl}/orcamentos/${id}/html?token=${encodeURIComponent(token)}`;
-    window.open(printUrl, "_blank");
+    const pdfUrl = `${apiBaseUrl}/orcamentos/${id}/pdf?token=${encodeURIComponent(token)}`;
+    window.open(pdfUrl, "_blank");
   };
 
   const formatCurrency = (val: number) => {

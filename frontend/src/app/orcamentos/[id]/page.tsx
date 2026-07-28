@@ -71,8 +71,8 @@ export default function OrcamentoDetailPage() {
     if (!orcamento) return;
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const token = localStorage.getItem("token") || "";
-    const printUrl = `${apiBaseUrl}/orcamentos/${orcamento.id}/html?token=${encodeURIComponent(token)}`;
-    window.open(printUrl, "_blank");
+    const pdfUrl = `${apiBaseUrl}/orcamentos/${orcamento.id}/pdf?token=${encodeURIComponent(token)}`;
+    window.open(pdfUrl, "_blank");
   };
 
   const handleDownloadNestingPdf = () => {
