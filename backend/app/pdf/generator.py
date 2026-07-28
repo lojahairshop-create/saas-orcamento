@@ -7,18 +7,12 @@ from datetime import datetime, timedelta
 from typing import Any
 from jinja2 import Environment, FileSystemLoader
 
-# Tratamento de importações opcionais para evitar erros em servidores de produção
+# Tratamento robusto caso as dependências do WeasyPrint (como Pango/Cairo) não estejam no sistema.
 try:
     from weasyprint import HTML
     WEASYPRINT_DISPONIVEL = True
 except Exception:
     WEASYPRINT_DISPONIVEL = False
-
-try:
-    from xhtml2pdf import pisa
-    XHTML2PDF_DISPONIVEL = True
-except Exception:
-    XHTML2PDF_DISPONIVEL = False
 
 
 def fmt_br(val, decimals=2):
@@ -58,8 +52,8 @@ class PDFGenerator:
         # Obter o caminho do template HTML
         template_dir = os.path.join(os.path.dirname(__file__), "templates")
         
-        # Inicializar ambiente Jinja2 (sem cache para recarregar templates instantaneamente)
-        env = Environment(loader=FileSystemLoader(template_dir), auto_reload=True, cache_size=0)
+        # Inicializar ambiente Jinja2
+        env = Environment(loader=FileSystemLoader(template_dir))
         template = env.get_template("orcamento.html")
 
         # Calcular data de validade
@@ -110,30 +104,21 @@ class PDFGenerator:
 
         if WEASYPRINT_DISPONIVEL:
             try:
-                # Compilar HTML renderizado para PDF via WeasyPrint
+                # Compilar HTML renderizado para PDF
                 pdf_bytes = HTML(string=html_rendered).write_pdf()
                 return pdf_bytes
             except Exception as exc:
+                # Se falhar em tempo de execução por falta de bibliotecas C, caímos no fallback
                 print(f"Erro ao compilar PDF com WeasyPrint: {str(exc)}")
                 pass
 
-        # FALLBACK 1: xhtml2pdf (100% Pure Python, gera texto vetorial selecionável)
-        if XHTML2PDF_DISPONIVEL:
-            try:
-                import io
-                import re
-                
-                # Remover blocos @bottom-center/@bottom-right que são específicos do WeasyPrint
-                clean_html = re.sub(r'@[a-zA-Z-]+\s*\{[^}]*\}', '', html_rendered)
-                pdf_stream = io.BytesIO()
-                pisa_status = pisa.CreatePDF(io.BytesIO(clean_html.encode("utf-8")), dest=pdf_stream)
-                if not pisa_status.err and len(pdf_stream.getvalue()) > 500:
-                    return pdf_stream.getvalue()
-            except Exception as exc:
-                print(f"Erro ao compilar PDF com xhtml2pdf: {exc}")
-
-        # FALLBACK 2: ReportLab canvas
+        # FALLBACK: Se o WeasyPrint não estiver disponível ou falhar, retornamos o próprio HTML
+        # decodificado em PDF falso ou geramos um HTML limpo para que o navegador renderize.
+        # Para que a API responda algo legível, vamos simular os bytes do PDF ou
+        # escrever uma mensagem de erro em formato PDF básico usando reportlab (se disponível),
+        # ou apenas criar um arquivo PDF simples contendo a representação em texto.
         try:
+            # Fallback usando ReportLab caso esteja disponível, que é pure-python e livre de C libraries
             from reportlab.lib.pagesizes import letter
             from reportlab.pdfgen import canvas
             import io
@@ -145,6 +130,7 @@ class PDFGenerator:
             p.drawString(100, 710, f"Total Preço: R$ {orcamento_response.total_preco:.2f}")
             p.drawString(100, 690, f"Total NF: R$ {orcamento_response.total_nf:.2f}")
             p.drawString(100, 670, f"Validade: {validade_str}")
+            p.drawString(100, 650, "[NOTA: Instale GTK+ / WeasyPrint no servidor para habilitar o PDF completo]")
             
             y_offset = 610
             p.drawString(100, y_offset, "Itens:")
