@@ -709,7 +709,8 @@ function NovoOrcamentoWizardContent() {
           beneficiamento: !!it.beneficiamento,
           custo_extra: it.custo_extra || 0,
           tempo_corte: it.tempo_corte || 0,
-          preco_pintura_kg: it.preco_pintura_kg || 0,
+          preco_pintura_kg: it.valor_pintura || it.preco_pintura_kg || 0,
+          valor_pintura: it.valor_pintura || it.preco_pintura_kg || 0,
           operacoes: [
             { nome: "DOBRA", tempo_min: it.tempo_dobra || 0 },
             { nome: "SOLDA", tempo_min: it.tempo_solda || 0 },

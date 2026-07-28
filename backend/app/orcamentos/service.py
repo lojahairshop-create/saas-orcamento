@@ -98,8 +98,8 @@ def _build_item_response(
         observacoes=item_input.get("observacoes"),
         custo_extra=float(item_input.get("custo_extra", 0.0)),
         tempo_corte=float(item_input.get("tempo_corte", 0.0)),
-        preco_pintura_kg=float(item_input.get("preco_pintura_kg", 0.0)),
-        valor_pintura=float(item_input.get("valor_pintura", 0.0)),
+        preco_pintura_kg=float(item_input.get("preco_pintura_kg", 0.0)) or float(item_input.get("valor_pintura", 0.0)),
+        valor_pintura=float(item_input.get("valor_pintura", 0.0)) or float(item_input.get("preco_pintura_kg", 0.0)),
     )
 
 
@@ -206,8 +206,8 @@ async def create_orcamento(
             "origem_material": item_input.get("origem_material", "chapa_inteira"),
             "custo_extra": item_input.get("custo_extra", 0.0),
             "tempo_corte": item_input.get("tempo_corte", 0.0),
-            "preco_pintura_kg": item_input.get("preco_pintura_kg", 0.0),
-            "valor_pintura": item_input.get("valor_pintura", 0.0),
+            "preco_pintura_kg": item_input.get("preco_pintura_kg", 0.0) or item_input.get("valor_pintura", 0.0),
+            "valor_pintura": item_input.get("valor_pintura", 0.0) or item_input.get("preco_pintura_kg", 0.0),
             "vetor_svg": item_input.get("vetor_svg"),
             "velocidade": calc.get("velocidade", 0),
             "peck": calc.get("peck", 0),
@@ -343,8 +343,8 @@ async def get_orcamento(orcamento_id: str, user_id: str) -> OrcamentoResponse:
             "origem_material": item_db.get("origem_material", "chapa_inteira"),
             "custo_extra": float(item_db.get("custo_extra") or 0),
             "tempo_corte": float(item_db.get("tempo_corte") or 0),
-            "preco_pintura_kg": float(item_db.get("preco_pintura_kg") or 0),
-            "valor_pintura": float(item_db.get("valor_pintura") or 0),
+            "preco_pintura_kg": float(item_db.get("preco_pintura_kg") or item_db.get("valor_pintura") or 0),
+            "valor_pintura": float(item_db.get("valor_pintura") or item_db.get("preco_pintura_kg") or 0),
             "taxa_comissao": taxa_comissao,
             "operacoes": [op.model_dump() for op in operacoes_model],
         }
@@ -405,8 +405,8 @@ async def get_orcamento(orcamento_id: str, user_id: str) -> OrcamentoResponse:
                 observacoes=item_db.get("observacoes"),
                 custo_extra=item_dict["custo_extra"],
                 tempo_corte=item_dict["tempo_corte"],
-                preco_pintura_kg=item_dict["preco_pintura_kg"],
-                valor_pintura=item_dict.get("valor_pintura", 0.0),
+                preco_pintura_kg=item_dict["preco_pintura_kg"] or item_dict.get("valor_pintura", 0.0),
+                valor_pintura=item_dict.get("valor_pintura", 0.0) or item_dict["preco_pintura_kg"],
             )
         )
 
