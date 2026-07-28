@@ -281,12 +281,8 @@ class CalculoEngine:
         # 9. Total fabricação e custo básico (adiciona pintura e custo_extra)
         valor_pintura = float(item_data.get("valor_pintura", 0.0))
         preco_pintura_kg = float(item_data.get("preco_pintura_kg", 0.0))
-        if valor_pintura > 0:
-            custo_pintura = valor_pintura * quantidade
-        elif preco_pintura_kg > 0:
-            custo_pintura = peso_total * preco_pintura_kg
-        else:
-            custo_pintura = 0.0
+        val_pint = valor_pintura if valor_pintura > 0 else preco_pintura_kg
+        custo_pintura = val_pint * quantidade
 
         total_fabricacao = calcular_total_fabricacao(tempos_min, custos_hora) + custo_pintura
         custo_extra = float(item_data.get("custo_extra", 0.0))
