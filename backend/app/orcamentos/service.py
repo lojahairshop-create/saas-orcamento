@@ -264,6 +264,9 @@ async def create_orcamento(
         total_nf=resultado["total_nf"],
         total_tributos=resultado["total_tributos"],
         total_comissao=resultado["total_comissao"],
+    )
+
+
 async def get_orcamento(orcamento_id: str, user_id: str) -> OrcamentoResponse:
     """Busca um orçamento pelo ID com seus itens e recalcula os totais com base nas taxas vigentes."""
     supabase = get_supabase_service_client()
