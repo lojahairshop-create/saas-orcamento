@@ -52,8 +52,8 @@ class PDFGenerator:
         # Obter o caminho do template HTML
         template_dir = os.path.join(os.path.dirname(__file__), "templates")
         
-        # Inicializar ambiente Jinja2
-        env = Environment(loader=FileSystemLoader(template_dir))
+        # Inicializar ambiente Jinja2 (sem cache para recarregar templates instantaneamente)
+        env = Environment(loader=FileSystemLoader(template_dir), auto_reload=True, cache_size=0)
         template = env.get_template("orcamento.html")
 
         # Calcular data de validade

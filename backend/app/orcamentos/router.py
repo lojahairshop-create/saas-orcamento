@@ -180,7 +180,7 @@ async def exportar_html(
         from datetime import datetime, timedelta
         
         template_dir = os.path.join(os.path.dirname(__file__), "..", "pdf", "templates")
-        env = Environment(loader=FileSystemLoader(template_dir))
+        env = Environment(loader=FileSystemLoader(template_dir), auto_reload=True, cache_size=0)
         template = env.get_template("orcamento.html")
         
         validade_dias = orc.validade or 30
@@ -262,7 +262,7 @@ async def exportar_relatorio_html(
         from datetime import datetime
         
         template_dir = os.path.join(os.path.dirname(__file__), "..", "pdf", "templates")
-        env = Environment(loader=FileSystemLoader(template_dir))
+        env = Environment(loader=FileSystemLoader(template_dir), auto_reload=True, cache_size=0)
         template = env.get_template("relatorio_custos.html")
         
         # Carregar logo padrão aprimorada se não houver no banco
@@ -376,7 +376,7 @@ async def exportar_nesting_html(
         from datetime import datetime
         
         template_dir = os.path.join(os.path.dirname(__file__), "..", "pdf", "templates")
-        env = Environment(loader=FileSystemLoader(template_dir))
+        env = Environment(loader=FileSystemLoader(template_dir), auto_reload=True, cache_size=0)
         template = env.get_template("nesting_print.html")
         
         # Carregar as configurações gerais do banco
