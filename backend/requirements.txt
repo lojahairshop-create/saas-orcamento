@@ -7,7 +7,6 @@ supabase
 ezdxf
 shapely
 numpy
-weasyprint
 pydantic
 pydantic-settings
 python-dotenv
@@ -15,4 +14,4 @@ httpx
 pytest
 jinja2
 reportlab
-xhtml2pdf
+

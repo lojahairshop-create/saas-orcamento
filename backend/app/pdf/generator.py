@@ -7,12 +7,18 @@ from datetime import datetime, timedelta
 from typing import Any
 from jinja2 import Environment, FileSystemLoader
 
-# Tratamento robusto caso as dependências do WeasyPrint (como Pango/Cairo) não estejam no sistema.
+# Tratamento de importações opcionais para evitar erros em servidores de produção
 try:
     from weasyprint import HTML
     WEASYPRINT_DISPONIVEL = True
 except Exception:
     WEASYPRINT_DISPONIVEL = False
+
+try:
+    from xhtml2pdf import pisa
+    XHTML2PDF_DISPONIVEL = True
+except Exception:
+    XHTML2PDF_DISPONIVEL = False
 
 
 def fmt_br(val, decimals=2):
@@ -111,20 +117,20 @@ class PDFGenerator:
                 print(f"Erro ao compilar PDF com WeasyPrint: {str(exc)}")
                 pass
 
-        # FALLBACK 1: xhtml2pdf (100% Pure Python, gera texto vetorial selecionável sem precisar de GTK+)
-        try:
-            import io
-            import re
-            from xhtml2pdf import pisa
-            
-            # Remover blocos @bottom-center/@bottom-right que são específicos do WeasyPrint
-            clean_html = re.sub(r'@[a-zA-Z-]+\s*\{[^}]*\}', '', html_rendered)
-            pdf_stream = io.BytesIO()
-            pisa_status = pisa.CreatePDF(io.BytesIO(clean_html.encode("utf-8")), dest=pdf_stream)
-            if not pisa_status.err and len(pdf_stream.getvalue()) > 500:
-                return pdf_stream.getvalue()
-        except Exception as exc:
-            print(f"Erro ao compilar PDF com xhtml2pdf: {exc}")
+        # FALLBACK 1: xhtml2pdf (100% Pure Python, gera texto vetorial selecionável)
+        if XHTML2PDF_DISPONIVEL:
+            try:
+                import io
+                import re
+                
+                # Remover blocos @bottom-center/@bottom-right que são específicos do WeasyPrint
+                clean_html = re.sub(r'@[a-zA-Z-]+\s*\{[^}]*\}', '', html_rendered)
+                pdf_stream = io.BytesIO()
+                pisa_status = pisa.CreatePDF(io.BytesIO(clean_html.encode("utf-8")), dest=pdf_stream)
+                if not pisa_status.err and len(pdf_stream.getvalue()) > 500:
+                    return pdf_stream.getvalue()
+            except Exception as exc:
+                print(f"Erro ao compilar PDF com xhtml2pdf: {exc}")
 
         # FALLBACK 2: ReportLab canvas
         try:
