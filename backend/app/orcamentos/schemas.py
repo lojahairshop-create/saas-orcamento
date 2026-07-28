@@ -52,6 +52,7 @@ class ItemCreate(BaseModel):
     custo_extra: float = 0.0
     tempo_corte: float = 0.0
     preco_pintura_kg: float = 0.0
+    valor_pintura: float = 0.0
     operacoes: List[OperacaoItem] = []
     observacoes: Optional[str] = None
     origem_material: Optional[str] = "chapa_inteira"
@@ -76,6 +77,7 @@ class ItemUpdate(BaseModel):
     custo_extra: Optional[float] = None
     tempo_corte: Optional[float] = None
     preco_pintura_kg: Optional[float] = None
+    valor_pintura: Optional[float] = None
     operacoes: Optional[List[OperacaoItem]] = None
     observacoes: Optional[str] = None
     origem_material: Optional[str] = None
@@ -107,6 +109,7 @@ class ItemCalculadoResponse(BaseModel):
     custo_extra: float = 0.0
     tempo_corte: float = 0.0
     preco_pintura_kg: float = 0.0
+    valor_pintura: float = 0.0
 
     # Valores calculados
     velocidade: float = 0.0

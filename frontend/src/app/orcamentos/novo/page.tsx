@@ -127,7 +127,8 @@ function NovoOrcamentoWizardContent() {
     tempo_corte: 0.0,
     custo_extra: 0.0,
     
-    // Tempos das operações (minutos) e Pintura (R$/kg)
+    // Tempos das operações (minutos) e Pintura (R$)
+    valor_pintura: 0.0,
     preco_pintura_kg: 0.0,
     tempo_setup: 0.0,
     tempo_dobra: 0.0,
@@ -608,7 +609,9 @@ function NovoOrcamentoWizardContent() {
         { tempo_min: (item.tempo_usinagem || 0) * item.quantidade, custo_hora: getCusto("USINAGEM INTERNA") },
         { tempo_min: (item.tempo_montagem || 0) * item.quantidade, custo_hora: getCusto("MONTAGEM") },
       ];
-      const custoPintura = pesoTotal * (item.preco_pintura_kg || 0.0);
+      const custoPintura = (item.valor_pintura || 0.0) > 0
+        ? (item.valor_pintura || 0.0) * item.quantidade
+        : pesoTotal * (item.preco_pintura_kg || 0.0);
       const totalFab = calcularTotalFabricacao(operacoes) + custoPintura;
 
       // 7. Pricing (adiciona o custo_extra)
@@ -1396,11 +1399,14 @@ function NovoOrcamentoWizardContent() {
                     onChange={e => setNovaPeca({ ...novaPeca, tempo_montagem: parseFloat(e.target.value) || 0 })}
                   />
                   <Input
-                    label="PINTURA / TRAT. SUPERF. (R$/kg)"
+                    label="PINTURA / TRAT. SUPERF. (R$)"
                     type="number"
                     placeholder="0.00"
-                    value={novaPeca.preco_pintura_kg}
-                    onChange={e => setNovaPeca({ ...novaPeca, preco_pintura_kg: parseFloat(e.target.value) || 0 })}
+                    value={novaPeca.valor_pintura || novaPeca.preco_pintura_kg || 0}
+                    onChange={e => {
+                      const val = parseFloat(e.target.value) || 0;
+                      setNovaPeca({ ...novaPeca, valor_pintura: val, preco_pintura_kg: val });
+                    }}
                   />
                 </div>
               </div>

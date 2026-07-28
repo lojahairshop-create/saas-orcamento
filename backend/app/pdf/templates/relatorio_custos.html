@@ -205,7 +205,10 @@
                         {%- set op_cost = (op.tempo_min * item.quantidade / 60) * chora %}
                         {{ op.nome|title }}: {{ fmt(op.tempo_min * item.quantidade) }}min (R$ {{ fmt(op_cost) }})<br>
                         {%- endif %}{%- endfor -%}
-                        {%- if item.preco_pintura_kg and item.preco_pintura_kg > 0 %}
+                        {%- if item.valor_pintura and item.valor_pintura > 0 %}
+                        {%- set custo_pint = item.valor_pintura * item.quantidade %}
+                        Pintura / Trat. Superf.: R$ {{ fmt(item.valor_pintura) }} (Total R$ {{ fmt(custo_pint) }})<br>
+                        {%- elif item.preco_pintura_kg and item.preco_pintura_kg > 0 %}
                         {%- set custo_pint = item.peso_total * item.preco_pintura_kg %}
                         Pintura / Trat. Superf.: R$ {{ fmt(item.preco_pintura_kg) }}/kg (R$ {{ fmt(custo_pint) }})<br>
                         {%- endif -%}
