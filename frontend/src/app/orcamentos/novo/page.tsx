@@ -1396,7 +1396,7 @@ function NovoOrcamentoWizardContent() {
                     onChange={e => setNovaPeca({ ...novaPeca, tempo_montagem: parseFloat(e.target.value) || 0 })}
                   />
                   <Input
-                    label="PINTURA (R$/kg)"
+                    label="PINTURA / TRATAM. SUPERF. (R$/kg)"
                     type="number"
                     placeholder="0.00"
                     value={novaPeca.preco_pintura_kg}
