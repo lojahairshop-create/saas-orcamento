@@ -207,7 +207,7 @@
                         {%- endif %}{%- endfor -%}
                         {%- if item.preco_pintura_kg and item.preco_pintura_kg > 0 %}
                         {%- set custo_pint = item.peso_total * item.preco_pintura_kg %}
-                        Pintura / Tratam. Superf.: R$ {{ fmt(item.preco_pintura_kg) }}/kg (R$ {{ fmt(custo_pint) }})<br>
+                        Pintura / Trat. Superf.: R$ {{ fmt(item.preco_pintura_kg) }}/kg (R$ {{ fmt(custo_pint) }})<br>
                         {%- endif -%}
                     </div>
                 </td>
