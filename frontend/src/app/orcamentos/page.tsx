@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -69,11 +69,16 @@ export default function OrcamentosListPage() {
     }
   };
 
-  const handleDownloadPdf = (id: string, numero: string) => {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    const token = localStorage.getItem("token") || "";
-    const printUrl = `${apiBaseUrl}/orcamentos/${id}/html?token=${encodeURIComponent(token)}`;
-    window.open(printUrl, "_blank");
+  const handleDownloadPdf = async (id: string, numero: string) => {
+    try {
+      await api.downloadPdf(id, `orcamento_${numero}.pdf`);
+    } catch (err) {
+      console.error("Erro ao baixar PDF:", err);
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const token = localStorage.getItem("token") || "";
+      const printUrl = `${apiBaseUrl}/orcamentos/${id}/html?token=${encodeURIComponent(token)}`;
+      window.open(printUrl, "_blank");
+    }
   };
 
   const formatCurrency = (val: number) => {
