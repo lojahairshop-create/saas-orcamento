@@ -14,5 +14,4 @@ httpx
 pytest
 jinja2
 reportlab
-xhtml2pdf
 

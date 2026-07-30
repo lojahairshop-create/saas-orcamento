@@ -67,17 +67,12 @@ export default function OrcamentoDetailPage() {
     }
   };
 
-  const handleDownloadPdf = async () => {
+  const handleDownloadPdf = () => {
     if (!orcamento) return;
-    try {
-      await api.downloadPdf(orcamento.id, `orcamento_${orcamento.numero}.pdf`);
-    } catch (err) {
-      console.error("Erro ao baixar PDF:", err);
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const token = localStorage.getItem("token") || "";
-      const printUrl = `${apiBaseUrl}/orcamentos/${orcamento.id}/html?token=${encodeURIComponent(token)}`;
-      window.open(printUrl, "_blank");
-    }
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const token = localStorage.getItem("token") || "";
+    const printUrl = `${apiBaseUrl}/orcamentos/${orcamento.id}/html?token=${encodeURIComponent(token)}`;
+    window.open(printUrl, "_blank");
   };
 
   const handleDownloadNestingPdf = () => {
@@ -362,24 +357,13 @@ export default function OrcamentoDetailPage() {
                             Beneficiamento (Material do Cliente)
                           </span>
                         )}
-                        {(() => {
-                          const it = item as any;
-                          const temPintura = (it.valor_pintura > 0) || (it.preco_pintura_kg > 0) || (it.operacoes && it.operacoes.some((op: any) => (op.nome || '').toUpperCase().includes('PINTURA') || (op.nome || '').toUpperCase().includes('TRAT')));
-                          return temPintura ? (
-                            <span className="text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded inline-block ml-2">
-                              Pintura / Trat. Superf.
-                            </span>
-                          ) : null;
-                        })()}
                         {item.observacoes && (
                           <span className="text-[10px] text-slate-500 block mt-0.5">Obs: {item.observacoes}</span>
                         )}
-                        {((item as any).tempo_corte > 0 || (item as any).custo_extra > 0 || (item as any).valor_pintura > 0 || (item as any).preco_pintura_kg > 0) && (
-                          <div className="text-[10px] text-teal-600 flex flex-wrap gap-3 mt-0.5">
+                        {((item as any).tempo_corte > 0 || (item as any).custo_extra > 0) && (
+                          <div className="text-[10px] text-teal-600 flex gap-3 mt-0.5">
                             {(item as any).tempo_corte > 0 && <span>Tempo Corte: {(item as any).tempo_corte} min</span>}
                             {(item as any).custo_extra > 0 && <span>Custo Extra: {formatCurrency((item as any).custo_extra)}</span>}
-                            {(item as any).valor_pintura > 0 && <span>Pintura: {formatCurrency((item as any).valor_pintura)} /un</span>}
-                            {(item as any).preco_pintura_kg > 0 && <span>Pintura: {formatCurrency((item as any).preco_pintura_kg)} /kg</span>}
                           </div>
                         )}
                       </div>

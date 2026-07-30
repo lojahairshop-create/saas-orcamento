@@ -104,31 +104,21 @@ class PDFGenerator:
 
         if WEASYPRINT_DISPONIVEL:
             try:
-                # Compilar HTML renderizado para PDF via WeasyPrint
+                # Compilar HTML renderizado para PDF
                 pdf_bytes = HTML(string=html_rendered).write_pdf()
                 return pdf_bytes
             except Exception as exc:
+                # Se falhar em tempo de execução por falta de bibliotecas C, caímos no fallback
                 print(f"Erro ao compilar PDF com WeasyPrint: {str(exc)}")
                 pass
 
-        # USAR XHTML2PDF (PISA) como alternativa em Python Puro para PDFs com texto copiável
+        # FALLBACK: Se o WeasyPrint não estiver disponível ou falhar, retornamos o próprio HTML
+        # decodificado em PDF falso ou geramos um HTML limpo para que o navegador renderize.
+        # Para que a API responda algo legível, vamos simular os bytes do PDF ou
+        # escrever uma mensagem de erro em formato PDF básico usando reportlab (se disponível),
+        # ou apenas criar um arquivo PDF simples contendo a representação em texto.
         try:
-            from io import BytesIO
-            from xhtml2pdf import pisa
-
-            buffer = BytesIO()
-            pdf_result = pisa.pisaDocument(BytesIO(html_rendered.encode("utf-8")), buffer)
-            if not pdf_result.err:
-                return buffer.getvalue()
-            else:
-                print(f"Aviso xhtml2pdf gerou com {pdf_result.err} aviso(s), retornando PDF gerado.")
-                return buffer.getvalue()
-        except Exception as exc_pisa:
-            print(f"Erro ao compilar PDF com xhtml2pdf: {str(exc_pisa)}")
-            pass
-
-        # FALLBACK 2: ReportLab canvas
-        try:
+            # Fallback usando ReportLab caso esteja disponível, que é pure-python e livre de C libraries
             from reportlab.lib.pagesizes import letter
             from reportlab.pdfgen import canvas
             import io
@@ -140,6 +130,7 @@ class PDFGenerator:
             p.drawString(100, 710, f"Total Preço: R$ {orcamento_response.total_preco:.2f}")
             p.drawString(100, 690, f"Total NF: R$ {orcamento_response.total_nf:.2f}")
             p.drawString(100, 670, f"Validade: {validade_str}")
+            p.drawString(100, 650, "[NOTA: Instale GTK+ / WeasyPrint no servidor para habilitar o PDF completo]")
             
             y_offset = 610
             p.drawString(100, y_offset, "Itens:")
@@ -155,4 +146,6 @@ class PDFGenerator:
             p.save()
             return buffer.getvalue()
         except Exception:
+            # Se nem o reportlab funcionar, retorna os bytes do HTML cru para o cliente,
+            # ou um PDF binário dummy.
             return html_rendered.encode("utf-8")
