@@ -110,6 +110,7 @@ class ItemCalculadoResponse(BaseModel):
     vetor_svg: Optional[str] = None
     custo_extra: float = 0.0
     tempo_corte: float = 0.0
+    tempo_setup: float = 0.0
     preco_pintura_kg: float = 0.0
     valor_pintura: float = 0.0
     valor_final: float = 0.0
