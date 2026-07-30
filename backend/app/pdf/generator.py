@@ -57,13 +57,7 @@ class PDFGenerator:
         template = env.get_template("orcamento.html")
 
         # Calcular data de validade
-        if isinstance(orcamento_response, dict):
-            created_at_dt = orcamento_response.get("created_at")
-            validade_dias = orcamento_response.get("validade") or 30
-        else:
-            created_at_dt = getattr(orcamento_response, "created_at", None)
-            validade_dias = getattr(orcamento_response, "validade", 30) or 30
-
+        created_at_dt = orcamento_response.created_at
         if isinstance(created_at_dt, str):
             try:
                 # Tenta parsear string ISO
@@ -73,6 +67,7 @@ class PDFGenerator:
         elif not created_at_dt:
             created_at_dt = datetime.now()
             
+        validade_dias = orcamento_response.validade or 30
         validade_dt = created_at_dt + timedelta(days=validade_dias)
         validade_str = validade_dt.strftime("%d/%m/%Y")
 
@@ -109,14 +104,30 @@ class PDFGenerator:
 
         if WEASYPRINT_DISPONIVEL:
             try:
-                # Compilar HTML renderizado para PDF
+                # Compilar HTML renderizado para PDF via WeasyPrint
                 pdf_bytes = HTML(string=html_rendered).write_pdf()
                 return pdf_bytes
             except Exception as exc:
                 print(f"Erro ao compilar PDF com WeasyPrint: {str(exc)}")
                 pass
 
-        # FALLBACK: ReportLab canvas caso WeasyPrint não esteja instalado no sistema
+        # USAR XHTML2PDF (PISA) como alternativa em Python Puro para PDFs com texto copiável
+        try:
+            from io import BytesIO
+            from xhtml2pdf import pisa
+
+            buffer = BytesIO()
+            pdf_result = pisa.pisaDocument(BytesIO(html_rendered.encode("utf-8")), buffer)
+            if not pdf_result.err:
+                return buffer.getvalue()
+            else:
+                print(f"Aviso xhtml2pdf gerou com {pdf_result.err} aviso(s), retornando PDF gerado.")
+                return buffer.getvalue()
+        except Exception as exc_pisa:
+            print(f"Erro ao compilar PDF com xhtml2pdf: {str(exc_pisa)}")
+            pass
+
+        # FALLBACK 2: ReportLab canvas
         try:
             from reportlab.lib.pagesizes import letter
             from reportlab.pdfgen import canvas
@@ -124,30 +135,18 @@ class PDFGenerator:
 
             buffer = io.BytesIO()
             p = canvas.Canvas(buffer, pagesize=letter)
-            
-            num = getattr(orcamento_response, 'numero', None) or (orcamento_response.get('numero') if isinstance(orcamento_response, dict) else '')
-            cli = getattr(orcamento_response, 'cliente', None)
-            cli_nome = getattr(cli, 'nome', '') if cli else (orcamento_response.get('cliente', {}).get('nome', '') if isinstance(orcamento_response, dict) else '')
-            tot_p = getattr(orcamento_response, 'total_preco', 0) or (orcamento_response.get('total_preco', 0) if isinstance(orcamento_response, dict) else 0)
-            tot_nf = getattr(orcamento_response, 'total_nf', 0) or (orcamento_response.get('total_nf', 0) if isinstance(orcamento_response, dict) else 0)
-            itens_lst = getattr(orcamento_response, 'itens', []) or (orcamento_response.get('itens', []) if isinstance(orcamento_response, dict) else [])
-
-            p.drawString(100, 750, f"ORÇAMENTO COMERCIAL: {num}")
-            p.drawString(100, 730, f"Cliente: {cli_nome}")
-            p.drawString(100, 710, f"Total Preço: R$ {tot_p:.2f}")
-            p.drawString(100, 690, f"Total NF: R$ {tot_nf:.2f}")
+            p.drawString(100, 750, f"ORÇAMENTO COMERCIAL: {orcamento_response.numero}")
+            p.drawString(100, 730, f"Cliente: {orcamento_response.cliente.nome}")
+            p.drawString(100, 710, f"Total Preço: R$ {orcamento_response.total_preco:.2f}")
+            p.drawString(100, 690, f"Total NF: R$ {orcamento_response.total_nf:.2f}")
             p.drawString(100, 670, f"Validade: {validade_str}")
             
             y_offset = 610
             p.drawString(100, y_offset, "Itens:")
             y_offset -= 20
             
-            for item in itens_lst[:10]:
-                it_q = getattr(item, 'quantidade', None) or (item.get('quantidade') if isinstance(item, dict) else 1)
-                it_desc = getattr(item, 'descricao', '') or (item.get('descricao', '') if isinstance(item, dict) else '')
-                it_mat = getattr(item, 'material', '') or (item.get('material', '') if isinstance(item, dict) else '')
-                it_tot = getattr(item, 'preco_total', 0) or (item.get('preco_total', 0) if isinstance(item, dict) else 0)
-                p.drawString(120, y_offset, f"- {it_q}x {it_desc} ({it_mat}): R$ {it_tot:.2f}")
+            for item in orcamento_response.itens[:10]:
+                p.drawString(120, y_offset, f"- {item.quantidade}x {item.descricao} ({item.material}): R$ {item.preco_total:.2f}")
                 y_offset -= 15
                 if y_offset < 100:
                     break

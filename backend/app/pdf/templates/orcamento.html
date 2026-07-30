@@ -5,24 +5,15 @@
     <title>Orçamento {{ orcamento.numero }}</title>
     <style>
         @page {
-            size: A4;
-            margin-top: 15mm;
-            margin-left: 15mm;
-            margin-right: 15mm;
-            margin-bottom: 25mm;
-            @bottom-center {
-                content: "FF CALDEIRARIA LTDA • CNPJ: 29.391.618/0001-01 | Rua Lúcia Piffer Baptistella, 320, Vila Rita • Fone: (11) 4487-7164\A Todos os direitos reservados.";
-                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-                font-size: 6.5pt;
-                color: #94a3b8;
-                text-align: center;
-                white-space: pre-line;
-            }
-            @bottom-right {
-                content: "Página " counter(page) " de " counter(pages);
-                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-                font-size: 8pt;
-                color: #64748b;
+            size: A4 portrait;
+            margin-top: 12mm;
+            margin-left: 12mm;
+            margin-right: 12mm;
+            margin-bottom: 20mm;
+            @frame footer {
+                -pdf-frame-content: footerContent;
+                bottom: 4mm;
+                height: 12mm;
             }
         }
         body {
@@ -173,6 +164,24 @@
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 4px;
         }
+        .terms-category {
+            font-weight: bold;
+            font-size: 8.5pt;
+            color: #0f172a;
+            margin-top: 8px;
+            margin-bottom: 3px;
+        }
+        .terms-sublist {
+            list-style-type: disc;
+            padding-left: 16px;
+            margin: 0 0 8px 0;
+        }
+        .terms-sublist li {
+            font-size: 7.8pt;
+            color: #334155;
+            margin-bottom: 3px;
+            line-height: 1.35;
+        }
         .terms-details-table {
             width: 100%;
             border-collapse: collapse;
@@ -181,10 +190,13 @@
         .terms-details-table td {
             padding: 4px 0;
             font-size: 8.5pt;
+            border-bottom: 1px solid #f1f5f9;
         }
         .observacoes-text {
+            white-space: pre-wrap;
+            font-family: inherit;
             font-size: 8.5pt;
-            color: #334155;
+            color: #1e293b;
             line-height: 1.5;
             margin-top: 4px;
         }
@@ -272,16 +284,13 @@
                 </td>
                 <td>
                     <strong>{{ item.descricao }}</strong>
-                    {%- set ns_setup = namespace(tem=(item.tempo_setup and item.tempo_setup > 0)) -%}
-                    {%- set ns_pintura = namespace(tem=(item.valor_pintura and item.valor_pintura > 0) or (item.preco_pintura_kg and item.preco_pintura_kg > 0) or (item.preco_pintura and item.preco_pintura > 0)) -%}
-                    {%- if item.operacoes -%}
+                    {%- set tem_pintura = (item.valor_pintura and item.valor_pintura > 0) or (item.preco_pintura_kg and item.preco_pintura_kg > 0) or (item.preco_pintura and item.preco_pintura > 0) -%}
+                    {%- if not tem_pintura and item.operacoes -%}
                       {%- for op in item.operacoes -%}
-                        {%- set op_u = (op.nome or '')|upper -%}
-                        {%- if ('SET-UP' in op_u or 'SETUP' in op_u) and (op.tempo_min and op.tempo_min > 0) -%}
-                          {%- set ns_setup.tem = true -%}
-                        {%- endif -%}
-                        {%- if 'PINTURA' in op_u or 'TRAT' in op_u or 'ZINCA' in op_u or 'GALVA' in op_u or 'JATEA' in op_u or 'ANODI' in op_u or 'PASSIVA' in op_u -%}
-                          {%- set ns_pintura.tem = true -%}
+                        {%- if 'PINTURA' in (op.nome|upper) or 'TRAT' in (op.nome|upper) -%}
+                          {%- if (op.tempo_min and op.tempo_min > 0) or (op.custo_hora and op.custo_hora > 0) -%}
+                            {%- set tem_pintura = true -%}
+                          {%- endif -%}
                         {%- endif -%}
                       {%- endfor -%}
                     {%- endif -%}
@@ -289,7 +298,7 @@
                     {%- set mat_nome = 'Aço Carbono' if ('CARBONO' in mat_upper or 'CARBON' in mat_upper) else ('Inox' if 'INOX' in mat_upper else ('Alumínio' if 'ALUM' in mat_upper else item.material|title)) -%}
                     <br>
                     <span style="font-size: 7.5pt; color: #475569;">
-                        {{ mat_nome }} {{ ("%.2f"|format(item.espessura))|replace('.00', '')|replace('.', ',') }}mm | Processos: {% set ns = namespace(primeiro=true) %}{%- if ns_setup.tem %}{%- if not ns.primeiro %}, {% endif %}Setup{% set ns.primeiro = false %}{% endif %}{%- if item.tempo_corte_laser > 0 or item.tempo_corte > 0 %}{%- if not ns.primeiro %}, {% endif %}Laser{% set ns.primeiro = false %}{% endif %}{%- if item.operacoes %}{%- for op in item.operacoes %}{%- if op.tempo_min and op.tempo_min > 0 and op.nome|upper not in ['CORTE LASER', 'SET-UP', 'SETUP', 'PINTURA', 'PINTURA / TRAT. SUPERF.', 'PINTURA/TRAT. SUPERF.', 'VALOR FINAL', 'VALOR_FINAL', 'PREÇO FINAL', 'PRECO FINAL'] %}{%- if not ns.primeiro %}, {% endif %}{{- 'Usinagem' if 'USINAGEM' in op.nome|upper else ('Caldeiraria' if 'CALDEIRARIA' in op.nome|upper else op.nome|title) -}}{%- set ns.primeiro = false -%}{%- endif %}{%- endfor %}{%- endif %}{%- if ns_pintura.tem %}{%- if not ns.primeiro %}, {% endif %}Pintura / Trat. Superf.{%- set ns.primeiro = false -%}{%- endif %}
+                        {{ mat_nome }} {{ ("%.2f"|format(item.espessura))|replace('.00', '')|replace('.', ',') }}mm | Processos: {% set ns = namespace(primeiro=true) %}{%- if item.tempo_corte_laser > 0 or item.tempo_corte > 0 %}Laser{% set ns.primeiro = false %}{% endif %}{%- if item.operacoes %}{%- for op in item.operacoes %}{%- if op.tempo_min and op.tempo_min > 0 and op.nome|upper not in ['CORTE LASER', 'SET-UP', 'SETUP', 'PINTURA', 'PINTURA / TRAT. SUPERF.', 'PINTURA/TRAT. SUPERF.'] %}{%- if not ns.primeiro %}, {% endif %}{{- 'Usinagem' if 'USINAGEM' in op.nome|upper else ('Caldeiraria' if 'CALDEIRARIA' in op.nome|upper else op.nome|title) -}}{%- set ns.primeiro = false -%}{%- endif %}{%- endfor %}{%- endif %}{%- if tem_pintura %}{%- if not ns.primeiro %}, {% endif %}Pintura / Trat. Superf.{%- set ns.primeiro = false -%}{%- endif %}
                     </span>
                     {% if item.beneficiamento %}
                     <br><span style="font-size: 7.5pt; color: #334155; font-weight: bold; white-space: nowrap;">Material Fornecido Pelo Cliente</span>
@@ -341,6 +350,12 @@
                 </td>
             </tr>
         </table>
+    </div>
+
+    <!-- RODAPÉ DA PÁGINA (PDF e Impressão) -->
+    <div id="footerContent" style="text-align: center; font-size: 7.5pt; color: #64748b; margin-top: 15px;">
+        FF CALDEIRARIA LTDA — CNPJ: 29.391.618/0001-01 | Rua Lúcia Piffer Baptistella, 320, Vila Rita — Fone: (11) 4487-7164<br>
+        Todos os direitos reservados.
     </div>
 
 </body>

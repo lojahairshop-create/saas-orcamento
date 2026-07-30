@@ -365,20 +365,11 @@ export default function OrcamentoDetailPage() {
                         {(() => {
                           const it = item as any;
                           const temPintura = (it.valor_pintura > 0) || (it.preco_pintura_kg > 0) || (it.operacoes && it.operacoes.some((op: any) => (op.nome || '').toUpperCase().includes('PINTURA') || (op.nome || '').toUpperCase().includes('TRAT')));
-                          return (
-                            <>
-                              {temPintura && (
-                                <span className="text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded inline-block ml-2">
-                                  Pintura / Trat. Superf.
-                                </span>
-                              )}
-                              {it.valor_final > 0 && (
-                                <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded inline-block ml-2">
-                                  Preço Fixo Manual: {formatCurrency(it.valor_final)}
-                                </span>
-                              )}
-                            </>
-                          );
+                          return temPintura ? (
+                            <span className="text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded inline-block ml-2">
+                              Pintura / Trat. Superf.
+                            </span>
+                          ) : null;
                         })()}
                         {item.observacoes && (
                           <span className="text-[10px] text-slate-500 block mt-0.5">Obs: {item.observacoes}</span>
