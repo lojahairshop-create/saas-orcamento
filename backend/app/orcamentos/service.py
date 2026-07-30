@@ -635,6 +635,7 @@ async def update_orcamento(
                 "origem_material": item_input.get("origem_material", "chapa_inteira"),
                 "custo_extra": item_input.get("custo_extra", 0.0),
                 "tempo_corte": item_input.get("tempo_corte", 0.0),
+                "preco_pintura_kg": float(item_input.get("valor_pintura") or item_input.get("preco_pintura_kg") or 0.0),
                 "vetor_svg": item_input.get("vetor_svg"),
                 "velocidade": calc.get("velocidade", 0),
                 "peck": calc.get("peck", 0),

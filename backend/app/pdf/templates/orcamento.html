@@ -287,10 +287,9 @@
                     {%- set ns_pintura = namespace(tem=(item.valor_pintura and item.valor_pintura > 0) or (item.preco_pintura_kg and item.preco_pintura_kg > 0) or (item.preco_pintura and item.preco_pintura > 0)) -%}
                     {%- if not ns_pintura.tem and item.operacoes -%}
                       {%- for op in item.operacoes -%}
-                        {%- if 'PINTURA' in (op.nome|upper) or 'TRAT' in (op.nome|upper) -%}
-                          {%- if (op.tempo_min and op.tempo_min > 0) or (op.custo_hora and op.custo_hora > 0) -%}
-                            {%- set ns_pintura.tem = true -%}
-                          {%- endif -%}
+                        {%- set op_u = (op.nome or '')|upper -%}
+                        {%- if 'PINTURA' in op_u or 'TRAT' in op_u or 'ZINCA' in op_u or 'GALVA' in op_u or 'JATEA' in op_u or 'ANODI' in op_u or 'PASSIVA' in op_u -%}
+                          {%- set ns_pintura.tem = true -%}
                         {%- endif -%}
                       {%- endfor -%}
                     {%- endif -%}

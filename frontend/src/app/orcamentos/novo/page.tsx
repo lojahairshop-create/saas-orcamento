@@ -100,6 +100,7 @@ function NovoOrcamentoWizardContent() {
   const [bulkTempoGuilhotina, setBulkTempoGuilhotina] = useState<string>("");
   const [bulkTempoUsinagem, setBulkTempoUsinagem] = useState<string>("");
   const [bulkTempoMontagem, setBulkTempoMontagem] = useState<string>("");
+  const [bulkValorPintura, setBulkValorPintura] = useState<string>("");
 
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [custosOperacao, setCustosOperacao] = useState<{ [key: string]: number }>({});
@@ -427,6 +428,8 @@ function NovoOrcamentoWizardContent() {
         let precoKg = it.preco_kg;
         let tipoMat = it.tipo_material;
 
+        let valPintura = it.valor_pintura ?? it.preco_pintura_kg ?? 0;
+
         if (bulkNewMaterial) {
           mat = bulkNewMaterial;
           const matched = materiais.find(m => m.nome === bulkNewMaterial);
@@ -476,6 +479,10 @@ function NovoOrcamentoWizardContent() {
           const parsed = parseFloat(String(bulkTempoMontagem).replace(",", "."));
           if (!isNaN(parsed)) montagem = parsed;
         }
+        if (bulkValorPintura) {
+          const parsed = parseFloat(String(bulkValorPintura).replace(",", "."));
+          if (!isNaN(parsed)) valPintura = parsed;
+        }
 
         return {
           ...it,
@@ -491,6 +498,8 @@ function NovoOrcamentoWizardContent() {
           tempo_guilhotina: guilhotina,
           tempo_usinagem: usinagem,
           tempo_montagem: montagem,
+          valor_pintura: valPintura,
+          preco_pintura_kg: valPintura,
         };
       }
       return it;
@@ -1874,13 +1883,21 @@ function NovoOrcamentoWizardContent() {
                   <h4 className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wider">
                     Alterar Tempos de Operação (minutos)
                   </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <Input
                       label="DOBRA"
                       type="number"
                       placeholder="Manter original"
                       value={bulkTempoDobra}
                       onChange={(e) => setBulkTempoDobra(e.target.value)}
+                      className="h-9 text-xs"
+                    />
+                    <Input
+                      label="CALDEIRARIA"
+                      type="number"
+                      placeholder="Manter original"
+                      value={bulkTempoCaldeiraria}
+                      onChange={(e) => setBulkTempoCaldeiraria(e.target.value)}
                       className="h-9 text-xs"
                     />
                     <Input
@@ -1913,6 +1930,14 @@ function NovoOrcamentoWizardContent() {
                       placeholder="Manter original"
                       value={bulkTempoMontagem}
                       onChange={(e) => setBulkTempoMontagem(e.target.value)}
+                      className="h-9 text-xs"
+                    />
+                    <Input
+                      label="PINTURA / TRAT. (R$)"
+                      type="number"
+                      placeholder="Manter original"
+                      value={bulkValorPintura}
+                      onChange={(e) => setBulkValorPintura(e.target.value)}
                       className="h-9 text-xs"
                     />
                   </div>
