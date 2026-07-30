@@ -130,6 +130,7 @@ function NovoOrcamentoWizardContent() {
     // Tempos das operações (minutos) e Pintura (R$)
     valor_pintura: 0.0,
     preco_pintura_kg: 0.0,
+    valor_final: 0.0,
     tempo_setup: 0.0,
     tempo_dobra: 0.0,
     tempo_caldeiraria: 0.0,
@@ -161,6 +162,18 @@ function NovoOrcamentoWizardContent() {
       console.error("Erro ao recalcular margem geral:", err);
     }
   };
+
+  // Keep-alive ping para evitar logout por ociosidade / Render dormir
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        await api.getMe();
+      } catch (err) {
+        console.warn("Ping keepalive:", err);
+      }
+    }, 120000); // 2 minutos
+    return () => clearInterval(interval);
+  }, []);
 
   // Carregar materiais e custos padrão do backend no início
   useEffect(() => {
@@ -287,6 +300,9 @@ function NovoOrcamentoWizardContent() {
           beneficiamento: !!it.beneficiamento,
           tempo_corte: it.tempo_corte || 0.0,
           custo_extra: it.custo_extra || 0.0,
+          valor_pintura: it.valor_pintura ?? it.preco_pintura_kg ?? 0.0,
+          preco_pintura_kg: it.preco_pintura_kg ?? it.valor_pintura ?? 0.0,
+          valor_final: it.valor_final ?? 0.0,
           tempo_setup: getTempo(it.operacoes || [], "SET-UP"),
           tempo_dobra: getTempo(it.operacoes || [], "DOBRA"),
           tempo_caldeiraria: getTempo(it.operacoes || [], "CALDEIRARIA"),
@@ -337,6 +353,7 @@ function NovoOrcamentoWizardContent() {
       custo_extra: 0,
       valor_pintura: 0.0,
       preco_pintura_kg: 0.0,
+      valor_final: 0.0,
       tempo_setup: 0.0,
       tempo_dobra: 0.0,
       tempo_caldeiraria: 0.0,
@@ -377,6 +394,7 @@ function NovoOrcamentoWizardContent() {
       custo_extra: item.custo_extra ?? 0,
       valor_pintura: item.valor_pintura ?? item.preco_pintura_kg ?? 0,
       preco_pintura_kg: item.preco_pintura_kg ?? item.valor_pintura ?? 0,
+      valor_final: item.valor_final ?? 0,
       tempo_setup: item.tempo_setup ?? 0,
       tempo_dobra: item.tempo_dobra ?? 0,
       tempo_caldeiraria: item.tempo_caldeiraria ?? 0,
@@ -621,8 +639,18 @@ function NovoOrcamentoWizardContent() {
       const custoBasico = calcularCustoBasico(totalFab, custoMp) + custoExtraTotal;
       const vendaSemImp = calcularValorVendaSemImp(custoBasico, item.margem_lucro);
       const vendaSemImpUnit = item.quantidade > 0 ? vendaSemImp / item.quantidade : 0;
-      const precoUnitComImp = calcularPrecoComImpostos(vendaSemImpUnit, totalImpostos);
-      const precoTotalItem = precoUnitComImp * item.quantidade;
+      
+      const valorFinal = item.valor_final || 0.0;
+      let precoUnitComImp = 0.0;
+      let precoTotalItem = 0.0;
+
+      if (valorFinal > 0) {
+        precoTotalItem = valorFinal;
+        precoUnitComImp = item.quantidade > 0 ? valorFinal / item.quantidade : valorFinal;
+      } else {
+        precoUnitComImp = calcularPrecoComImpostos(vendaSemImpUnit, totalImpostos);
+        precoTotalItem = precoUnitComImp * item.quantidade;
+      }
 
       totalPreco += precoTotalItem;
       totalCustoMp += custoMp;
@@ -632,6 +660,7 @@ function NovoOrcamentoWizardContent() {
       return {
         ...item,
         beneficiamento,
+        valor_final: valorFinal,
         peso_total: pesoTotal,
         preco_unitario_com_imp: precoUnitComImp,
         preco_total: precoTotalItem,
@@ -711,6 +740,7 @@ function NovoOrcamentoWizardContent() {
           tempo_corte: it.tempo_corte || 0,
           preco_pintura_kg: it.valor_pintura || it.preco_pintura_kg || 0,
           valor_pintura: it.valor_pintura || it.preco_pintura_kg || 0,
+          valor_final: it.valor_final || 0,
           operacoes: [
             { nome: "DOBRA", tempo_min: it.tempo_dobra || 0 },
             { nome: "SOLDA", tempo_min: it.tempo_solda || 0 },
@@ -1411,6 +1441,16 @@ function NovoOrcamentoWizardContent() {
                       setNovaPeca({ ...novaPeca, valor_pintura: val, preco_pintura_kg: val });
                     }}
                   />
+                  <Input
+                    label="VALOR FINAL / PREÇO FIXO (R$)"
+                    type="number"
+                    placeholder="0.00"
+                    value={novaPeca.valor_final || 0}
+                    onChange={e => {
+                      const val = parseFloat(e.target.value) || 0;
+                      setNovaPeca({ ...novaPeca, valor_final: val });
+                    }}
+                  />
                 </div>
               </div>
 
@@ -1441,6 +1481,7 @@ function NovoOrcamentoWizardContent() {
                         custo_extra: 0.0,
                         valor_pintura: 0.0,
                         preco_pintura_kg: 0.0,
+                        valor_final: 0.0,
                         tempo_setup: 0.0,
                         tempo_dobra: 0.0,
                         tempo_caldeiraria: 0.0,

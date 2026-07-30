@@ -100,6 +100,7 @@ def _build_item_response(
         tempo_corte=float(item_input.get("tempo_corte", 0.0)),
         preco_pintura_kg=float(item_input.get("preco_pintura_kg", 0.0)) or float(item_input.get("valor_pintura", 0.0)),
         valor_pintura=float(item_input.get("valor_pintura", 0.0)) or float(item_input.get("preco_pintura_kg", 0.0)),
+        valor_final=float(item_input.get("valor_final", 0.0)),
     )
 
 
@@ -207,6 +208,8 @@ async def create_orcamento(
             "custo_extra": item_input.get("custo_extra", 0.0),
             "tempo_corte": item_input.get("tempo_corte", 0.0),
             "preco_pintura_kg": float(item_input.get("valor_pintura") or item_input.get("preco_pintura_kg") or 0.0),
+            "valor_pintura": float(item_input.get("valor_pintura") or item_input.get("preco_pintura_kg") or 0.0),
+            "valor_final": float(item_input.get("valor_final") or 0.0),
             "vetor_svg": item_input.get("vetor_svg"),
             "velocidade": calc.get("velocidade", 0),
             "peck": calc.get("peck", 0),
@@ -344,6 +347,7 @@ async def get_orcamento(orcamento_id: str, user_id: str) -> OrcamentoResponse:
             "tempo_corte": float(item_db.get("tempo_corte") or 0),
             "preco_pintura_kg": float(item_db.get("preco_pintura_kg") or item_db.get("valor_pintura") or 0),
             "valor_pintura": float(item_db.get("valor_pintura") or item_db.get("preco_pintura_kg") or 0),
+            "valor_final": float(item_db.get("valor_final") or 0),
             "taxa_comissao": taxa_comissao,
             "operacoes": [op.model_dump() for op in operacoes_model],
         }
@@ -635,6 +639,9 @@ async def update_orcamento(
                 "origem_material": item_input.get("origem_material", "chapa_inteira"),
                 "custo_extra": item_input.get("custo_extra", 0.0),
                 "tempo_corte": item_input.get("tempo_corte", 0.0),
+                "preco_pintura_kg": float(item_input.get("valor_pintura") or item_input.get("preco_pintura_kg") or 0.0),
+                "valor_pintura": float(item_input.get("valor_pintura") or item_input.get("preco_pintura_kg") or 0.0),
+                "valor_final": float(item_input.get("valor_final") or 0.0),
                 "vetor_svg": item_input.get("vetor_svg"),
                 "velocidade": calc.get("velocidade", 0),
                 "peck": calc.get("peck", 0),

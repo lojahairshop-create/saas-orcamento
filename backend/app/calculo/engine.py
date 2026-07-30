@@ -300,13 +300,17 @@ class CalculoEngine:
         total_impostos = tax_cfg.total_impostos
 
         # 12. Preço unitário com impostos (POR UNIDADE)
-        preco_unitario_com_imp = calcular_preco_com_impostos(
-            valor_venda_sem_imp / quantidade if quantidade > 0 else 0,
-            total_impostos,
-        )
-
-        # 13. Preço total
-        preco_total = preco_unitario_com_imp * quantidade
+        valor_final = float(item_data.get("valor_final", 0.0))
+        if valor_final > 0:
+            preco_total = valor_final
+            preco_unitario_com_imp = valor_final / quantidade if quantidade > 0 else valor_final
+        else:
+            preco_unitario_com_imp = calcular_preco_com_impostos(
+                valor_venda_sem_imp / quantidade if quantidade > 0 else 0,
+                total_impostos,
+            )
+            # 13. Preço total
+            preco_total = preco_unitario_com_imp * quantidade
 
         # 14. Impostos individuais
         impostos = calcular_impostos_individuais(
@@ -329,6 +333,7 @@ class CalculoEngine:
             "tempo_corte": float(item_data.get("tempo_corte", 0.0)),
             "preco_pintura_kg": preco_pintura_kg,
             "valor_pintura": valor_pintura,
+            "valor_final": valor_final,
             # Geometria / Peso
             "area": area,
             "peso_unitario": peso_unitario,
