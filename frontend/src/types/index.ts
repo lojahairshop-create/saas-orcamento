@@ -40,6 +40,7 @@ export interface OrcamentoItem {
   beneficiamento?: boolean;
   preco_pintura_kg?: number;
   valor_pintura?: number;
+  valor_final?: number;
   operacoes: OperacaoItem[];
   observacoes?: string | null;
 

@@ -31,6 +31,12 @@ class ApiClient {
     if (response.status === 204) {
       return {} as T;
     }
+    if (response.status === 401) {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("session_expired_notice", "true");
+      }
+      throw new Error("Sessão expirada por inatividade. Seu rascunho foi preservado localmente no navegador.");
+    }
     if (!response.ok) {
       let errorMessage = "Erro na requisição";
       try {
@@ -57,8 +63,18 @@ class ApiClient {
     const data = await this.handleResponse<{ access_token: string; user: User }>(res);
     if (data.access_token) {
       localStorage.setItem("token", data.access_token);
+      localStorage.removeItem("session_expired_notice");
     }
     return data;
+  }
+
+  async keepAlive(): Promise<boolean> {
+    try {
+      const user = await this.getMe();
+      return !!user;
+    } catch {
+      return false;
+    }
   }
 
   async logout(): Promise<void> {

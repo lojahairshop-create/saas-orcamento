@@ -101,6 +101,7 @@ function NovoOrcamentoWizardContent() {
   const [bulkTempoUsinagem, setBulkTempoUsinagem] = useState<string>("");
   const [bulkTempoMontagem, setBulkTempoMontagem] = useState<string>("");
   const [bulkValorPintura, setBulkValorPintura] = useState<string>("");
+  const [bulkValorFinal, setBulkValorFinal] = useState<string>("");
 
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [custosOperacao, setCustosOperacao] = useState<{ [key: string]: number }>({});
@@ -128,9 +129,10 @@ function NovoOrcamentoWizardContent() {
     tempo_corte: 0.0,
     custo_extra: 0.0,
     
-    // Tempos das operações (minutos) e Pintura (R$)
+    // Tempos das operações (minutos), Pintura (R$) e Valor Final (R$)
     valor_pintura: 0.0,
     preco_pintura_kg: 0.0,
+    valor_final: 0.0,
     tempo_setup: 0.0,
     tempo_dobra: 0.0,
     tempo_caldeiraria: 0.0,
@@ -141,6 +143,37 @@ function NovoOrcamentoWizardContent() {
     
     observacoes: "",
   });
+
+  // Keepalive silencioso para manter a sessão ativa durante orçamentos longos
+  useEffect(() => {
+    const timer = setInterval(() => {
+      api.keepAlive();
+    }, 180000); // a cada 3 min
+    return () => clearInterval(timer);
+  }, []);
+
+  // Salvamento automático do rascunho em localStorage para zero perda de dados
+  useEffect(() => {
+    if (itens.length > 0) {
+      try {
+        localStorage.setItem("orcamento_draft_auto", JSON.stringify({
+          cliente,
+          tipoVenda,
+          ipiRate,
+          taxaComissao,
+          condicaoPagamento,
+          prazoEntrega,
+          frete,
+          validade,
+          observacoes,
+          itens,
+          updated_at: Date.now()
+        }));
+      } catch (e) {
+        console.error("Auto-save draft error:", e);
+      }
+    }
+  }, [itens, cliente, tipoVenda, ipiRate, taxaComissao, condicaoPagamento, prazoEntrega, frete, validade, observacoes]);
 
   const [sugestaoEstoque, setSugestaoEstoque] = useState<any>(null);
   const [margemGeralPct, setMargemGeralPct] = useState<number>(30);
@@ -338,6 +371,7 @@ function NovoOrcamentoWizardContent() {
       custo_extra: 0,
       valor_pintura: 0.0,
       preco_pintura_kg: 0.0,
+      valor_final: 0.0,
       tempo_setup: 0.0,
       tempo_dobra: 0.0,
       tempo_caldeiraria: 0.0,
@@ -378,6 +412,7 @@ function NovoOrcamentoWizardContent() {
       custo_extra: item.custo_extra ?? 0,
       valor_pintura: item.valor_pintura ?? item.preco_pintura_kg ?? 0,
       preco_pintura_kg: item.preco_pintura_kg ?? item.valor_pintura ?? 0,
+      valor_final: item.valor_final ?? 0,
       tempo_setup: item.tempo_setup ?? 0,
       tempo_dobra: item.tempo_dobra ?? 0,
       tempo_caldeiraria: item.tempo_caldeiraria ?? 0,
@@ -429,6 +464,7 @@ function NovoOrcamentoWizardContent() {
         let tipoMat = it.tipo_material;
 
         let valPintura = it.valor_pintura ?? it.preco_pintura_kg ?? 0;
+        let valFinal = it.valor_final ?? 0;
 
         if (bulkNewMaterial) {
           mat = bulkNewMaterial;
@@ -483,6 +519,10 @@ function NovoOrcamentoWizardContent() {
           const parsed = parseFloat(String(bulkValorPintura).replace(",", "."));
           if (!isNaN(parsed)) valPintura = parsed;
         }
+        if (bulkValorFinal) {
+          const parsed = parseFloat(String(bulkValorFinal).replace(",", "."));
+          if (!isNaN(parsed)) valFinal = parsed;
+        }
 
         return {
           ...it,
@@ -500,6 +540,7 @@ function NovoOrcamentoWizardContent() {
           tempo_montagem: montagem,
           valor_pintura: valPintura,
           preco_pintura_kg: valPintura,
+          valor_final: valFinal,
         };
       }
       return it;
@@ -720,6 +761,7 @@ function NovoOrcamentoWizardContent() {
           tempo_corte: it.tempo_corte || 0,
           preco_pintura_kg: it.valor_pintura || it.preco_pintura_kg || 0,
           valor_pintura: it.valor_pintura || it.preco_pintura_kg || 0,
+          valor_final: it.valor_final || 0,
           operacoes: [
             { nome: "SET-UP", tempo_min: it.tempo_setup || 0 },
             { nome: "DOBRA", tempo_min: it.tempo_dobra || 0 },
@@ -1422,6 +1464,13 @@ function NovoOrcamentoWizardContent() {
                       setNovaPeca({ ...novaPeca, valor_pintura: val, preco_pintura_kg: val });
                     }}
                   />
+                  <Input
+                    label="VALOR FINAL / PREÇO FIXO (R$)"
+                    type="number"
+                    placeholder="0.00 (Sobrescreve a formação de preço)"
+                    value={novaPeca.valor_final || ""}
+                    onChange={e => setNovaPeca({ ...novaPeca, valor_final: parseFloat(e.target.value) || 0 })}
+                  />
                 </div>
               </div>
 
@@ -1938,6 +1987,14 @@ function NovoOrcamentoWizardContent() {
                       placeholder="Manter original"
                       value={bulkValorPintura}
                       onChange={(e) => setBulkValorPintura(e.target.value)}
+                      className="h-9 text-xs"
+                    />
+                    <Input
+                      label="VALOR FINAL (R$)"
+                      type="number"
+                      placeholder="Manter original"
+                      value={bulkValorFinal}
+                      onChange={(e) => setBulkValorFinal(e.target.value)}
                       className="h-9 text-xs"
                     />
                   </div>

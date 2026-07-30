@@ -57,7 +57,13 @@ class PDFGenerator:
         template = env.get_template("orcamento.html")
 
         # Calcular data de validade
-        created_at_dt = orcamento_response.created_at
+        if isinstance(orcamento_response, dict):
+            created_at_dt = orcamento_response.get("created_at")
+            validade_dias = orcamento_response.get("validade") or 30
+        else:
+            created_at_dt = getattr(orcamento_response, "created_at", None)
+            validade_dias = getattr(orcamento_response, "validade", 30) or 30
+
         if isinstance(created_at_dt, str):
             try:
                 # Tenta parsear string ISO
@@ -67,7 +73,6 @@ class PDFGenerator:
         elif not created_at_dt:
             created_at_dt = datetime.now()
             
-        validade_dias = orcamento_response.validade or 30
         validade_dt = created_at_dt + timedelta(days=validade_dias)
         validade_str = validade_dt.strftime("%d/%m/%Y")
 
