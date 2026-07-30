@@ -1501,6 +1501,7 @@ function NovoOrcamentoWizardContent() {
                         custo_extra: 0.0,
                         valor_pintura: 0.0,
                         preco_pintura_kg: 0.0,
+                        valor_final: 0.0,
                         tempo_setup: 0.0,
                         tempo_dobra: 0.0,
                         tempo_caldeiraria: 0.0,
