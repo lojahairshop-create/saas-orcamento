@@ -712,7 +712,9 @@ function NovoOrcamentoWizardContent() {
           preco_pintura_kg: it.valor_pintura || it.preco_pintura_kg || 0,
           valor_pintura: it.valor_pintura || it.preco_pintura_kg || 0,
           operacoes: [
+            { nome: "SET-UP", tempo_min: it.tempo_setup || 0 },
             { nome: "DOBRA", tempo_min: it.tempo_dobra || 0 },
+            { nome: "CALDEIRARIA", tempo_min: it.tempo_caldeiraria || 0 },
             { nome: "SOLDA", tempo_min: it.tempo_solda || 0 },
             { nome: "GUILHOTINA", tempo_min: it.tempo_guilhotina || 0 },
             { nome: "USINAGEM INTERNA", tempo_min: it.tempo_usinagem || 0 },
@@ -1633,7 +1635,14 @@ function NovoOrcamentoWizardContent() {
                 <Table headers={["Descrição", "Qtd", "Peso Total", "Custo MP", "Fabricação", "Preço s/ Imp", "Total c/ Imp"]}>
                   {calculado.itens.map((item: any, idx: number) => (
                     <TableRow key={idx}>
-                      <TableCell className="font-semibold text-slate-800">{item.descricao}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-slate-800">{item.descricao}</span>
+                          {((item.valor_pintura > 0) || (item.preco_pintura_kg > 0)) && (
+                            <span className="text-[10px] text-teal-700 font-bold">Pintura / Trat. Superf.</span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-center">{item.quantidade}</TableCell>
                       <TableCell>{item.peso_total.toFixed(2)} kg</TableCell>
                       <TableCell>
