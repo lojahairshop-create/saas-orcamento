@@ -5,15 +5,24 @@
     <title>Orçamento {{ orcamento.numero }}</title>
     <style>
         @page {
-            size: A4 portrait;
-            margin-top: 12mm;
-            margin-left: 12mm;
-            margin-right: 12mm;
-            margin-bottom: 20mm;
-            @frame footer {
-                -pdf-frame-content: footerContent;
-                bottom: 4mm;
-                height: 12mm;
+            size: A4;
+            margin-top: 15mm;
+            margin-left: 15mm;
+            margin-right: 15mm;
+            margin-bottom: 25mm;
+            @bottom-center {
+                content: "FF CALDEIRARIA LTDA • CNPJ: 29.391.618/0001-01 | Rua Lúcia Piffer Baptistella, 320, Vila Rita • Fone: (11) 4487-7164\A Todos os direitos reservados.";
+                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                font-size: 6.5pt;
+                color: #94a3b8;
+                text-align: center;
+                white-space: pre-line;
+            }
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                font-size: 8pt;
+                color: #64748b;
             }
         }
         body {
@@ -164,24 +173,6 @@
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 4px;
         }
-        .terms-category {
-            font-weight: bold;
-            font-size: 8.5pt;
-            color: #0f172a;
-            margin-top: 8px;
-            margin-bottom: 3px;
-        }
-        .terms-sublist {
-            list-style-type: disc;
-            padding-left: 16px;
-            margin: 0 0 8px 0;
-        }
-        .terms-sublist li {
-            font-size: 7.8pt;
-            color: #334155;
-            margin-bottom: 3px;
-            line-height: 1.35;
-        }
         .terms-details-table {
             width: 100%;
             border-collapse: collapse;
@@ -190,13 +181,10 @@
         .terms-details-table td {
             padding: 4px 0;
             font-size: 8.5pt;
-            border-bottom: 1px solid #f1f5f9;
         }
         .observacoes-text {
-            white-space: pre-wrap;
-            font-family: inherit;
             font-size: 8.5pt;
-            color: #1e293b;
+            color: #334155;
             line-height: 1.5;
             margin-top: 4px;
         }
@@ -353,12 +341,6 @@
                 </td>
             </tr>
         </table>
-    </div>
-
-    <!-- RODAPÉ DA PÁGINA (PDF e Impressão) -->
-    <div id="footerContent" style="text-align: center; font-size: 7.5pt; color: #64748b; margin-top: 15px;">
-        FF CALDEIRARIA LTDA — CNPJ: 29.391.618/0001-01 | Rua Lúcia Piffer Baptistella, 320, Vila Rita — Fone: (11) 4487-7164<br>
-        Todos os direitos reservados.
     </div>
 
 </body>
