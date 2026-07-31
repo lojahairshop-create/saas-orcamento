@@ -410,6 +410,7 @@ async def get_orcamento(orcamento_id: str, user_id: str) -> OrcamentoResponse:
                 tempo_corte=item_dict["tempo_corte"],
                 preco_pintura_kg=item_dict["preco_pintura_kg"] or item_dict.get("valor_pintura", 0.0),
                 valor_pintura=item_dict.get("valor_pintura", 0.0) or item_dict["preco_pintura_kg"],
+                valor_final=item_dict.get("valor_final", 0.0),
             )
         )
 
