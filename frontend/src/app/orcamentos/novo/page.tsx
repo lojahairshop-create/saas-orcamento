@@ -645,8 +645,8 @@ function NovoOrcamentoWizardContent() {
       let precoTotalItem = 0.0;
 
       if (valorFinal > 0) {
-        precoTotalItem = valorFinal;
-        precoUnitComImp = item.quantidade > 0 ? valorFinal / item.quantidade : valorFinal;
+        precoUnitComImp = valorFinal;
+        precoTotalItem = valorFinal * (item.quantidade || 1);
       } else {
         precoUnitComImp = calcularPrecoComImpostos(vendaSemImpUnit, totalImpostos);
         precoTotalItem = precoUnitComImp * item.quantidade;
@@ -1442,7 +1442,7 @@ function NovoOrcamentoWizardContent() {
                     }}
                   />
                   <Input
-                    label="VALOR FINAL / PREÇO FIXO (R$)"
+                    label="VALOR FINAL UNITÁRIO (R$)"
                     type="number"
                     placeholder="0.00"
                     value={novaPeca.valor_final || 0}

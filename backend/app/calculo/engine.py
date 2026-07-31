@@ -302,8 +302,8 @@ class CalculoEngine:
         # 12. Preço unitário com impostos (POR UNIDADE)
         valor_final = float(item_data.get("valor_final", 0.0))
         if valor_final > 0:
-            preco_total = valor_final
-            preco_unitario_com_imp = valor_final / quantidade if quantidade > 0 else valor_final
+            preco_unitario_com_imp = valor_final
+            preco_total = valor_final * quantidade
         else:
             preco_unitario_com_imp = calcular_preco_com_impostos(
                 valor_venda_sem_imp / quantidade if quantidade > 0 else 0,
