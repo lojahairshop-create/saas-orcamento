@@ -124,6 +124,7 @@ function NovoOrcamentoWizardContent() {
     margem_lucro: 0.30,
     origem_material: "chapa_inteira",
     beneficiamento: false,
+    chapa_arranjada: false,
     tempo_corte: 0.0,
     custo_extra: 0.0,
     
@@ -298,6 +299,7 @@ function NovoOrcamentoWizardContent() {
           margem_lucro: it.margem_lucro || 0.3,
           origem_material: it.origem_material || "chapa_inteira",
           beneficiamento: !!it.beneficiamento,
+          chapa_arranjada: !!it.chapa_arranjada,
           tempo_corte: it.tempo_corte || 0.0,
           custo_extra: it.custo_extra || 0.0,
           valor_pintura: it.valor_pintura ?? it.preco_pintura_kg ?? 0.0,
@@ -349,6 +351,7 @@ function NovoOrcamentoWizardContent() {
       quantidade: 1,
       origem_material: "chapa_inteira",
       beneficiamento: false,
+      chapa_arranjada: false,
       tempo_corte: 0,
       custo_extra: 0,
       valor_pintura: 0.0,
@@ -390,6 +393,7 @@ function NovoOrcamentoWizardContent() {
       margem_lucro: item.margem_lucro ?? 0.30,
       origem_material: item.origem_material || "chapa_inteira",
       beneficiamento: !!item.beneficiamento,
+      chapa_arranjada: !!item.chapa_arranjada,
       tempo_corte: item.tempo_corte ?? 0,
       custo_extra: item.custo_extra ?? 0,
       valor_pintura: item.valor_pintura ?? item.preco_pintura_kg ?? 0,
@@ -600,11 +604,24 @@ function NovoOrcamentoWizardContent() {
       // 3. Área e Peso
       const mat = matNome.toUpperCase().trim();
       const densidade = mat.includes("INOX") ? 8.2 : (mat.includes("ALUM") ? 3.2 : 7.86);
-      const area = calcularArea(item.largura, item.comprimento);
-      const pesoUnit = calcularPesoUnitario(item.largura, item.comprimento, item.espessura);
       
-      const pad = Math.max(item.espessura, 5.0);
-      const pesoTotal = item.quantidade * (item.espessura * (item.largura + pad) * (item.comprimento + pad) * densidade / 1000000.0);
+      const chapaArranjada = !!item.chapa_arranjada;
+      let area = 0;
+      let pesoUnit = 0;
+      let pesoTotal = 0;
+
+      if (chapaArranjada) {
+        const largCalc = item.chapa_l || 1200;
+        const compCalc = (item.comprimento || 0) + 20.0;
+        area = (largCalc / 1000.0) * (compCalc / 1000.0);
+        pesoUnit = item.espessura * largCalc * compCalc * densidade / 1000000.0;
+        pesoTotal = item.quantidade * pesoUnit;
+      } else {
+        area = calcularArea(item.largura, item.comprimento);
+        pesoUnit = calcularPesoUnitario(item.largura, item.comprimento, item.espessura);
+        const pad = Math.max(item.espessura, 5.0);
+        pesoTotal = item.quantidade * (item.espessura * (item.largura + pad) * (item.comprimento + pad) * densidade / 1000000.0);
+      }
 
       // 4. Aproveitamento de chapa
       const pecasChapa = calcularPecasPorChapa(item.chapa_l, item.chapa_c, item.largura, item.comprimento, item.espessura);
@@ -660,6 +677,7 @@ function NovoOrcamentoWizardContent() {
       return {
         ...item,
         beneficiamento,
+        chapa_arranjada: chapaArranjada,
         valor_final: valorFinal,
         peso_total: pesoTotal,
         preco_unitario_com_imp: precoUnitComImp,
@@ -1319,6 +1337,23 @@ function NovoOrcamentoWizardContent() {
                 </label>
               </div>
 
+              {/* Opção de Chapa Arranjada */}
+              <div className="flex items-center gap-2 mt-3 bg-amber-50/80 border border-amber-200 p-3 rounded-xl">
+                <input
+                  type="checkbox"
+                  id="checkbox-chapa-arranjada"
+                  checked={!!novaPeca.chapa_arranjada}
+                  onChange={e => setNovaPeca({ ...novaPeca, chapa_arranjada: e.target.checked })}
+                  className="rounded border-gray-300 text-amber-600 focus:ring-amber-500 cursor-pointer h-4 w-4"
+                />
+                <label htmlFor="checkbox-chapa-arranjada" className="text-xs font-bold text-slate-800 cursor-pointer select-none">
+                  Cobrar por Chapa Arranjada
+                  <span className="block text-[10px] text-slate-600 font-normal">
+                    Ao marcar esta opção, a matéria-prima será calculada utilizando a largura total da chapa (<strong>{novaPeca.chapa_l || 1200}mm</strong>) e o comprimento da peça + 20mm (<strong>{(novaPeca.comprimento || 0) + 20}mm</strong>). Cada unidade no lote multiplicará por essa faixa inteira.
+                  </span>
+                </label>
+              </div>
+
               {/* Origem de Chapa e Estoque */}
               <div className="border-t border-gray-200 pt-4 mt-4">
                 <h4 className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wider">
@@ -1477,6 +1512,7 @@ function NovoOrcamentoWizardContent() {
                         margem_lucro: 0.30,
                         origem_material: "chapa_inteira",
                         beneficiamento: false,
+                        chapa_arranjada: false,
                         tempo_corte: 0.0,
                         custo_extra: 0.0,
                         valor_pintura: 0.0,
@@ -1586,6 +1622,11 @@ function NovoOrcamentoWizardContent() {
                                 {item.beneficiamento && (
                                   <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded w-max">
                                     Beneficiamento (Mat. Cliente)
+                                  </span>
+                                )}
+                                {item.chapa_arranjada && (
+                                  <span className="text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded w-max">
+                                    Chapa Arranjada
                                   </span>
                                 )}
                               </div>

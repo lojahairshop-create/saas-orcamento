@@ -49,6 +49,7 @@ class ItemCreate(BaseModel):
     preco_kg: float = 0.0
     margem_lucro: float = 0.30
     beneficiamento: bool = False
+    chapa_arranjada: bool = False
     custo_extra: float = 0.0
     tempo_corte: float = 0.0
     preco_pintura_kg: float = 0.0
@@ -75,6 +76,7 @@ class ItemUpdate(BaseModel):
     preco_kg: Optional[float] = None
     margem_lucro: Optional[float] = None
     beneficiamento: Optional[bool] = None
+    chapa_arranjada: Optional[bool] = None
     custo_extra: Optional[float] = None
     tempo_corte: Optional[float] = None
     preco_pintura_kg: Optional[float] = None
@@ -106,6 +108,7 @@ class ItemCalculadoResponse(BaseModel):
     preco_kg: float = 0.0
     margem_lucro: float = 0.30
     beneficiamento: bool = False
+    chapa_arranjada: bool = False
     origem_material: str = "chapa_inteira"
     vetor_svg: Optional[str] = None
     custo_extra: float = 0.0

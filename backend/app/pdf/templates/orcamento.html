@@ -302,6 +302,9 @@
                     {% if item.beneficiamento %}
                     <br><span style="font-size: 7.5pt; color: #334155; font-weight: bold; white-space: nowrap;">Material Fornecido Pelo Cliente</span>
                     {% endif %}
+                    {% if item.chapa_arranjada %}
+                    <br><span style="font-size: 7.5pt; color: #b45309; font-weight: bold; white-space: nowrap;">Cálculo: Chapa Arranjada ({{ fmt_dim(item.chapa_l) }} X {{ fmt_dim(item.comprimento + 20) }} mm)</span>
+                    {% endif %}
                 </td>
                 <td class="text-center">{{ item.quantidade }}</td>
                 <td class="text-right" style="white-space: nowrap;">R$ {{ fmt(item.preco_unitario_com_imp) }}</td>

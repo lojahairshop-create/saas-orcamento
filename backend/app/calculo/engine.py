@@ -224,8 +224,20 @@ class CalculoEngine:
 
         # 3. Área e pesos
         densidade = self.get_densidade(material)
-        area = calcular_area(largura, comprimento)
-        peso_unitario = calcular_peso_unitario(largura, comprimento, espessura)
+        chapa_arranjada = bool(item_data.get("chapa_arranjada", False))
+
+        if chapa_arranjada:
+            largura_calc = chapa_l
+            comprimento_calc = comprimento + 20.0
+            area = (largura_calc / 1000.0) * (comprimento_calc / 1000.0)
+            peso_unitario = espessura * largura_calc * comprimento_calc * densidade / 1000000.0
+            peso_total = quantidade * peso_unitario
+        else:
+            area = calcular_area(largura, comprimento)
+            peso_unitario = calcular_peso_unitario(largura, comprimento, espessura)
+            pad = max(espessura, 5.0)
+            peso_total = quantidade * (espessura * (largura + pad) * (comprimento + pad) * densidade / 1000000.0)
+
         peso_chapa = calcular_peso_chapa(chapa_l, chapa_c, espessura)
 
         # 4. Peças por chapa (duas orientações com gap=espessura e margem de 5mm na chapa)
@@ -242,9 +254,7 @@ class CalculoEngine:
 
         beneficiamento = bool(item_data.get("beneficiamento", False))
 
-        # 7. Peso total (com margem de max(espessura, 5mm)) e custo MP (com IPI)
-        pad = max(espessura, 5.0)
-        peso_total = quantidade * (espessura * (largura + pad) * (comprimento + pad) * densidade / 1000000.0)
+        # 7. Custo MP (com IPI)
         ipi_rate = float(config.get("ipi_rate", 0.05))
         custo_mp = 0.0 if beneficiamento else calcular_custo_mp(peso_total, preco_kg, ipi_rate)
 
@@ -325,6 +335,7 @@ class CalculoEngine:
 
         return {
             "beneficiamento": beneficiamento,
+            "chapa_arranjada": chapa_arranjada,
             # Parâmetros laser
             "velocidade": velocidade,
             "peck": peck,
