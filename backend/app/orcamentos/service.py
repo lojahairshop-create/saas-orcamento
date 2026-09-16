@@ -840,7 +840,7 @@ async def update_status(
             .eq("orcamento_id", orcamento_id)
             .execute()
         )
-            from app.engenharia.nesting import NestingEngine
+        items = items_res.data or []
 
         for item in items:
             origem = item.get("origem_material", "chapa_inteira")
