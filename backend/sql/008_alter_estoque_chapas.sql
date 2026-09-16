@@ -7,7 +7,8 @@ ALTER TABLE estoque_chapas
     ADD COLUMN IF NOT EXISTS y NUMERIC DEFAULT 0,
     ADD COLUMN IF NOT EXISTS valor_contabil NUMERIC NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS status VARCHAR(50) NOT NULL DEFAULT 'disponivel' CHECK (status IN ('disponivel', 'reservado', 'consumido')),
-    ADD COLUMN IF NOT EXISTS orcamento_id UUID REFERENCES orcamentos(id) ON DELETE SET NULL;
+    ADD COLUMN IF NOT EXISTS orcamento_id UUID REFERENCES orcamentos(id) ON DELETE SET NULL,
+    ADD COLUMN IF NOT EXISTS gerado_por_orcamento_id UUID REFERENCES orcamentos(id) ON DELETE SET NULL;
 
 -- 2. RPC for Concurrency: Atomic reservation (apenas para tipo_registro = 'retalho')
 CREATE OR REPLACE FUNCTION reservar_retalhos(p_retalho_ids UUID[], p_orcamento_id UUID)

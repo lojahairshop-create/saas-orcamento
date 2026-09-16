@@ -473,10 +473,40 @@ class CalculoEngine:
                     peso_chapa = (esp * w * h * densidade) / 1_000_000.0
                     custo_bin = calcular_custo_mp(peso_chapa, preco_kg, ipi_rate)
                     bin_info['valor_original'] = custo_bin # Atualiza para caso precisemos salvar o retalho sobrante
+                # Processar retalhos novos (sobras úteis)
+                retalhos_novos_uteis = []
+                valor_sobras_uteis = 0.0
+                tamanho_min_retalho = float(config.get("tamanho_min_retalho", 200.0))
+                
+                for r_livre in bin_info['nesting_result'].get('retangulos_livres', []):
+                    w_livre = r_livre.get('w', 0)
+                    h_livre = r_livre.get('h', 0)
+                    
+                    if w_livre >= tamanho_min_retalho and h_livre >= tamanho_min_retalho:
+                        peso_retalho = (esp * w_livre * h_livre * densidade) / 1_000_000.0
+                        valor_retalho = calcular_custo_mp(peso_retalho, preco_kg, ipi_rate)
+                        
+                        retalho_novo = {
+                            "material": mat,
+                            "tipo_material": lista_itens[0][1].get("tipo_material"),
+                            "espessura": esp,
+                            "largura": w_livre,
+                            "comprimento": h_livre,
+                            "x": r_livre.get('x', 0),
+                            "y": r_livre.get('y', 0),
+                            "valor_contabil": valor_retalho
+                        }
+                        retalhos_novos_uteis.append(retalho_novo)
+                        valor_sobras_uteis += valor_retalho
+                        
+                bin_info['novos_retalhos_gerados'] = retalhos_novos_uteis
+                
+                # Custo a ratear: Custo original menos o valor financeiro resgatado nas sobras úteis
+                custo_bin_liquido = max(0.0, custo_bin - valor_sobras_uteis)
                     
                 rateios = bin_info['nesting_result'].get('rateio_custo_pecas', {})
                 for peca_idx, fracao in rateios.items():
-                    custo_rateado_por_item_idx[peca_idx] = custo_rateado_por_item_idx.get(peca_idx, 0.0) + (custo_bin * fracao)
+                    custo_rateado_por_item_idx[peca_idx] = custo_rateado_por_item_idx.get(peca_idx, 0.0) + (custo_bin_liquido * fracao)
 
         # ------------------------------------------------------------------
 

@@ -3,6 +3,7 @@ Camada de serviço para orçamentos – lógica de negócio + persistência.
 """
 
 import json
+import uuid
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 
@@ -141,14 +142,45 @@ async def create_orcamento(
     # Converter itens para dicts
     items_dicts = [_item_create_to_dict(item, data.taxa_comissao) for item in data.itens]
 
-    # Calcular
-    resultado = engine.calcular_orcamento(items_dicts, config)
+    # Calcular com retry loop para sincronização de retalhos (Idempotência e Concorrência)
+    orc_id_pre = str(uuid.uuid4())
+    for attempt in range(3):
+        retalhos_res = supabase.table("estoque_chapas").select("*").eq("status", "disponivel").eq("tipo_registro", "retalho").execute()
+        config["retalhos_disponiveis"] = retalhos_res.data
+        
+        resultado = engine.calcular_orcamento(items_dicts, config)
+        
+        tem_nesting = any(it.get("chapa_arranjada", False) and not it.get("beneficiamento", False) for it in items_dicts)
+        if not tem_nesting:
+            break
+            
+        retalhos_usados_ids = []
+        novos_retalhos = []
+        for bin_info in resultado.get("bins_utilizados", []):
+            if bin_info['tipo'] == 'retalho':
+                retalhos_usados_ids.append(bin_info['id'])
+            novos = bin_info.get('novos_retalhos_gerados', [])
+            novos_retalhos.extend(novos)
+            
+        try:
+            supabase.rpc("sync_retalhos_orcamento", {
+                "p_orcamento_id": orc_id_pre,
+                "p_retalhos_usados_ids": retalhos_usados_ids,
+                "p_novos_retalhos_json": novos_retalhos,
+                "p_user_id": user_id
+            }).execute()
+            break
+        except Exception as e:
+            if attempt == 2:
+                raise ValueError("O estoque de retalhos mudou enquanto você calculava o orçamento. Por favor, tente recalcular e salvar novamente.")
+            continue
 
     # Gerar número
     numero = data.numero.strip() if (data.numero and data.numero.strip()) else _generate_numero_orcamento()
 
     # Inserir orçamento
     orc_data = {
+        "id": orc_id_pre,
         "numero": numero,
         "status": "rascunho",
         "cliente_nome": data.cliente.nome,
@@ -177,8 +209,7 @@ async def create_orcamento(
     }
 
     orc_result = supabase.table("orcamentos").insert(orc_data).execute()
-    orc_record = orc_result.data[0]
-    orc_id = orc_record["id"]
+    orc_id = orc_id_pre
 
     # Inserir itens
     items_responses: List[ItemCalculadoResponse] = []
@@ -598,7 +629,37 @@ async def update_orcamento(
         }
 
         items_dicts = [_item_create_to_dict(item, taxa_comissao) for item in data.itens]
-        resultado = engine.calcular_orcamento(items_dicts, config)
+        
+        for attempt in range(3):
+            retalhos_res = supabase.table("estoque_chapas").select("*").eq("status", "disponivel").eq("tipo_registro", "retalho").execute()
+            config["retalhos_disponiveis"] = retalhos_res.data
+            
+            resultado = engine.calcular_orcamento(items_dicts, config)
+            
+            tem_nesting = any(it.get("chapa_arranjada", False) and not it.get("beneficiamento", False) for it in items_dicts)
+            if not tem_nesting:
+                break
+                
+            retalhos_usados_ids = []
+            novos_retalhos = []
+            for bin_info in resultado.get("bins_utilizados", []):
+                if bin_info['tipo'] == 'retalho':
+                    retalhos_usados_ids.append(bin_info['id'])
+                novos = bin_info.get('novos_retalhos_gerados', [])
+                novos_retalhos.extend(novos)
+                
+            try:
+                supabase.rpc("sync_retalhos_orcamento", {
+                    "p_orcamento_id": orcamento_id,
+                    "p_retalhos_usados_ids": retalhos_usados_ids,
+                    "p_novos_retalhos_json": novos_retalhos,
+                    "p_user_id": user_id
+                }).execute()
+                break
+            except Exception as e:
+                if attempt == 2:
+                    raise ValueError("O estoque de retalhos mudou enquanto você calculava o orçamento. Por favor, tente recalcular e salvar novamente.")
+                continue
 
         update_data.update(
             {
@@ -723,9 +784,7 @@ async def update_status(
             .eq("orcamento_id", orcamento_id)
             .execute()
         )
-        items = items_res.data or []
-
-        from app.engenharia.nesting import NestingEngine
+            from app.engenharia.nesting import NestingEngine
 
         for item in items:
             origem = item.get("origem_material", "chapa_inteira")
@@ -758,46 +817,8 @@ async def update_status(
                         supabase.table("estoque_chapas").update({"quantidade": new_qty}).eq("id", sheet["id"]).execute()
                         qtd_restante -= deduct
 
-                # 2. Calcular e gerar retalho se houver sobra útil
-                try:
-                    itens_nesting = [{
-                        "id": str(item["id"]),
-                        "largura": float(item["largura"]),
-                        "comprimento": float(item["comprimento"]),
-                        "quantidade": int(item["quantidade"])
-                    }]
-                    chapa_l = float(item.get("chapa_l", 1200))
-                    chapa_c = float(item.get("chapa_c", 2400))
-                    
-                    result_nesting = NestingEngine.nested_rectangles(
-                        itens=itens_nesting,
-                        chapa_l=chapa_l,
-                        chapa_c=chapa_c,
-                        gap=5.0
-                    )
-                    
-                    for ch in result_nesting.get("chapas", []):
-                        pecas_chapa = ch.get("pecas", [])
-                        if not pecas_chapa:
-                            continue
-                        
-                        max_y = max(p["y"] + p["h"] for p in pecas_chapa)
-                        comprimento_sobra = chapa_c - max_y
-                        
-                        if comprimento_sobra >= 200.0:
-                            db_retalho = {
-                                "material": item["material"],
-                                "tipo_material": item.get("tipo_material"),
-                                "espessura": item["espessura"],
-                                "largura": chapa_l,
-                                "comprimento": comprimento_sobra,
-                                "quantidade": 1,
-                                "tipo_registro": "retalho",
-                                "created_by": user_id,
-                            }
-                            supabase.table("estoque_chapas").insert(db_retalho).execute()
-                except Exception as e:
-                    # Log ou print do erro de nesting/retalho, sem travar aprovação
+                # Os retalhos gerados e consumidos já são gerenciados pelo Trigger reverter_retalhos_trigger 
+                # quando o status do orçamento muda para 'Aprovado'. Nenhuma lógica manual é necessária aqui.ravar aprovação
                     print(f"Erro ao processar retalho para item {item['id']}: {e}")
 
             elif origem.startswith("retalho_"):
