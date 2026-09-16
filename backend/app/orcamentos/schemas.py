@@ -177,6 +177,7 @@ class OrcamentoCreate(BaseModel):
     frete: Optional[str] = "FOB"
     validade: Optional[int] = 30
     observacoes: Optional[str] = None
+    usar_nesting_2d: Optional[bool] = False
 
 
 class OrcamentoUpdate(BaseModel):
@@ -191,6 +192,7 @@ class OrcamentoUpdate(BaseModel):
     frete: Optional[str] = None
     validade: Optional[int] = None
     observacoes: Optional[str] = None
+    usar_nesting_2d: Optional[bool] = None
 
 
 class StatusUpdate(BaseModel):

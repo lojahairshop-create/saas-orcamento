@@ -406,13 +406,15 @@ class CalculoEngine:
         config = config or {}
 
         # ------------------------------------------------------------------
-        # ORQUESTRAÇÃO NESTING MULTI-BIN
+        # ORQUESTRAÇÃO NESTING MULTI-BIN (Atrás de Feature Flag)
         # ------------------------------------------------------------------
-        # Agrupar os itens que usam chapa_arranjada (nesting) por (Material, Espessura, ChapaPadrao)
+        usar_nesting_2d = config.get("usar_nesting_2d", False)
+        
         itens_nesting = []
-        for i, item in enumerate(items):
-            if item.get("chapa_arranjada", False) and not item.get("beneficiamento", False):
-                itens_nesting.append((i, item))
+        if usar_nesting_2d:
+            for i, item in enumerate(items):
+                if item.get("chapa_arranjada", False) and not item.get("beneficiamento", False):
+                    itens_nesting.append((i, item))
                 
         grupos_nesting = {}
         for idx, item in itens_nesting:

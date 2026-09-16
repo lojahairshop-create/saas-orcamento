@@ -132,48 +132,54 @@ async def create_orcamento(
     custos_op = {c["operacao"]: float(c["custo_hora"]) for c in custos_res.data} if custos_res.data else {}
 
     # Preparar config para o engine
+    usar_nesting_2d = data.usar_nesting_2d if hasattr(data, 'usar_nesting_2d') else False
     config = {
         "estado": data.cliente.estado,
         "tipo_venda": data.tipo_venda,
         "ipi_rate": data.ipi_rate,
         "custos_operacao": custos_op,
+        "usar_nesting_2d": usar_nesting_2d,
     }
 
     # Converter itens para dicts
     items_dicts = [_item_create_to_dict(item, data.taxa_comissao) for item in data.itens]
 
-    # Calcular com retry loop para sincronização de retalhos (Idempotência e Concorrência)
+    # Calcular com retry loop para sincronização de retalhos (se Feature Flag ativada)
     orc_id_pre = str(uuid.uuid4())
-    for attempt in range(3):
-        retalhos_res = supabase.table("estoque_chapas").select("*").eq("status", "disponivel").eq("tipo_registro", "retalho").execute()
-        config["retalhos_disponiveis"] = retalhos_res.data
-        
+    if usar_nesting_2d:
+        for attempt in range(3):
+            retalhos_res = supabase.table("estoque_chapas").select("*").eq("status", "disponivel").eq("tipo_registro", "retalho").execute()
+            config["retalhos_disponiveis"] = retalhos_res.data
+            
+            resultado = engine.calcular_orcamento(items_dicts, config)
+            
+            tem_nesting = any(it.get("chapa_arranjada", False) and not it.get("beneficiamento", False) for it in items_dicts)
+            if not tem_nesting:
+                break
+                
+            retalhos_usados_ids = []
+            novos_retalhos = []
+            for bin_info in resultado.get("bins_utilizados", []):
+                if bin_info['tipo'] == 'retalho':
+                    retalhos_usados_ids.append(bin_info['id'])
+                novos = bin_info.get('novos_retalhos_gerados', [])
+                novos_retalhos.extend(novos)
+                
+            try:
+                supabase.rpc("sync_retalhos_orcamento", {
+                    "p_orcamento_id": orc_id_pre,
+                    "p_retalhos_usados_ids": retalhos_usados_ids,
+                    "p_novos_retalhos_json": novos_retalhos,
+                    "p_user_id": user_id
+                }).execute()
+                break
+            except Exception as e:
+                if attempt == 2:
+                    raise ValueError("O estoque de retalhos mudou enquanto você calculava o orçamento. Por favor, tente recalcular e salvar novamente.")
+                continue
+    else:
+        # Modo Clássico (Zumbi)
         resultado = engine.calcular_orcamento(items_dicts, config)
-        
-        tem_nesting = any(it.get("chapa_arranjada", False) and not it.get("beneficiamento", False) for it in items_dicts)
-        if not tem_nesting:
-            break
-            
-        retalhos_usados_ids = []
-        novos_retalhos = []
-        for bin_info in resultado.get("bins_utilizados", []):
-            if bin_info['tipo'] == 'retalho':
-                retalhos_usados_ids.append(bin_info['id'])
-            novos = bin_info.get('novos_retalhos_gerados', [])
-            novos_retalhos.extend(novos)
-            
-        try:
-            supabase.rpc("sync_retalhos_orcamento", {
-                "p_orcamento_id": orc_id_pre,
-                "p_retalhos_usados_ids": retalhos_usados_ids,
-                "p_novos_retalhos_json": novos_retalhos,
-                "p_user_id": user_id
-            }).execute()
-            break
-        except Exception as e:
-            if attempt == 2:
-                raise ValueError("O estoque de retalhos mudou enquanto você calculava o orçamento. Por favor, tente recalcular e salvar novamente.")
-            continue
 
     # Gerar número
     numero = data.numero.strip() if (data.numero and data.numero.strip()) else _generate_numero_orcamento()
@@ -621,45 +627,51 @@ async def update_orcamento(
         custos_res = supabase.table("custos_operacao").select("operacao, custo_hora").execute()
         custos_op = {c["operacao"]: float(c["custo_hora"]) for c in custos_res.data} if custos_res.data else {}
 
+        usar_nesting_2d = data.usar_nesting_2d if hasattr(data, 'usar_nesting_2d') else False
         config = {
             "estado": estado,
             "tipo_venda": tipo_venda,
             "ipi_rate": ipi_rate,
             "custos_operacao": custos_op,
+            "usar_nesting_2d": usar_nesting_2d,
         }
 
         items_dicts = [_item_create_to_dict(item, taxa_comissao) for item in data.itens]
         
-        for attempt in range(3):
-            retalhos_res = supabase.table("estoque_chapas").select("*").eq("status", "disponivel").eq("tipo_registro", "retalho").execute()
-            config["retalhos_disponiveis"] = retalhos_res.data
-            
+        if usar_nesting_2d:
+            for attempt in range(3):
+                retalhos_res = supabase.table("estoque_chapas").select("*").eq("status", "disponivel").eq("tipo_registro", "retalho").execute()
+                config["retalhos_disponiveis"] = retalhos_res.data
+                
+                resultado = engine.calcular_orcamento(items_dicts, config)
+                
+                tem_nesting = any(it.get("chapa_arranjada", False) and not it.get("beneficiamento", False) for it in items_dicts)
+                if not tem_nesting:
+                    break
+                    
+                retalhos_usados_ids = []
+                novos_retalhos = []
+                for bin_info in resultado.get("bins_utilizados", []):
+                    if bin_info['tipo'] == 'retalho':
+                        retalhos_usados_ids.append(bin_info['id'])
+                    novos = bin_info.get('novos_retalhos_gerados', [])
+                    novos_retalhos.extend(novos)
+                    
+                try:
+                    supabase.rpc("sync_retalhos_orcamento", {
+                        "p_orcamento_id": orcamento_id,
+                        "p_retalhos_usados_ids": retalhos_usados_ids,
+                        "p_novos_retalhos_json": novos_retalhos,
+                        "p_user_id": user_id
+                    }).execute()
+                    break
+                except Exception as e:
+                    if attempt == 2:
+                        raise ValueError("O estoque de retalhos mudou enquanto você calculava o orçamento. Por favor, tente recalcular e salvar novamente.")
+                    continue
+        else:
+            # Modo Clássico (Zumbi)
             resultado = engine.calcular_orcamento(items_dicts, config)
-            
-            tem_nesting = any(it.get("chapa_arranjada", False) and not it.get("beneficiamento", False) for it in items_dicts)
-            if not tem_nesting:
-                break
-                
-            retalhos_usados_ids = []
-            novos_retalhos = []
-            for bin_info in resultado.get("bins_utilizados", []):
-                if bin_info['tipo'] == 'retalho':
-                    retalhos_usados_ids.append(bin_info['id'])
-                novos = bin_info.get('novos_retalhos_gerados', [])
-                novos_retalhos.extend(novos)
-                
-            try:
-                supabase.rpc("sync_retalhos_orcamento", {
-                    "p_orcamento_id": orcamento_id,
-                    "p_retalhos_usados_ids": retalhos_usados_ids,
-                    "p_novos_retalhos_json": novos_retalhos,
-                    "p_user_id": user_id
-                }).execute()
-                break
-            except Exception as e:
-                if attempt == 2:
-                    raise ValueError("O estoque de retalhos mudou enquanto você calculava o orçamento. Por favor, tente recalcular e salvar novamente.")
-                continue
 
         update_data.update(
             {
