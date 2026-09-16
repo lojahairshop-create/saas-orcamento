@@ -49,6 +49,9 @@ function NovoOrcamentoWizardContent() {
   const [loading, setLoading] = useState(false);
 
   // --- Step 1: Cliente Info ---
+  const [nestingStatus, setNestingStatus] = useState(false);
+  const [usarNesting2d, setUsarNesting2d] = useState(false);
+  
   const [cliente, setCliente] = useState({
     nome: "",
     email: "",
@@ -105,6 +108,7 @@ function NovoOrcamentoWizardContent() {
   const [custosOperacao, setCustosOperacao] = useState<{ [key: string]: number }>({});
   const [dxfItemsToConfigure, setDxfItemsToConfigure] = useState<any[] | null>(null);
   const [editingPecaId, setEditingPecaId] = useState<string | null>(null);
+  const [hasEditedNestingDimensions, setHasEditedNestingDimensions] = useState(false);
   
   // Peça que está sendo editada/adicionada no form manual
   const [novaPeca, setNovaPeca] = useState({
@@ -178,6 +182,14 @@ function NovoOrcamentoWizardContent() {
 
   // Carregar materiais e custos padrão do backend no início
   useEffect(() => {
+    async function loadNestingStatus() {
+      try {
+        const res = await api.getNestingStatus();
+        setNestingStatus(res.habilitado);
+      } catch (err) {
+        console.warn("Erro ao carregar status do nesting:", err);
+      }
+    }
     async function loadMateriais() {
       try {
         const list = await api.getMateriais();
@@ -209,6 +221,7 @@ function NovoOrcamentoWizardContent() {
     }
     loadMateriais();
     loadCustos();
+    loadNestingStatus();
   }, []);
 
   // Buscar sugestões de chapa/retalho no estoque
@@ -274,6 +287,7 @@ function NovoOrcamentoWizardContent() {
         setObservacoes(data.observacoes || "");
         setNumeroOrcamento(data.numero || "");
         setFrete(data.frete || "FOB");
+        setUsarNesting2d(!!data.usar_nesting_2d);
 
         // Mapear itens de volta
         const getTempo = (ops: any[], name: string) => {
@@ -338,6 +352,7 @@ function NovoOrcamentoWizardContent() {
     } else {
       setItens([...itens, { ...novaPeca, id: Date.now().toString() + Math.random().toString(36).substr(2, 9) }]);
     }
+    setHasEditedNestingDimensions(true);
     
     // Reset form peça mantendo material/configurações anteriores
     setNovaPeca(prev => ({
@@ -373,6 +388,7 @@ function NovoOrcamentoWizardContent() {
     if (editingPecaId === id) {
       setEditingPecaId(null);
     }
+    setHasEditedNestingDimensions(true);
   };
 
   const handleEditPeca = (item: any) => {
@@ -521,6 +537,7 @@ function NovoOrcamentoWizardContent() {
     setItens(updatedItens);
     setSelectedItemIds([]);
     setBulkModalOpen(false);
+    setHasEditedNestingDimensions(true);
   };
 
   const handleDxfSuccess = (dxfs: DXFResult[]) => {
@@ -738,6 +755,7 @@ function NovoOrcamentoWizardContent() {
         frete,
         validade,
         observacoes,
+        usar_nesting_2d: usarNesting2d,
         itens: itens.map(it => ({
           descricao: it.descricao || "Peça sem descrição",
           material: it.material || "AÇO CARBONO",
@@ -785,7 +803,11 @@ function NovoOrcamentoWizardContent() {
       router.push(`/orcamentos/${resultId}`);
     } catch (err: any) {
       console.error("Erro ao salvar orçamento:", err);
-      alert(err?.message || "Erro ao salvar orçamento. Verifique os dados inseridos.");
+      if (err?.message?.includes("409") || err?.status === 409) {
+        alert("Conflito de Estoque: O retalho que seria usado foi reservado por outro orçamento neste exato momento. Por favor, clique em Recalcular para gerar um novo plano com o estoque restante.");
+      } else {
+        alert(err?.message || "Erro ao salvar orçamento. Verifique os dados inseridos.");
+      }
     } finally {
       setLoading(false);
     }
@@ -935,6 +957,24 @@ function NovoOrcamentoWizardContent() {
                 onChange={e => setTaxaComissao(parseFloat(e.target.value) / 100)}
               />
             </div>
+
+            {nestingStatus && (
+              <div className="flex items-center gap-2 mt-6 bg-blue-50/80 border border-blue-200 p-3 rounded-xl">
+                <input
+                  type="checkbox"
+                  id="checkbox-nesting-2d"
+                  checked={usarNesting2d}
+                  onChange={e => setUsarNesting2d(e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer h-4 w-4"
+                />
+                <label htmlFor="checkbox-nesting-2d" className="text-sm font-bold text-slate-800 cursor-pointer select-none">
+                  Ativar Otimização de Arranjo 2D
+                  <span className="block text-[11px] text-slate-500 font-normal">
+                    Ao ativar, será gerado o plano de corte (Nesting 2D) de chapas inteiras e retalhos disponíveis após a aprovação comercial.
+                  </span>
+                </label>
+              </div>
+            )}
 
             <div className="flex justify-end mt-6">
               <Button
@@ -1779,6 +1819,26 @@ function NovoOrcamentoWizardContent() {
 
             {/* Calculations Breakdown Sidebar */}
             <div className="flex flex-col gap-6">
+              {hasEditedNestingDimensions && usarNesting2d && (
+                <div className="bg-amber-100 border-l-4 border-amber-500 p-4 rounded-r-md">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-amber-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-amber-700 font-bold">
+                        Arranjo Desatualizado
+                      </p>
+                      <p className="mt-1 text-xs text-amber-600">
+                        As dimensões das peças mudaram. O cálculo de retalhos atual na pré-visualização é inválido. Clique em Aprovar/Salvar para gerar o novo mapa real de corte.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <Card
                 header={
                   <div className="flex items-center gap-1.5 text-teal-600">

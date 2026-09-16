@@ -213,6 +213,7 @@ class OrcamentoResponse(BaseModel):
     frete: Optional[str] = "FOB"
     validade: Optional[int] = 30
     observacoes: Optional[str] = None
+    nesting_json: Optional[List[Dict[str, Any]]] = None
 
     # Totais
     total_preco: float = 0.0

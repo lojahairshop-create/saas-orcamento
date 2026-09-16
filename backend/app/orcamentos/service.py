@@ -6,6 +6,7 @@ import json
 import uuid
 from datetime import datetime
 from typing import Optional, List, Dict, Any
+from fastapi import HTTPException
 
 from app.database import get_supabase_service_client
 from app.calculo.engine import CalculoEngine
@@ -179,7 +180,10 @@ async def create_orcamento(
                 break
             except Exception as e:
                 if attempt == 2:
-                    raise ValueError("O estoque de retalhos mudou enquanto você calculava o orçamento. Por favor, tente recalcular e salvar novamente.")
+                    raise HTTPException(
+                        status_code=409, 
+                        detail="O estoque de retalhos mudou enquanto você calculava o orçamento. Por favor, clique em Recalcular e salve novamente."
+                    )
                 continue
     else:
         # Modo Clássico (Zumbi)
@@ -193,6 +197,7 @@ async def create_orcamento(
         "id": orc_id_pre,
         "numero": numero,
         "status": "rascunho",
+        "nesting_json": resultado.get("bins_utilizados", []),
         "cliente_nome": data.cliente.nome,
         "cliente_email": data.cliente.email or "",
         "cliente_telefone": data.cliente.telefone or "",
@@ -675,7 +680,10 @@ async def update_orcamento(
                     break
                 except Exception as e:
                     if attempt == 2:
-                        raise ValueError("O estoque de retalhos mudou enquanto você calculava o orçamento. Por favor, tente recalcular e salvar novamente.")
+                        raise HTTPException(
+                            status_code=409, 
+                            detail="O estoque de retalhos mudou enquanto você calculava o orçamento. Por favor, clique em Recalcular e salve novamente."
+                        )
                     continue
         else:
             # Modo Clássico (Zumbi)
@@ -683,6 +691,7 @@ async def update_orcamento(
 
         update_data.update(
             {
+                "nesting_json": resultado.get("bins_utilizados", []),
                 "total_preco": resultado["total_preco"],
                 "total_nf": resultado["total_nf"],
                 "total_tributos": resultado["total_tributos"],

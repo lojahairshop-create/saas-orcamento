@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import NestingVisualizer from "@/components/orcamento/NestingVisualizer";
 
 export default function OrcamentoDetailPage() {
   const params = useParams();
@@ -91,63 +92,7 @@ export default function OrcamentoDetailPage() {
     window.open(printUrl, "_blank");
   };
 
-  const runNestingAnalysis = async () => {
-    if (!orcamento || orcamento.itens.length === 0) return;
-    setNestingLoading(true);
-    try {
-      // Agrupar itens por material e espessura
-      const groups: { [key: string]: typeof orcamento.itens } = {};
-      orcamento.itens.forEach((item) => {
-        const key = `${item.material} - ${item.espessura}mm`;
-        if (!groups[key]) groups[key] = [];
-        groups[key].push(item);
-      });
-
-      // Executar nesting para cada grupo
-      const results = [];
-      for (const [key, items] of Object.entries(groups)) {
-        const chapa_l = items[0].chapa_l || 1200;
-        const chapa_c = items[0].chapa_c || 2400;
-
-        // Filtrar apenas peças com dimensões maiores que 0
-        const validItems = items.filter((it) => it.largura > 0 && it.comprimento > 0);
-        if (validItems.length === 0) continue;
-
-        const payload = {
-          itens: validItems.map((it, idx) => ({
-            id: it.descricao || `P${idx + 1}`,
-            largura: it.largura,
-            comprimento: it.comprimento,
-            quantidade: it.quantidade,
-          })),
-          chapa_l: chapa_l,
-          chapa_c: chapa_c,
-          gap: 5.0,
-        };
-
-        const res = await api.calcularNesting(payload);
-        results.push({
-          key,
-          chapa_l,
-          chapa_c,
-          ...res,
-        });
-      }
-
-      setNestingResults(results);
-    } catch (err) {
-      console.error("Erro ao calcular nesting:", err);
-      alert("Erro ao calcular arranjo de chapas.");
-    } finally {
-      setNestingLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === "nesting" && orcamento && nestingResults.length === 0) {
-      runNestingAnalysis();
-    }
-  }, [activeTab, orcamento]);
+  // Removida chamada runNestingAnalysis, pois agora os dados vêm de orcamento.nesting_json
 
   const formatCurrency = (val: number) => {
     return val.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -447,115 +392,7 @@ export default function OrcamentoDetailPage() {
 
         {/* Tab 2: Arranjo de Chapas / Nesting */}
         {activeTab === "nesting" && (
-          <div className="flex flex-col gap-6">
-            {nestingLoading ? (
-              <div className="h-64 flex flex-col items-center justify-center gap-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent" />
-                <span className="text-xs text-slate-500 font-semibold">Calculando otimização de arranjo...</span>
-              </div>
-            ) : nestingResults.length > 0 ? (
-              nestingResults.map((res, gIdx) => (
-                <Card
-                  key={gIdx}
-                  header={
-                    <div className="flex justify-between items-center w-full">
-                      <span className="font-bold text-slate-200">{res.key}</span>
-                      <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-                        Aproveitamento Médio: {res.aproveitamento_medio}%
-                      </span>
-                    </div>
-                  }
-                >
-                  <div className="flex flex-col gap-6">
-                    {/* Infos chapa */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs bg-white/[0.01] border border-white/5 p-4 rounded-xl">
-                      <div>
-                        <span className="text-slate-500 block font-semibold mb-0.5">Medida da Chapa</span>
-                        <span className="font-bold text-slate-700">{res.chapa_l} x {res.chapa_c} mm</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block font-semibold mb-0.5">Chapas Ocupadas</span>
-                        <span className="font-bold text-slate-700">{res.total_chapas} chapa(s)</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block font-semibold mb-0.5">Espaçamento (Gap)</span>
-                        <span className="font-bold text-slate-700">5.0 mm</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block font-semibold mb-0.5">Disposição Visual</span>
-                        <span className="font-bold text-slate-700">Horizontal (Comprimento X Largura)</span>
-                      </div>
-                    </div>
-
-                    {/* Chapas individuais */}
-                    <div className="flex flex-col gap-6">
-                      {res.chapas.map((chapa: any, cIdx: number) => (
-                        <div key={cIdx} className="flex flex-col gap-3 bg-white/[0.01] border border-white/5 p-5 rounded-xl">
-                          <div className="flex justify-between items-center text-xs font-bold">
-                            <span className="text-slate-700">Layout da Chapa #{cIdx + 1}</span>
-                            <span className="text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">
-                              Eficiência: {chapa.aproveitamento}%
-                            </span>
-                          </div>
-
-                          {/* CAD canvas representation */}
-                          <div className="relative w-full border border-slate-800 bg-[#07070a] rounded-lg overflow-hidden shadow-inner flex items-center justify-center p-4">
-                            <div
-                              style={{
-                                width: "100%",
-                                maxWidth: "700px",
-                                aspectRatio: `${res.chapa_c} / ${res.chapa_l}`,
-                                position: "relative",
-                                border: "1px dashed #334155",
-                                backgroundColor: "#020204",
-                              }}
-                            >
-                              {chapa.pecas.map((peca: any, pIdx: number) => (
-                                <div
-                                  key={pIdx}
-                                  style={{
-                                    position: "absolute",
-                                    left: `${(peca.y / res.chapa_c) * 100}%`,
-                                    top: `${(peca.x / res.chapa_l) * 100}%`,
-                                    width: `${(peca.h / res.chapa_c) * 100}%`,
-                                    height: `${(peca.w / res.chapa_l) * 100}%`,
-                                    backgroundColor: peca.rotacionado ? "rgba(245, 158, 11, 0.12)" : "rgba(59, 130, 246, 0.12)",
-                                    border: peca.rotacionado ? "1px solid rgba(245, 158, 11, 0.5)" : "1px solid rgba(59, 130, 246, 0.5)",
-                                    borderRadius: "3px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    padding: "2px",
-                                    boxSizing: "border-box",
-                                    overflow: "hidden",
-                                    transition: "all 0.2s ease",
-                                  }}
-                                  title={`${peca.id}: ${Math.round(peca.w)}x${Math.round(peca.h)}mm ${peca.rotacionado ? '(Rotacionado 90°)' : ''}`}
-                                >
-                                  <div className="flex flex-col items-center justify-center text-center select-none w-full h-full">
-                                    <span className="text-[8px] md:text-[9.5px] font-bold text-slate-700 truncate max-w-full leading-none">
-                                      {peca.id}
-                                    </span>
-                                    <span className="text-[7px] md:text-[8px] text-slate-500 font-bold mt-0.5">
-                                      {Math.round(peca.w)}x{Math.round(peca.h)}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </Card>
-              ))
-            ) : (
-              <div className="py-16 text-center text-slate-500 font-semibold bg-white/[0.01] border border-white/5 rounded-xl flex flex-col gap-2 items-center">
-                <span>Nenhum arranjo disponível. Certifique-se de que o orçamento possui peças válidas com largura e comprimento cadastrados.</span>
-              </div>
-            )}
-          </div>
+          <NestingVisualizer nestingJson={orcamento?.nesting_json || []} />
         )}
       </div>
     </AppLayout>

@@ -32,14 +32,16 @@ class ApiClient {
       return {} as T;
     }
     if (!response.ok) {
-      let errorMessage = "Erro na requisição";
+      let errorMessage = `Erro na requisição (Status: ${response.status})`;
       try {
         const errData = await response.json();
         errorMessage = errData.detail || errorMessage;
       } catch {
         // Ignorar se não for JSON
       }
-      throw new Error(errorMessage);
+      const error: any = new Error(errorMessage);
+      error.status = response.status;
+      throw error;
     }
     return response.json();
   }
@@ -424,6 +426,14 @@ class ApiClient {
       body: JSON.stringify(data),
     });
     return this.handleResponse<{ status: string; avisos: string[] }>(res);
+  }
+
+  async getNestingStatus(): Promise<{ habilitado: boolean }> {
+    const res = await fetch(`${API_BASE_URL}/config/nesting-status`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    return this.handleResponse<{ habilitado: boolean }>(res);
   }
 
   // -------------------------------------------------------------------------

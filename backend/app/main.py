@@ -50,3 +50,10 @@ app.include_router(estoque_router, prefix="/estoque", tags=["Estoque"])
 async def health_check():
     """Verifica se a API está online."""
     return {"status": "online", "version": "1.0.0"}
+
+@app.get("/config/nesting-status", tags=["Configurações"])
+async def nesting_status():
+    """Retorna se o backend permite o motor Nesting 2D (Fase 4)."""
+    import os
+    habilitado = os.environ.get("NESTING_2D_HABILITADO", "false").lower() == "true"
+    return {"habilitado": habilitado}

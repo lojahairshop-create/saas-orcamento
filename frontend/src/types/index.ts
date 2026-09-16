@@ -96,6 +96,8 @@ export interface Orcamento {
   frete?: string;
   validade: number;
   observacoes?: string;
+  usar_nesting_2d?: boolean;
+  nesting_json?: any[];
   
   // Totais
   total_preco: number;
