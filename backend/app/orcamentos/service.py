@@ -132,7 +132,11 @@ async def create_orcamento(
     custos_op = {c["operacao"]: float(c["custo_hora"]) for c in custos_res.data} if custos_res.data else {}
 
     # Preparar config para o engine
-    usar_nesting_2d = data.usar_nesting_2d if hasattr(data, 'usar_nesting_2d') else False
+    import os
+    env_nesting_ativo = os.environ.get("NESTING_2D_HABILITADO", "false").lower() == "true"
+    payload_nesting = getattr(data, 'usar_nesting_2d', False)
+    usar_nesting_2d = env_nesting_ativo and payload_nesting
+    
     config = {
         "estado": data.cliente.estado,
         "tipo_venda": data.tipo_venda,
@@ -627,7 +631,11 @@ async def update_orcamento(
         custos_res = supabase.table("custos_operacao").select("operacao, custo_hora").execute()
         custos_op = {c["operacao"]: float(c["custo_hora"]) for c in custos_res.data} if custos_res.data else {}
 
-        usar_nesting_2d = data.usar_nesting_2d if hasattr(data, 'usar_nesting_2d') else False
+        import os
+        env_nesting_ativo = os.environ.get("NESTING_2D_HABILITADO", "false").lower() == "true"
+        payload_nesting = getattr(data, 'usar_nesting_2d', False)
+        usar_nesting_2d = env_nesting_ativo and payload_nesting
+        
         config = {
             "estado": estado,
             "tipo_venda": tipo_venda,
