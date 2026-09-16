@@ -134,7 +134,7 @@ async def create_orcamento(
 
     # Preparar config para o engine
     import os
-    env_nesting_ativo = os.environ.get("NESTING_2D_HABILITADO", "false").lower() == "true"
+    env_nesting_ativo = os.environ.get("NESTING_2D_HABILITADO", "true").lower() == "true"
     payload_nesting = getattr(data, 'usar_nesting_2d', False)
     usar_nesting_2d = env_nesting_ativo and payload_nesting
     
@@ -664,7 +664,7 @@ async def update_orcamento(
         custos_op = {c["operacao"]: float(c["custo_hora"]) for c in custos_res.data} if custos_res.data else {}
 
         import os
-        env_nesting_ativo = os.environ.get("NESTING_2D_HABILITADO", "false").lower() == "true"
+        env_nesting_ativo = os.environ.get("NESTING_2D_HABILITADO", "true").lower() == "true"
         payload_nesting = getattr(data, 'usar_nesting_2d', False)
         usar_nesting_2d = env_nesting_ativo and payload_nesting
         

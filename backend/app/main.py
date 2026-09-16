@@ -55,5 +55,6 @@ async def health_check():
 async def nesting_status():
     """Retorna se o backend permite o motor Nesting 2D (Fase 4)."""
     import os
-    habilitado = os.environ.get("NESTING_2D_HABILITADO", "false").lower() == "true"
+    # Feature flag check with default to true
+    habilitado = os.environ.get("NESTING_2D_HABILITADO", "true").lower() == "true"
     return {"habilitado": habilitado}
