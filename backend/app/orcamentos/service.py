@@ -151,12 +151,39 @@ async def create_orcamento(
 
     # Calcular com retry loop para sincronização de retalhos (se Feature Flag ativada)
     orc_id_pre = str(uuid.uuid4())
+    numero = data.numero.strip() if (data.numero and data.numero.strip()) else _generate_numero_orcamento()
+
+    # Inserir o esqueleto do orçamento ANTES para satisfazer a Foreign Key do RPC
+    supabase.table("orcamentos").insert({
+        "id": orc_id_pre,
+        "numero": numero,
+        "status": "rascunho",
+        "cliente_nome": data.cliente.nome,
+        "cliente_estado": data.cliente.estado,
+        "tipo_venda": data.tipo_venda,
+        "created_by": user_id
+    }).execute()
     if usar_nesting_2d:
         for attempt in range(3):
             retalhos_res = supabase.table("estoque_chapas").select("*").eq("status", "disponivel").eq("tipo_registro", "retalho").execute()
             config["retalhos_disponiveis"] = retalhos_res.data
             
             resultado = engine.calcular_orcamento(items_dicts, config)
+            
+            if attempt == 0:
+                first_resultado = resultado
+            else:
+                bins_atuais = [b.get('id') for b in resultado.get("bins_utilizados", [])]
+                bins_originais = [b.get('id') for b in first_resultado.get("bins_utilizados", [])]
+                preco_mudou = abs(resultado["total_preco"] - first_resultado["total_preco"]) > 0.01
+                
+                if preco_mudou or bins_atuais != bins_originais:
+                    # O preço ou o arranjo mudou devido à indisponibilidade de retalhos.
+                    supabase.table("orcamentos").delete().eq("id", orc_id_pre).execute()
+                    raise HTTPException(
+                        status_code=409, 
+                        detail="O estoque de retalhos mudou enquanto você calculava o orçamento. Por favor, clique em Recalcular e salve novamente."
+                    )
             
             tem_nesting = any(it.get("chapa_arranjada", False) and not it.get("beneficiamento", False) for it in items_dicts)
             if not tem_nesting:
@@ -180,6 +207,7 @@ async def create_orcamento(
                 break
             except Exception as e:
                 if attempt == 2:
+                    supabase.table("orcamentos").delete().eq("id", orc_id_pre).execute()
                     raise HTTPException(
                         status_code=409, 
                         detail="O estoque de retalhos mudou enquanto você calculava o orçamento. Por favor, clique em Recalcular e salve novamente."
@@ -192,9 +220,8 @@ async def create_orcamento(
     # Gerar número
     numero = data.numero.strip() if (data.numero and data.numero.strip()) else _generate_numero_orcamento()
 
-    # Inserir orçamento
+    # Atualizar orçamento
     orc_data = {
-        "id": orc_id_pre,
         "numero": numero,
         "status": "rascunho",
         "nesting_json": resultado.get("bins_utilizados", []),
@@ -223,7 +250,7 @@ async def create_orcamento(
         "created_by": user_id,
     }
 
-    orc_result = supabase.table("orcamentos").insert(orc_data).execute()
+    orc_result = supabase.table("orcamentos").update(orc_data).eq("id", orc_id_pre).execute()
     orc_id = orc_id_pre
 
     # Inserir itens

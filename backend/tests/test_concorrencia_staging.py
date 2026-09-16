@@ -2,6 +2,9 @@ import asyncio
 import uuid
 import sys
 import os
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
 
 # Adiciona o backend ao path para podermos importar a aplicação
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -12,7 +15,10 @@ from app.orcamentos.service import create_orcamento
 
 async def run_concurrency_test(iteration: int):
     supabase = get_supabase_service_client()
-    user_id = str(uuid.uuid4()) # ID mock para a sessão do teste
+    
+    # Busca um user_id válido para não quebrar a FK
+    users_res = supabase.table("orcamentos").select("created_by").limit(10).execute()
+    user_id = next((row["created_by"] for row in users_res.data if row.get("created_by")), None)
     
     # ---------------------------------------------------------
     # SETUP DETERMINÍSTICO
@@ -61,28 +67,36 @@ async def run_concurrency_test(iteration: int):
                     quantidade=1,
                     chapa_arranjada=True
                 )
-            ]
+            ],
+            usar_nesting_2d=True
         )
 
-    req1 = criar_payload(f"TESTE-{iteration}-A")
-    req2 = criar_payload(f"TESTE-{iteration}-B")
+    run_id = str(uuid.uuid4())[:4]
+    req1 = criar_payload(f"TESTE-{iteration}-A-{run_id}")
+    req2 = criar_payload(f"TESTE-{iteration}-B-{run_id}")
 
     # Funções de chamada que vão engolir a Exceção para podermos analisar
-    async def call_a():
+    def call_a():
         try:
-            return await create_orcamento(req1, user_id)
+            return create_orcamento(req1, user_id)
         except Exception as e:
             return e
             
-    async def call_b():
+    def call_b():
         try:
-            return await create_orcamento(req2, user_id)
+            return create_orcamento(req2, user_id)
         except Exception as e:
             return e
 
     # Disparar simultaneamente (Janela de Race Condition)
     print("Disparando orçamentos simultâneos na RPC...")
-    results = await asyncio.gather(call_a(), call_b())
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        future_a = executor.submit(call_a)
+        future_b = executor.submit(call_b)
+        res_a = future_a.result()
+        res_b = future_b.result()
+        results = (res_a, res_b)
     
     res_a, res_b = results
     
@@ -99,19 +113,19 @@ async def run_concurrency_test(iteration: int):
     
     if isinstance(res_a, Exception):
         falhas += 1
-        print(f"[Operador A] ❌ Falhou com rollback automático: {res_a}")
+        print(f"[Operador A] [FALHA] Falhou com rollback automático: {res_a}")
     else:
         sucessos += 1
         orc_ganhador_id = res_a.id
-        print(f"[Operador A] ✅ Venceu a corrida. Orçamento: {res_a.id[:8]}")
+        print(f"[Operador A] [SUCESSO] Venceu a corrida. Orçamento: {res_a.id[:8]}")
         
     if isinstance(res_b, Exception):
         falhas += 1
-        print(f"[Operador B] ❌ Falhou com rollback automático: {res_b}")
+        print(f"[Operador B] [FALHA] Falhou com rollback automático: {res_b}")
     else:
         sucessos += 1
         orc_ganhador_id = res_b.id
-        print(f"[Operador B] ✅ Venceu a corrida. Orçamento: {res_b.id[:8]}")
+        print(f"[Operador B] [SUCESSO] Venceu a corrida. Orçamento: {res_b.id[:8]}")
         
     print("\n[Verificação de Integridade do Banco]")
     print(f"Status Final do Retalho: '{estado_final.get('status')}'")
