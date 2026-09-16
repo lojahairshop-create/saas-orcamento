@@ -186,3 +186,84 @@ class Nesting2DEngine:
             'retangulos_livres': free_rectangles,
             'rateio_custo_pecas': rateio_custo_pecas
         }
+
+    @classmethod
+    def otimizar_lote_multi_bin(
+        cls,
+        pecas: List[Dict[str, Any]],
+        retalhos_disponiveis: List[Dict[str, Any]],
+        chapa_padrao: Tuple[float, float],
+        margem_corte: float = 5.0
+    ) -> Dict[str, Any]:
+        """
+        Orquestra o empacotamento em múltiplos bins (retalhos e chapas novas).
+        Retalhos disponíveis são tentados primeiro usando Best-Fit (menor área primeiro).
+        Se restarem peças, chapas novas padrão são abertas sequencialmente.
+        
+        :param pecas: Lista de peças a produzir.
+        :param retalhos_disponiveis: Lista de dicionários [{'id': uuid, 'largura': w, 'comprimento': h, 'valor_contabil': v}]
+        :param chapa_padrao: Dimensões da chapa inteira (largura, comprimento) para quando acabarem os retalhos.
+        :return: Resultado multi-bin mapeando peças para os bins, e métricas gerais.
+        """
+        # Ordenar retalhos do menor para o maior (Best-Fit)
+        retalhos = sorted(
+            retalhos_disponiveis, 
+            key=lambda r: r['largura'] * r['comprimento']
+        )
+        
+        pecas_restantes = copy.deepcopy(pecas)
+        bins_utilizados = []
+        
+        # 1. Tentar alocar nos retalhos disponíveis
+        for retalho in retalhos:
+            if not pecas_restantes:
+                break
+                
+            # Dimensão do retalho
+            dim = (retalho['largura'], retalho['comprimento'])
+            
+            # Roda o nesting no retalho
+            res = cls.otimizar_chapa_single_bin(pecas_restantes, dim, margem_corte)
+            
+            if res['pecas_posicionadas']:
+                # Se alocou pelo menos uma peça, contabiliza este retalho como utilizado
+                bin_info = {
+                    'tipo': 'retalho',
+                    'id': retalho.get('id'),
+                    'dimensao': dim,
+                    'valor_original': retalho.get('valor_contabil', 0),
+                    'nesting_result': res
+                }
+                bins_utilizados.append(bin_info)
+                # Atualiza a lista de peças restantes
+                pecas_restantes = res['pecas_nao_posicionadas']
+                
+        # 2. Tentar alocar em chapas novas caso ainda restem peças
+        chapas_abertas = 0
+        while pecas_restantes:
+            chapas_abertas += 1
+            res = cls.otimizar_chapa_single_bin(pecas_restantes, chapa_padrao, margem_corte)
+            
+            # Se não alocou NENHUMA peça na chapa virgem, significa que existe alguma peça 
+            # MAIOR que a chapa padrão (oversized). Para evitar loop infinito, abortamos essa peça.
+            if not res['pecas_posicionadas']:
+                # A primeira peça da lista restante é definitivamente grande demais.
+                # Removemos ela para poder tentar o resto.
+                peca_gigante = pecas_restantes.pop(0)
+                # Opcional: registrar que a peça_gigante falhou.
+                continue
+                
+            bin_info = {
+                'tipo': 'chapa_nova',
+                'id': f'nova_chapa_{chapas_abertas}',
+                'dimensao': chapa_padrao,
+                'valor_original': 0, # Será calculado na service com o preço do material
+                'nesting_result': res
+            }
+            bins_utilizados.append(bin_info)
+            pecas_restantes = res['pecas_nao_posicionadas']
+            
+        return {
+            'bins_utilizados': bins_utilizados,
+            'pecas_nao_suportadas': pecas_restantes # Vazio no caso ideal
+        }

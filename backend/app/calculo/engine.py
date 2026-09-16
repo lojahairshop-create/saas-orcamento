@@ -24,6 +24,7 @@ from app.calculo.formulas import (
     calcular_comissao,
 )
 from app.calculo.impostos import get_tax_config, TaxConfig
+from app.calculo.nesting_engine import Nesting2DEngine
 
 
 class CalculoEngine:
@@ -256,7 +257,12 @@ class CalculoEngine:
 
         # 7. Custo MP (com IPI)
         ipi_rate = float(config.get("ipi_rate", 0.05))
-        custo_mp = 0.0 if beneficiamento else calcular_custo_mp(peso_total, preco_kg, ipi_rate)
+        custo_mp_override = item_data.get("custo_mp_override")
+        
+        if custo_mp_override is not None:
+            custo_mp = float(custo_mp_override)
+        else:
+            custo_mp = 0.0 if beneficiamento else calcular_custo_mp(peso_total, preco_kg, ipi_rate)
 
         # 8. Montagem dos tempos e custos de operação
         tempos_min: Dict[str, float] = {}
@@ -399,6 +405,81 @@ class CalculoEngine:
         """
         config = config or {}
 
+        # ------------------------------------------------------------------
+        # ORQUESTRAÇÃO NESTING MULTI-BIN
+        # ------------------------------------------------------------------
+        # Agrupar os itens que usam chapa_arranjada (nesting) por (Material, Espessura, ChapaPadrao)
+        itens_nesting = []
+        for i, item in enumerate(items):
+            if item.get("chapa_arranjada", False) and not item.get("beneficiamento", False):
+                itens_nesting.append((i, item))
+                
+        grupos_nesting = {}
+        for idx, item in itens_nesting:
+            mat = item.get("material", "AÇO CARBONO").upper().strip()
+            esp = float(item.get("espessura", 0))
+            chapa_dim = (float(item.get("chapa_l", 1200)), float(item.get("chapa_c", 2400)))
+            key = (mat, esp, chapa_dim)
+            if key not in grupos_nesting:
+                grupos_nesting[key] = []
+            grupos_nesting[key].append((idx, item))
+            
+        retalhos_disponiveis = config.get("retalhos_disponiveis", [])
+        bins_utilizados_geral = []
+        custo_rateado_por_item_idx = {}
+        
+        ipi_rate = float(config.get("ipi_rate", 0.05))
+        margem_corte = float(config.get("margem_corte", 5.0))
+        
+        for key, lista_itens in grupos_nesting.items():
+            mat, esp, chapa_padrao = key
+            
+            # Filtra retalhos aplicáveis a este grupo
+            retalhos_grupo = [
+                r for r in retalhos_disponiveis
+                if r.get('material', '').upper().strip() == mat and float(r.get('espessura', 0)) == esp
+            ]
+            
+            pecas_para_nesting = []
+            preco_kg = float(lista_itens[0][1].get("preco_kg", 0))
+            
+            for idx, item in lista_itens:
+                pecas_para_nesting.append({
+                    'id': idx, # Usamos o idx como ID para recuperar o rateio depois
+                    'largura': float(item.get("largura", 0)),
+                    'comprimento': float(item.get("comprimento", 0)),
+                    'quantidade': int(item.get("quantidade", 1)),
+                    'permitir_rotacao': item.get("permitir_rotacao", True)
+                })
+                
+            res_nesting = Nesting2DEngine.otimizar_lote_multi_bin(
+                pecas=pecas_para_nesting,
+                retalhos_disponiveis=retalhos_grupo,
+                chapa_padrao=chapa_padrao,
+                margem_corte=margem_corte
+            )
+            
+            densidade = self.get_densidade(mat)
+            
+            for bin_info in res_nesting['bins_utilizados']:
+                bins_utilizados_geral.append(bin_info)
+                
+                # Calcular custo total do bin (chapa ou retalho)
+                if bin_info['tipo'] == 'retalho':
+                    custo_bin = float(bin_info['valor_original'])
+                else:
+                    # Chapa nova: custo do peso total da chapa com IPI
+                    w, h = bin_info['dimensao']
+                    peso_chapa = (esp * w * h * densidade) / 1_000_000.0
+                    custo_bin = calcular_custo_mp(peso_chapa, preco_kg, ipi_rate)
+                    bin_info['valor_original'] = custo_bin # Atualiza para caso precisemos salvar o retalho sobrante
+                    
+                rateios = bin_info['nesting_result'].get('rateio_custo_pecas', {})
+                for peca_idx, fracao in rateios.items():
+                    custo_rateado_por_item_idx[peca_idx] = custo_rateado_por_item_idx.get(peca_idx, 0.0) + (custo_bin * fracao)
+
+        # ------------------------------------------------------------------
+
         items_calculados: List[Dict[str, Any]] = []
         total_preco = 0.0
         total_nf = 0.0
@@ -408,7 +489,11 @@ class CalculoEngine:
         total_custo_mp = 0.0
         total_fabricacao = 0.0
 
-        for item_data in items:
+        for i, item_data in enumerate(items):
+            # Injeta o custo override se esse item participou do nesting e alocou alguma peça
+            if i in custo_rateado_por_item_idx:
+                item_data["custo_mp_override"] = custo_rateado_por_item_idx[i]
+                
             resultado = self.calcular_item(item_data, config)
             items_calculados.append(resultado)
 
@@ -422,6 +507,7 @@ class CalculoEngine:
 
         return {
             "items_calculados": items_calculados,
+            "bins_utilizados": bins_utilizados_geral,
             "total_preco": total_preco,
             "total_nf": total_nf,
             "total_tributos": total_tributos,
