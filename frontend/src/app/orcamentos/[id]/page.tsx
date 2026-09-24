@@ -23,6 +23,7 @@ import {
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import NestingVisualizer from "@/components/orcamento/NestingVisualizer";
+import NestingViewerAdapter from "@/components/nesting/NestingViewerAdapter";
 
 export default function OrcamentoDetailPage() {
   const params = useParams();
@@ -392,7 +393,7 @@ export default function OrcamentoDetailPage() {
 
         {/* Tab 2: Arranjo de Chapas / Nesting */}
         {activeTab === "nesting" && (
-          <NestingVisualizer nestingJson={orcamento?.nesting_json || []} />
+          <NestingViewerAdapter nesting={orcamento?.nesting_json || []} readOnly={false} />
         )}
       </div>
     </AppLayout>
