@@ -285,7 +285,10 @@ class DXFProcessor:
             "comprimento": round(comprimento, 2),
             "area": round(area_m2, 6),
             "furos": furos,
-            "vetor_svg": vetor_svg
+            "vetor_svg": vetor_svg,
+            "source_metadata": {
+                "primitives": primitives
+            }
         }
 
     @staticmethod
@@ -578,7 +581,11 @@ class DXFProcessor:
                 "comprimento": round(comprimento, 2),
                 "area": round(area_m2, 6),
                 "furos": furos,
-                "vetor_svg": vetor_svg
+                "vetor_svg": vetor_svg,
+                "source_metadata": {
+                    "outer": piece["outer_contour"]["primitives"],
+                    "inner": [inner["primitives"] for inner in piece["inner_contours"]]
+                }
             })
 
         return results

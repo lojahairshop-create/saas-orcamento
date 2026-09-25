@@ -59,6 +59,7 @@ class ItemCreate(BaseModel):
     observacoes: Optional[str] = None
     origem_material: Optional[str] = "chapa_inteira"
     vetor_svg: Optional[str] = None
+    source_metadata: Optional[Dict[str, Any]] = None
 
 
 class ItemUpdate(BaseModel):
@@ -111,6 +112,7 @@ class ItemCalculadoResponse(BaseModel):
     chapa_arranjada: bool = False
     origem_material: str = "chapa_inteira"
     vetor_svg: Optional[str] = None
+    source_metadata: Optional[Dict[str, Any]] = None
     custo_extra: float = 0.0
     tempo_corte: float = 0.0
     preco_pintura_kg: float = 0.0

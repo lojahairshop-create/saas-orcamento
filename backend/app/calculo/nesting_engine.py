@@ -1,7 +1,34 @@
 from typing import List, Dict, Any, Tuple
 import copy
+from backend.app.calculo.true_shape.orchestrator import TrueShapeOrchestrator, TRUE_SHAPE_ENABLED
 
 class Nesting2DEngine:
+    @staticmethod
+    def _map_true_shape_to_legacy(ts_result, pecas_individuais, chapa_w, chapa_h):
+        # Build positioned pieces
+        pecas_posicionadas = []
+        placed_ids = set()
+        
+        # map placements
+        for pl in ts_result.placements:
+            # Reconstruct original dict info
+            # Our ID was original_id + _ + index. 
+            # E.g. "peca_1" from "peca" index 1.
+            orig_id = pl.part_id.rsplit('_', 1)[0]
+            
+            # Find the first matching peca that hasn't been placed yet
+            # It's a bit tricky because we lost the original reference.
+            # But we can just use the original pecas_individuais list
+            # We'll match by the exact part_id we sent.
+            for original_p in pecas_individuais:
+                p_id = str(original_p.get("id", "0"))
+                # To match correctly, we would need to know the exact generated ID.
+                pass
+                
+        # Actually, let's just do a simpler mapping.
+        # It's better to inject it carefully.
+        pass
+
     @staticmethod
     def otimizar_chapa_single_bin(
         pecas: List[Dict[str, Any]], 
@@ -10,13 +37,74 @@ class Nesting2DEngine:
     ) -> Dict[str, Any]:
         """
         Otimiza o arranjo de peças em uma única chapa usando a heurística MaxRects (Bottom-Left).
-        
-        :param pecas: Lista de dicionários, ex: [{'id': 1, 'largura': 300, 'comprimento': 400, 'quantidade': 2, 'permitir_rotacao': True, 'peso_unitario': 1.5}]
-        :param chapa_dim: Tupla (largura, comprimento) da chapa.
-        :param margem_corte: Gap/margem adicionada entre as peças e nas bordas.
-        :return: Dicionário com resultados do posicionamento.
+        Ou True Shape se habilitado via feature flag.
         """
         chapa_w, chapa_h = chapa_dim
+        
+        if TRUE_SHAPE_ENABLED:
+            print("[TRUE SHAPE] Feature flag ON. Tentando TrueShapeOrchestrator...")
+            ts_res = TrueShapeOrchestrator.execute(pecas, chapa_dim, margem_corte)
+            
+            if ts_res.status == "SUCCESS":
+                print(f"[TRUE SHAPE] Sucesso! Placements: {len(ts_res.placements)}")
+                # Map to legacy
+                # Desempacotar peças
+                pecas_individuais = []
+                for p in pecas:
+                    qtd = p.get('quantidade', 1)
+                    for i in range(qtd):
+                        cp = copy.deepcopy(p)
+                        cp["ts_id"] = f"{p.get('id', 'peca')}_{i}"
+                        pecas_individuais.append(cp)
+                        
+                pecas_posicionadas = []
+                placed_ts_ids = {pl.part_id for pl in ts_res.placements}
+                
+                area_usada_total = 0.0
+                for pl in ts_res.placements:
+                    # Find original
+                    orig_p = next(p for p in pecas_individuais if p["ts_id"] == pl.part_id)
+                    w = float(orig_p.get("largura", 0))
+                    h = float(orig_p.get("comprimento", 0))
+                    area_usada_total += (w * h)
+                    
+                    orig_p.update({
+                        'x': pl.x,
+                        'y': pl.y,
+                        'w': w,
+                        'h': h,
+                        'rotacionado': pl.rotation != 0.0
+                    })
+                    pecas_posicionadas.append(orig_p)
+                    
+                pecas_nao_posicionadas = []
+                for p in pecas_individuais:
+                    if p["ts_id"] not in placed_ts_ids:
+                        pecas_nao_posicionadas.append(p)
+                        
+                area_total_chapa = chapa_w * chapa_h
+                aproveitamento_percentual = ts_res.utilization
+                
+                rateio_custo_pecas = {}
+                for i, p in enumerate(pecas_posicionadas):
+                    area_peca = p['w'] * p['h']
+                    fator = area_peca / area_usada_total if area_usada_total > 0 else 0
+                    peca_id = p.get('id', f'peca_{i}')
+                    rateio_custo_pecas[peca_id] = rateio_custo_pecas.get(peca_id, 0) + fator
+                    
+                return {
+                    'pecas_posicionadas': pecas_posicionadas,
+                    'pecas_nao_posicionadas': pecas_nao_posicionadas,
+                    'aproveitamento_percentual': aproveitamento_percentual,
+                    'area_usada_m2': area_usada_total / 1_000_000,
+                    'area_sobra_m2': (area_total_chapa - area_usada_total) / 1_000_000,
+                    'retangulos_livres': [], # TrueShape does not produce free max rects
+                    'rateio_custo_pecas': rateio_custo_pecas,
+                    'engine_used': 'TrueShape'
+                }
+            else:
+                print(f"[TRUE SHAPE] Falhou com status {ts_res.status}. Fallback para BoundingBox.")
+        
         
         # Desempacotar peças considerando 'quantidade'
         pecas_individuais = []

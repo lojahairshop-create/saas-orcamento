@@ -561,6 +561,8 @@ function NovoOrcamentoWizardContent() {
         margem_lucro: 0.30,
         beneficiamento: false,
         origem_material: "chapa_inteira",
+        vetor_svg: (dxf as any).vetor_svg,
+        source_metadata: (dxf as any).source_metadata,
         
         // Tempos padrão (iniciam em 0 para peças importadas por DXF)
         tempo_setup: 0.0,
