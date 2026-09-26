@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Tuple
 import copy
-from backend.app.calculo.true_shape.orchestrator import TrueShapeOrchestrator, TRUE_SHAPE_ENABLED
+from app.calculo.true_shape.orchestrator import TrueShapeOrchestrator, TRUE_SHAPE_ENABLED
 
 class Nesting2DEngine:
     @staticmethod

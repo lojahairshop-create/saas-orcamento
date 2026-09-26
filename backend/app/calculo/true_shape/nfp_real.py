@@ -2,7 +2,7 @@ import time
 from shapely.geometry import Polygon
 from shapely.affinity import translate, scale
 from shapely.ops import unary_union, triangulate
-from backend.app.calculo.true_shape.kernel import GeometryKernel
+from app.calculo.true_shape.kernel import GeometryKernel
 from typing import Tuple
 
 class RealNfpProvider:

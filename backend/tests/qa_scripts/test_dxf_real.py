@@ -1,5 +1,5 @@
 import os
-from backend.app.calculo.true_shape.orchestrator import TrueShapeOrchestrator
+from app.calculo.true_shape.orchestrator import TrueShapeOrchestrator
 
 def test_polygonize():
     # 1. Test Multiple Independent Pieces in same Item 

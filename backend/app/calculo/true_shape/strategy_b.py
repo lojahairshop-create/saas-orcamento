@@ -1,6 +1,6 @@
-from backend.app.calculo.true_shape.models import CanonicalPartGeometry, Placement
-from backend.app.calculo.true_shape.kernel import GeometryKernel
-from backend.app.calculo.true_shape.nfp_real import RealNfpProvider
+from app.calculo.true_shape.models import CanonicalPartGeometry, Placement
+from app.calculo.true_shape.kernel import GeometryKernel
+from app.calculo.true_shape.nfp_real import RealNfpProvider
 from shapely.geometry import Point
 from shapely.ops import unary_union
 from typing import List

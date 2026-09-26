@@ -4,9 +4,9 @@ from typing import List, Dict, Any, Tuple
 import concurrent.futures
 import time
 import multiprocessing
-from backend.app.calculo.true_shape.models import CanonicalPartGeometry, NestingResult, Placement
-from backend.app.calculo.true_shape.strategy_b import StrategyBNfp
-from backend.app.calculo.true_shape.validator import PlacementValidator
+from app.calculo.true_shape.models import CanonicalPartGeometry, NestingResult, Placement
+from app.calculo.true_shape.strategy_b import StrategyBNfp
+from app.calculo.true_shape.validator import PlacementValidator
 
 # Feature Flags and Limits
 TRUE_SHAPE_ENABLED = os.getenv("TRUE_SHAPE_ENABLED", "false").lower() == "true"

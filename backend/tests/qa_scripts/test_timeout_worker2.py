@@ -1,7 +1,7 @@
 import time
 import os
 import psutil
-from backend.app.calculo.true_shape.orchestrator import TrueShapeOrchestrator
+from app.calculo.true_shape.orchestrator import TrueShapeOrchestrator
 
 def cpu_bound_long_task(parts_data, sheet_w, sheet_h, clearance, soft_budget, q):
     # Overwrite the worker temporarily to test
@@ -11,7 +11,7 @@ def cpu_bound_long_task(parts_data, sheet_w, sheet_h, clearance, soft_budget, q)
         _ = 1 + 1
 
 def test_hard_timeout():
-    import backend.app.calculo.true_shape.orchestrator as orch
+    import app.calculo.true_shape.orchestrator as orch
     orch._run_strategy_b_worker_pipe = cpu_bound_long_task
     orch.TRUE_SHAPE_HARD_TIMEOUT_SECONDS = 2.0
     orch.TRUE_SHAPE_ENABLED = True

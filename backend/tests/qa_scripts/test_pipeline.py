@@ -1,7 +1,7 @@
 import os
 import time
-from backend.app.engenharia.dxf_processor import DXFProcessor
-from backend.app.calculo.nesting_engine import Nesting2DEngine
+from app.engenharia.dxf_processor import DXFProcessor
+from app.calculo.nesting_engine import Nesting2DEngine
 
 # A small SVG string to use for testing
 SVG_CONTENT = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M 0 0 L 100 0 L 100 100 L 0 100 Z" fill="none"/></svg>'
@@ -53,7 +53,7 @@ def run_benchmarks():
     for n in [10, 50, 100, 300]:
         itens, dxf_time = create_dxf_mock_file(n)
         
-        import backend.app.calculo.nesting_engine as ne
+        import app.calculo.nesting_engine as ne
         ne.TRUE_SHAPE_ENABLED = False
         t_start = time.time()
         res_bbox = Nesting2DEngine.otimizar_chapa_single_bin(itens, (200, 200), margem_corte=0)

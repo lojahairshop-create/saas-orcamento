@@ -6,7 +6,7 @@ os.environ["TRUE_SHAPE_ENABLED"] = "true"
 os.environ["TRUE_SHAPE_SOFT_BUDGET_SECONDS"] = "2.0"
 os.environ["TRUE_SHAPE_HARD_TIMEOUT_SECONDS"] = "3.0"
 
-from backend.app.calculo.nesting_engine import Nesting2DEngine
+from app.calculo.nesting_engine import Nesting2DEngine
 
 def test_integration():
     pecas = [
@@ -40,7 +40,7 @@ def test_integration():
     os.environ["TRUE_SHAPE_SOFT_BUDGET_SECONDS"] = "0.05"
     
     # Note: Because of how Python modules cache os.environ, we need to inject it into TrueShapeOrchestrator directly for the test
-    import backend.app.calculo.true_shape.orchestrator as orch
+    import app.calculo.true_shape.orchestrator as orch
     orch.TRUE_SHAPE_HARD_TIMEOUT_SECONDS = 0.1
     orch.TRUE_SHAPE_SOFT_BUDGET_SECONDS = 0.05
     

@@ -9,7 +9,7 @@ def test_concurrency():
     os.environ["TRUE_SHAPE_SOFT_BUDGET_SECONDS"] = "2.0"
     os.environ["TRUE_SHAPE_HARD_TIMEOUT_SECONDS"] = "3.0"
     
-    from backend.app.calculo.nesting_engine import Nesting2DEngine
+    from app.calculo.nesting_engine import Nesting2DEngine
     
     pecas = [{"id": "1", "largura": 100, "comprimento": 100, "quantidade": 1}]
     

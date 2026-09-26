@@ -1,5 +1,5 @@
-from backend.app.calculo.true_shape.models import CanonicalPartGeometry, Placement, ValidationResult
-from backend.app.calculo.true_shape.kernel import GeometryKernel
+from app.calculo.true_shape.models import CanonicalPartGeometry, Placement, ValidationResult
+from app.calculo.true_shape.kernel import GeometryKernel
 from typing import List
 import math
 
