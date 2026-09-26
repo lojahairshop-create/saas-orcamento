@@ -11,10 +11,10 @@ export const TransformerLayer: React.FC<TransformerLayerProps> = ({ stageRef }) 
   const { parts, updatePart } = useNestingStore();
   const transformerRef = useRef<Konva.Transformer>(null);
 
+  const selectedParts = parts.filter((p) => p.selected);
+
   useEffect(() => {
     if (!stageRef.current || !transformerRef.current) return;
-
-    const selectedParts = parts.filter((p) => p.selected);
 
     const nodes = stageRef.current.find('.part-group').filter((node) => {
       return selectedParts.some(p => p.id === node.id());
@@ -42,11 +42,11 @@ export const TransformerLayer: React.FC<TransformerLayerProps> = ({ stageRef }) 
         ref={transformerRef}
         onTransformEnd={handleTransformEnd}
         boundBoxFunc={(oldBox, newBox) => {
-          // Limit resize if needed, though mostly parts shouldn't be freely resized, only rotated
+        // Limit resize if needed, though mostly parts shouldn't be freely resized, only rotated
           return newBox;
         }}
         resizeEnabled={false} // Disable resize for nesting parts typically
-        rotateEnabled={true}
+        rotateEnabled={selectedParts.length > 0 && selectedParts.every(p => Boolean(p.polygon))}
         anchorSize={8}
         borderStroke="#60a5fa"
         anchorStroke="#60a5fa"

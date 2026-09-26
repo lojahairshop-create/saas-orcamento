@@ -515,6 +515,7 @@ async def get_orcamento(orcamento_id: str, user_id: str) -> OrcamentoResponse:
         frete=orc.get("frete", "FOB"),
         validade=int(orc.get("validade") or 7),
         observacoes=orc.get("observacoes"),
+        nesting_json=orc.get("nesting_json"),
         total_preco=tot_preco,
         total_nf=tot_nf,
         total_tributos=tot_tributos,

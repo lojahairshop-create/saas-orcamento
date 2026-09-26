@@ -48,22 +48,39 @@ export const PartItem = React.memo(({ part, status, debugMode, onSelect, onDragE
       onTap={(e: any) => onSelect(e, part.id)}
       onDragEnd={(e) => onDragEnd(e, part.id)}
     >
-      {/* Main Polygon */}
-      <Line
-        points={part.polygon.points}
-        closed={true}
-        fill={fillColor}
-        stroke={strokeColor}
-        strokeWidth={part.selected || debugMode ? 2 : 1}
-        opacity={0.8}
-        shadowColor={shadowColor}
-        shadowBlur={shadowBlur}
-        shadowOpacity={0.5}
-        shadowOffset={{ x: 2, y: 2 }}
-      />
+      {/* Main Geometry */}
+      {part.polygon ? (
+        <Line
+          points={part.polygon.points}
+          closed={true}
+          fill={fillColor}
+          stroke={strokeColor}
+          strokeWidth={part.selected || debugMode ? 2 : 1}
+          opacity={0.8}
+          shadowColor={shadowColor}
+          shadowBlur={shadowBlur}
+          shadowOpacity={0.5}
+          shadowOffset={{ x: 2, y: 2 }}
+        />
+      ) : (
+        <Rect
+          x={part.boundingBox.x}
+          y={part.boundingBox.y}
+          width={part.boundingBox.width}
+          height={part.boundingBox.height}
+          fill={fillColor}
+          stroke={strokeColor}
+          strokeWidth={part.selected || debugMode ? 2 : 1}
+          opacity={0.8}
+          shadowColor={shadowColor}
+          shadowBlur={shadowBlur}
+          shadowOpacity={0.5}
+          shadowOffset={{ x: 2, y: 2 }}
+        />
+      )}
 
       {/* Holes */}
-      {part.polygon.holes?.map((holePoints, idx) => (
+      {part.polygon?.holes?.map((holePoints, idx) => (
         <Line
           key={`hole-${idx}`}
           points={holePoints}

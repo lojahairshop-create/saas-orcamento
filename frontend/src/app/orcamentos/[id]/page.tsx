@@ -393,7 +393,7 @@ export default function OrcamentoDetailPage() {
 
         {/* Tab 2: Arranjo de Chapas / Nesting */}
         {activeTab === "nesting" && (
-          <NestingViewerAdapter nesting={orcamento?.nesting_json || []} readOnly={false} />
+          <NestingViewerAdapter nesting={orcamento?.nesting_json || []} itens={orcamento?.itens || []} readOnly={false} />
         )}
       </div>
     </AppLayout>

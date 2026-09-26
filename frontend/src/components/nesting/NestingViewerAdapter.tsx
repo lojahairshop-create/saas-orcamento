@@ -1,46 +1,55 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNestingStore } from "@/store/nestingStore";
 import dynamic from "next/dynamic";
 const NestingCanvas = dynamic(() => import("./NestingCanvas"), { ssr: false });
 import { PartConfig } from "@/types/nesting";
 import NestingVisualizer from "@/components/orcamento/NestingVisualizer";
+import { adaptBudgetNesting } from "@/utils/nestingAdapters";
 
 interface NestingViewerAdapterProps {
   nesting: any[];
+  itens?: any[];
   sheet?: any;
   readOnly?: boolean;
 }
 
 const ENABLE_NEW_CANVAS = true;
 
-export default function NestingViewerAdapter({ nesting, readOnly = false }: NestingViewerAdapterProps) {
+export default function NestingViewerAdapter({ nesting, itens = [], readOnly = false }: NestingViewerAdapterProps) {
   const setSheet = useNestingStore((state) => state.setSheet);
-  const addPart = useNestingStore((state) => state.addPart);
-  const parts = useNestingStore((state) => state.parts);
-  const removePart = useNestingStore((state) => state.removePart);
 
-  const [selectedGroup, setSelectedGroup] = useState<number>(0);
-  const [selectedSheet, setSelectedSheet] = useState<number>(0);
+  const [selectedSheetIndex, setSelectedSheetIndex] = useState<number>(0);
+
+  // Derive Canonical Document
+  const canonicalDoc = useMemo(() => {
+    return adaptBudgetNesting(nesting, itens);
+  }, [nesting, itens]);
 
   useEffect(() => {
     if (!ENABLE_NEW_CANVAS) return;
-    if (!nesting || nesting.length === 0) return;
+    if (!canonicalDoc || !canonicalDoc.sheets || canonicalDoc.sheets.length === 0) {
+      useNestingStore.setState({ parts: [] });
+      return;
+    }
 
-    const group = nesting[selectedGroup];
-    if (!group || !group.chapas || group.chapas.length === 0) return;
+    // Safely clamp selected index in case sheets array shrinks
+    const safeIndex = selectedSheetIndex >= canonicalDoc.sheets.length ? 0 : selectedSheetIndex;
+    if (safeIndex !== selectedSheetIndex) {
+      setSelectedSheetIndex(safeIndex);
+    }
 
-    const sheetData = group.chapas[selectedSheet];
+    const sheetData = canonicalDoc.sheets[safeIndex];
     if (!sheetData) return;
 
     // Atualiza a chapa
     setSheet({
-      width: group.chapa_c || 3000, // Comprimento
-      height: group.chapa_l || 1500, // Largura
-      thickness: 1,
-      material: group.key || group.dimensao || 'Aço',
-      utilization: sheetData.aproveitamento || 0
+      width: sheetData.width,
+      height: sheetData.height,
+      thickness: sheetData.thickness || 1,
+      material: sheetData.material || 'Aço',
+      utilization: sheetData.utilization || 0
     });
 
     // Limpa peças velhas e insere novas. Hack rápido para limpar tudo:
@@ -48,40 +57,34 @@ export default function NestingViewerAdapter({ nesting, readOnly = false }: Nest
 
     const newParts: PartConfig[] = [];
 
-    sheetData.pecas.forEach((peca: any, idx: number) => {
-      // Converte do formato do backend
-      // Se não tiver polygon, gera Bounding Box
-      const width = peca.rotacionado ? peca.h : peca.w;
-      const height = peca.rotacionado ? peca.w : peca.h;
+    sheetData.placements.forEach((peca) => {
+      const width = peca.width;
+      const height = peca.height;
       
       const part: PartConfig = {
-        id: peca.id || `part-${idx}`,
-        name: `Peça ${peca.id || idx}`,
+        id: peca.id,
+        name: peca.name,
         quantity: 1,
         x: peca.x,
         y: peca.y,
-        rotation: peca.rotation || (peca.rotacionado ? 90 : 0),
+        rotation: peca.rotation,
+        engineRotated: peca.engineRotated,
         mirrorX: false,
         mirrorY: false,
         selected: false,
         locked: readOnly,
-        color: '#94a3b8', // slate-400
-        sourceDxfId: peca.id || '',
-        material: group.key || 'Aço',
-        thickness: 1,
+        color: '#94a3b8',
+        sourceDxfId: peca.sourceItemIndex !== undefined ? peca.sourceItemIndex.toString() : peca.id,
+        material: peca.material || sheetData.material || 'Aço',
+        thickness: peca.thickness || sheetData.thickness || 1,
         area: width * height,
         weight: 0,
         boundingBox: { x: 0, y: 0, width, height },
-        polygon: peca.polygon || {
-          id: `poly-${idx}`,
+        polygon: peca.polygon ? {
+          id: peca.polygon.id || `poly-${peca.id}`,
           closed: true,
-          points: [
-            0, 0,
-            width, 0,
-            width, height,
-            0, height
-          ]
-        }
+          points: peca.polygon.points
+        } : undefined
       };
 
       newParts.push(part);
@@ -89,13 +92,13 @@ export default function NestingViewerAdapter({ nesting, readOnly = false }: Nest
 
     useNestingStore.setState({ parts: newParts });
 
-  }, [nesting, selectedGroup, selectedSheet]);
+  }, [canonicalDoc, selectedSheetIndex, readOnly]);
 
   if (!ENABLE_NEW_CANVAS) {
     return <NestingVisualizer nestingJson={nesting} />;
   }
 
-  if (!nesting || nesting.length === 0) {
+  if (!canonicalDoc || !canonicalDoc.sheets || canonicalDoc.sheets.length === 0) {
     return (
       <div className="py-16 text-center text-slate-500 font-semibold bg-white border border-gray-200 rounded-xl flex flex-col gap-2 items-center">
         <span>Nenhum arranjo salvo ou disponível.</span>
@@ -108,39 +111,19 @@ export default function NestingViewerAdapter({ nesting, readOnly = false }: Nest
       {/* Controles de Navegação */}
       <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-gray-200">
         <div className="flex flex-col">
-          <label className="text-xs font-bold text-slate-500 mb-1">Grupo de Material</label>
+          <label className="text-xs font-bold text-slate-500 mb-1">Chapa</label>
           <select 
             className="border border-gray-300 rounded px-3 py-1.5 text-sm"
-            value={selectedGroup}
-            onChange={(e) => {
-              setSelectedGroup(Number(e.target.value));
-              setSelectedSheet(0);
-            }}
+            value={selectedSheetIndex}
+            onChange={(e) => setSelectedSheetIndex(Number(e.target.value))}
           >
-            {nesting.map((g: any, i: number) => (
-              <option key={i} value={i}>
-                {g.key || g.dimensao} ({g.chapas?.length || 0} chapas)
+            {canonicalDoc.sheets.map((sheet, i) => (
+              <option key={sheet.id || i} value={i}>
+                Chapa {i + 1} - {sheet.material || 'Material Genérico'} ({sheet.width}x{sheet.height}) - Aproveitamento: {sheet.utilization?.toFixed(1) || 0}%
               </option>
             ))}
           </select>
         </div>
-
-        {nesting[selectedGroup]?.chapas && (
-          <div className="flex flex-col">
-            <label className="text-xs font-bold text-slate-500 mb-1">Chapa</label>
-            <select 
-              className="border border-gray-300 rounded px-3 py-1.5 text-sm"
-              value={selectedSheet}
-              onChange={(e) => setSelectedSheet(Number(e.target.value))}
-            >
-              {nesting[selectedGroup].chapas.map((c: any, i: number) => (
-                <option key={i} value={i}>
-                  Chapa {i + 1} - Aproveitamento: {c.aproveitamento}%
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
       </div>
 
       {/* Renderiza o Canvas envolto numa div controlada */}

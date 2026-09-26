@@ -39,11 +39,12 @@ export type PartConfig = {
   id: string;
   name: string;
   quantity: number;
-  polygon: Polygon;
+  polygon?: Polygon;
   boundingBox: BoundingBox;
   x: number;
   y: number;
   rotation: number;
+  engineRotated?: boolean;
   mirrorX: boolean;
   mirrorY: boolean;
   selected: boolean;
