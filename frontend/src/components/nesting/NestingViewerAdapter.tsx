@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useNestingStore } from "@/store/nestingStore";
-import NestingCanvas from "./NestingCanvas";
+import dynamic from "next/dynamic";
+const NestingCanvas = dynamic(() => import("./NestingCanvas"), { ssr: false });
 import { PartConfig } from "@/types/nesting";
 import NestingVisualizer from "@/components/orcamento/NestingVisualizer";
 
