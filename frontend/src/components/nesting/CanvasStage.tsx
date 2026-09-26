@@ -47,7 +47,7 @@ export const CanvasStage: React.FC = () => {
         height={dimensions.height}
         onWheel={handleWheel}
         onClick={handleStageClick}
-        onTap={(e) => handleStageClick(e)}
+        onTap={(e: any) => handleStageClick(e)}
         onMouseDown={selectionBoxHandlers.onMouseDown}
         onMouseMove={selectionBoxHandlers.onMouseMove}
         onMouseUp={selectionBoxHandlers.onMouseUp}

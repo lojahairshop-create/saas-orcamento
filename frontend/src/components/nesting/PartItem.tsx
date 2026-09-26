@@ -45,7 +45,7 @@ export const PartItem = React.memo(({ part, status, debugMode, onSelect, onDragE
       scaleY={part.mirrorY ? -1 : 1}
       draggable={!part.locked}
       onClick={(e) => onSelect(e, part.id)}
-      onTap={(e) => onSelect(e, part.id)}
+      onTap={(e: any) => onSelect(e, part.id)}
       onDragEnd={(e) => onDragEnd(e, part.id)}
     >
       {/* Main Polygon */}
