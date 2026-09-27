@@ -9,6 +9,9 @@ import { Select } from "@/components/ui/Select";
 import { Table, TableRow, TableCell } from "@/components/ui/Table";
 import DxfUploader from "@/components/orcamento/DxfUploader";
 import { Modal } from "@/components/ui/Modal";
+import NestingComparisonModal from "@/components/orcamento/NestingComparisonModal";
+import NestingPreviewModal from "@/components/orcamento/NestingPreviewModal";
+import { SimulacaoComparacaoResponse } from "@/types";
 import { api } from "@/lib/api";
 import { DXFResult, Material } from "@/types";
 import {
@@ -49,9 +52,62 @@ function NovoOrcamentoWizardContent() {
   const [loading, setLoading] = useState(false);
 
   // --- Step 1: Cliente Info ---
+  const [comparacaoModalOpen, setComparacaoModalOpen] = useState(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [simulacaoResult, setSimulacaoResult] = useState<SimulacaoComparacaoResponse | null>(null);
+  const [simulacaoLoading, setSimulacaoLoading] = useState(false);
+  const [comparacaoStale, setComparacaoStale] = useState(false);
+  const [nestingJsonPreview, setNestingJsonPreview] = useState<any[] | null>(null);
+
+  const handleSimularComparacao = async () => {
+    setSimulacaoLoading(true);
+    setComparacaoStale(false);
+    try {
+      const clienteNomeFinal = cliente.nome.trim() || "Cliente Geral";
+      const payload = {
+        cliente: { ...cliente, nome: clienteNomeFinal },
+        tipo_venda: tipoVenda,
+        ipi_rate: ipiRate,
+        taxa_comissao: taxaComissao,
+        itens: itens.map(it => ({
+          ...it,
+          beneficiamento: !!it.beneficiamento,
+        }))
+      };
+      const res = await api.simularComparacao(payload);
+      setSimulacaoResult(res);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Erro ao executar simulação");
+    } finally {
+      setSimulacaoLoading(false);
+    }
+  };
+
+  const handleSelectScenario = (cenario: "classico" | "nesting") => {
+    if (!simulacaoResult) return;
+    const selected = simulacaoResult[cenario];
+
+    setUsarNesting2d(cenario === "nesting");
+    setComparacaoStale(false);
+
+    setCalculado((prev: any) => ({
+      ...prev,
+      total_custo_mp: selected.total_custo_mp,
+      total_fabricacao: selected.total_fabricacao,
+      total_preco: selected.total_preco,
+      total_nf: selected.total_nf,
+      total_tributos: selected.total_tributos,
+      total_peso: selected.total_peso,
+      total_comissao: selected.total_comissao,
+    }));
+
+    setComparacaoModalOpen(false);
+  };
+
   const [nestingStatus, setNestingStatus] = useState(false);
   const [usarNesting2d, setUsarNesting2d] = useState(false);
-  
+
   const [cliente, setCliente] = useState({
     nome: "",
     email: "",
@@ -94,7 +150,7 @@ function NovoOrcamentoWizardContent() {
   const [bulkNewMaterial, setBulkNewMaterial] = useState<string>("");
   const [bulkNewEspessura, setBulkNewEspessura] = useState<string>("");
   const [bulkNewQuantidade, setBulkNewQuantidade] = useState<string>("");
-  
+
   // Tempos das operações para edição em massa
   const [bulkTempoSetup, setBulkTempoSetup] = useState<string>("");
   const [bulkTempoDobra, setBulkTempoDobra] = useState<string>("");
@@ -109,7 +165,7 @@ function NovoOrcamentoWizardContent() {
   const [dxfItemsToConfigure, setDxfItemsToConfigure] = useState<any[] | null>(null);
   const [editingPecaId, setEditingPecaId] = useState<string | null>(null);
   const [hasEditedNestingDimensions, setHasEditedNestingDimensions] = useState(false);
-  
+
   // Peça que está sendo editada/adicionada no form manual
   const [novaPeca, setNovaPeca] = useState({
     descricao: "",
@@ -131,7 +187,7 @@ function NovoOrcamentoWizardContent() {
     chapa_arranjada: false,
     tempo_corte: 0.0,
     custo_extra: 0.0,
-    
+
     // Tempos das operações (minutos) e Pintura (R$)
     valor_pintura: 0.0,
     preco_pintura_kg: 0.0,
@@ -143,7 +199,7 @@ function NovoOrcamentoWizardContent() {
     tempo_guilhotina: 0.0,
     tempo_usinagem: 0.0,
     tempo_montagem: 0.0,
-    
+
     observacoes: "",
   });
 
@@ -266,7 +322,7 @@ function NovoOrcamentoWizardContent() {
       try {
         setLoading(true);
         const data = await api.getOrcamento(editId!);
-        
+
         // Preencher informações do cliente
         setCliente({
           nome: data.cliente.nome || "",
@@ -277,7 +333,7 @@ function NovoOrcamentoWizardContent() {
           cidade: data.cliente.cidade || "",
           estado: data.cliente.estado || "SP",
         });
-        
+
         setTipoVenda(data.tipo_venda || "pecas");
         setIpiRate(data.ipi_rate ?? 0.05);
         setTaxaComissao(data.taxa_comissao ?? 0.03);
@@ -328,7 +384,7 @@ function NovoOrcamentoWizardContent() {
           tempo_montagem: getTempo(it.operacoes || [], "MONTAGEM"),
           observacoes: it.observacoes || ""
         }));
-        
+
         setItens(mappedItens);
       } catch (err) {
         console.error("Erro ao carregar orçamento para edição:", err);
@@ -345,7 +401,7 @@ function NovoOrcamentoWizardContent() {
       alert("Informe pelo menos a descrição da peça.");
       return;
     }
-    
+
     if (editingPecaId) {
       setItens(itens.map(it => it.id === editingPecaId ? { ...novaPeca, id: editingPecaId } : it));
       setEditingPecaId(null);
@@ -353,7 +409,7 @@ function NovoOrcamentoWizardContent() {
       setItens([...itens, { ...novaPeca, id: Date.now().toString() + Math.random().toString(36).substr(2, 9) }]);
     }
     setHasEditedNestingDimensions(true);
-    
+
     // Reset form peça mantendo material/configurações anteriores
     setNovaPeca(prev => ({
       ...prev,
@@ -425,7 +481,7 @@ function NovoOrcamentoWizardContent() {
       observacoes: item.observacoes || ""
     });
     setEditingPecaId(item.id);
-    
+
     // Rolar a tela suavemente para o formulário de peças
     const element = document.getElementById("peca-form-card");
     if (element) {
@@ -471,14 +527,14 @@ function NovoOrcamentoWizardContent() {
           tipoMat = matched ? matched.tipo : tipoMat;
           precoKg = matched ? matched.preco_kg : precoKg;
         }
-        
+
         if (bulkNewEspessura) {
           const parsedEsp = parseFloat(String(bulkNewEspessura).replace(",", "."));
           if (!isNaN(parsedEsp)) {
             esp = parsedEsp;
           }
         }
-        
+
         if (bulkNewQuantidade) {
           const parsedQty = parseInt(String(bulkNewQuantidade), 10);
           if (!isNaN(parsedQty)) {
@@ -563,7 +619,7 @@ function NovoOrcamentoWizardContent() {
         origem_material: "chapa_inteira",
         vetor_svg: (dxf as any).vetor_svg,
         source_metadata: (dxf as any).source_metadata,
-        
+
         // Tempos padrão (iniciam em 0 para peças importadas por DXF)
         tempo_setup: 0.0,
         tempo_dobra: 0.0,
@@ -572,7 +628,7 @@ function NovoOrcamentoWizardContent() {
         tempo_guilhotina: 0.0,
         tempo_usinagem: 0.0,
         tempo_montagem: 0.0,
-        
+
         observacoes: "",
       };
     });
@@ -589,11 +645,11 @@ function NovoOrcamentoWizardContent() {
     // 12% se MG, PR, RJ, RS, SC, SP(equipamento)
     // 18% se SP(peças)
     const targetItens = itensList || itens;
-    
+
     let icmsRate = 0.18;
     const est7 = ["AC", "AL", "AP", "AM", "BA", "CE", "ES", "GO", "MA", "MT", "MS", "PA", "PB", "PE", "PI", "RN", "RO", "RR", "SE", "TO", "ZFM"];
     const est12 = ["MG", "PR", "RJ", "RS", "SC"];
-    
+
     const estado = cliente?.estado || "SP";
     if (est7.includes(estado)) {
       icmsRate = 0.07;
@@ -623,7 +679,7 @@ function NovoOrcamentoWizardContent() {
       // 3. Área e Peso
       const mat = matNome.toUpperCase().trim();
       const densidade = mat.includes("INOX") ? 8.2 : (mat.includes("ALUM") ? 3.2 : 7.86);
-      
+
       const chapaArranjada = !!item.chapa_arranjada;
       let area = 0;
       let pesoUnit = 0;
@@ -675,7 +731,7 @@ function NovoOrcamentoWizardContent() {
       const custoBasico = calcularCustoBasico(totalFab, custoMp) + custoExtraTotal;
       const vendaSemImp = calcularValorVendaSemImp(custoBasico, item.margem_lucro);
       const vendaSemImpUnit = item.quantidade > 0 ? vendaSemImp / item.quantidade : 0;
-      
+
       const valorFinal = item.valor_final || 0.0;
       let precoUnitComImp = 0.0;
       let precoTotalItem = 0.0;
@@ -796,12 +852,12 @@ function NovoOrcamentoWizardContent() {
         const result = await api.createOrcamento(payload);
         resultId = result.id;
       }
-      
+
       // Atualizar status
       if (resultId) {
         await api.updateStatus(resultId, status);
       }
-      
+
       router.push(`/orcamentos/${resultId}`);
     } catch (err: any) {
       console.error("Erro ao salvar orçamento:", err);
@@ -1533,8 +1589,8 @@ function NovoOrcamentoWizardContent() {
 
               <div className="flex justify-end gap-3 mt-5">
                 {editingPecaId && (
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     onClick={() => {
                       setEditingPecaId(null);
                       setNovaPeca({
@@ -1569,15 +1625,15 @@ function NovoOrcamentoWizardContent() {
                         tempo_montagem: 0.0,
                         observacoes: "",
                       });
-                    }} 
+                    }}
                     className="text-slate-600 hover:text-slate-700 select-none cursor-pointer"
                   >
                     Cancelar Edição
                   </Button>
                 )}
-                <Button 
-                  variant={editingPecaId ? "primary" : "secondary"} 
-                  onClick={handleAddPeca} 
+                <Button
+                  variant={editingPecaId ? "primary" : "secondary"}
+                  onClick={handleAddPeca}
                   className={`flex items-center gap-1 select-none cursor-pointer ${editingPecaId ? "bg-blue-600 hover:bg-blue-700 text-white border-none shadow-sm" : ""}`}
                 >
                   {editingPecaId ? <CheckCircle className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
@@ -1610,7 +1666,7 @@ function NovoOrcamentoWizardContent() {
                   {(() => {
                     const allSelected = itens.length > 0 && itens.every(it => selectedItemIds.includes(it.id));
                     const someSelected = itens.some(it => selectedItemIds.includes(it.id));
-                    
+
                     const tableHeaders = [
                       <input
                         key="select-all-budget-items"
@@ -1840,7 +1896,7 @@ function NovoOrcamentoWizardContent() {
                   </div>
                 </div>
               )}
-              
+
               <Card
                 header={
                   <div className="flex items-center gap-1.5 text-teal-600">
@@ -1865,6 +1921,21 @@ function NovoOrcamentoWizardContent() {
 
                   <div className="border-t border-gray-200 my-3" />
 
+                {comparacaoStale && nestingStatus && (
+                  <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-md mt-4">
+                    <p className="text-amber-700 font-bold text-sm">Simulação Desatualizada</p>
+                    <p className="text-amber-600 text-xs mt-1">Você alterou os dados do orçamento. Compare o arranjo novamente antes de finalizar.</p>
+                  </div>
+                )}
+                <div className={`mt-4 p-4 rounded-xl border-2 flex items-center justify-between ${usarNesting2d ? 'bg-teal-50 border-teal-500' : 'bg-slate-50 border-slate-300'}`}>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Cálculo Selecionado</p>
+                    <p className={`font-bold text-lg ${usarNesting2d ? 'text-teal-700' : 'text-slate-700'}`}>
+                      {usarNesting2d ? "Com Arranjo (Nesting 2D)" : "Sem Arranjo (Retangular)"}
+                    </p>
+                  </div>
+                  <Layers className={`h-8 w-8 ${usarNesting2d ? 'text-teal-500' : 'text-slate-400'}`} />
+                </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-600">Total Impostos (Embutidos):</span>
                     <span className="font-medium text-red-400">{formatCurrency(calculado.total_tributos)}</span>
@@ -1891,7 +1962,7 @@ function NovoOrcamentoWizardContent() {
                     <span className="text-xs font-bold text-slate-600">VALOR PRODUTOS:</span>
                     <span className="text-lg font-bold text-teal-600">{formatCurrency(calculado.total_preco)}</span>
                   </div>
-                  
+
                   {ipiRate > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-600">IPI ({ipiRate * 100}% por fora):</span>
@@ -1934,7 +2005,7 @@ function NovoOrcamentoWizardContent() {
                     >
                       Enviar para Aprovação
                     </Button>
-                    
+
                     <Button
                       variant="secondary"
                       className="w-full"

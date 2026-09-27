@@ -10,6 +10,7 @@ import {
   DashboardResumo,
   DXFResult,
   NestingResult,
+  SimulacaoComparacaoResponse,
 } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -47,9 +48,21 @@ class ApiClient {
   }
 
   // -------------------------------------------------------------------------
+  // Simulação Comparativa
+  // -------------------------------------------------------------------------
+
+  async simularComparacao(data: any): Promise<SimulacaoComparacaoResponse> {
+    const response = await fetch(`${API_BASE_URL}/orcamentos/simular-comparacao`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+    return this.handleResponse<SimulacaoComparacaoResponse>(response);
+  }
+
   // Autenticação
   // -------------------------------------------------------------------------
-  
+
   async login(email: string, password: string): Promise<{ access_token: string; user: User }> {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
@@ -265,8 +278,8 @@ class ApiClient {
   }
 
   async getParametrosLaser(material?: string): Promise<ParametroLaser[]> {
-    const url = material 
-      ? `${API_BASE_URL}/configuracoes/parametros-laser?material=${encodeURIComponent(material)}` 
+    const url = material
+      ? `${API_BASE_URL}/configuracoes/parametros-laser?material=${encodeURIComponent(material)}`
       : `${API_BASE_URL}/configuracoes/parametros-laser`;
     const res = await fetch(url, {
       method: "GET",
@@ -398,8 +411,8 @@ class ApiClient {
     const formData = new FormData();
     formData.append("file", file);
 
-    const url = splitParts 
-      ? `${API_BASE_URL}/engenharia/processar-dxf?split_parts=true` 
+    const url = splitParts
+      ? `${API_BASE_URL}/engenharia/processar-dxf?split_parts=true`
       : `${API_BASE_URL}/engenharia/processar-dxf`;
 
     const res = await fetch(url, {

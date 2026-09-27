@@ -428,6 +428,7 @@ class CalculoEngine:
             
         retalhos_disponiveis = config.get("retalhos_disponiveis", [])
         bins_utilizados_geral = []
+        pecas_nao_suportadas_geral = []
         custo_rateado_por_item_idx = {}
         
         ipi_rate = float(config.get("ipi_rate", 0.05))
@@ -463,6 +464,7 @@ class CalculoEngine:
             
             densidade = self.get_densidade(mat)
             
+            pecas_nao_suportadas_geral.extend(res_nesting.get('pecas_nao_suportadas', []))
             for bin_info in res_nesting['bins_utilizados']:
                 bins_utilizados_geral.append(bin_info)
                 
@@ -540,6 +542,7 @@ class CalculoEngine:
         return {
             "items_calculados": items_calculados,
             "bins_utilizados": bins_utilizados_geral,
+            "pecas_nao_suportadas": pecas_nao_suportadas_geral,
             "total_preco": total_preco,
             "total_nf": total_nf,
             "total_tributos": total_tributos,

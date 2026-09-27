@@ -1075,6 +1075,10 @@ async def simular_comparacao(
         else 0.0
     )
 
+    pecas_nao_suportadas = resultado_nesting.get("pecas_nao_suportadas", [])
+    total_pecas_nao_suportadas = len(pecas_nao_suportadas)
+    completo = (total_pecas_nao_suportadas == 0)
+
     cenario_nesting = CenarioNestingResponse(
         total_custo_mp=resultado_nesting["total_custo_mp"],
         total_fabricacao=resultado_nesting["total_fabricacao"],
@@ -1089,6 +1093,9 @@ async def simular_comparacao(
         aproveitamento_medio=round(aproveitamento_medio, 2),
         total_bins=total_bins,
         novos_retalhos_gerados=novos_retalhos_count,
+        completo=completo,
+        total_pecas_nao_suportadas=total_pecas_nao_suportadas,
+        pecas_nao_suportadas=pecas_nao_suportadas,
     )
 
     # ========================================================================

@@ -216,3 +216,34 @@ export interface NestingResult {
   total_chapas: number;
   aproveitamento_medio: number;
 }
+
+
+export interface SimulacaoCenarioResponse {
+  total_custo_mp: number;
+  total_fabricacao: number;
+  total_preco: number;
+  total_nf: number;
+  total_tributos: number;
+  total_peso: number;
+  total_comissao: number;
+  nesting_json?: any[];
+  chapas_novas?: number;
+  retalhos_utilizados?: number;
+  aproveitamento_medio?: number;
+  total_bins?: number;
+  novos_retalhos_gerados?: number;
+  completo: boolean;
+  total_pecas_nao_suportadas: number;
+  pecas_nao_suportadas: any[];
+}
+
+export interface SimulacaoComparacaoResponse {
+  classico: SimulacaoCenarioResponse;
+  nesting: SimulacaoCenarioResponse;
+  comparacao: {
+    economia_material: number;
+    economia_total: number;
+    percentual_economia_material: number;
+    percentual_economia_total: number;
+  };
+}

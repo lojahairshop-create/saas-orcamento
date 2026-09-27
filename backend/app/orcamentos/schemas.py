@@ -286,6 +286,9 @@ class CenarioNestingResponse(BaseModel):
     aproveitamento_medio: float = 0.0
     total_bins: int = 0
     novos_retalhos_gerados: int = 0
+    completo: bool = True
+    total_pecas_nao_suportadas: int = 0
+    pecas_nao_suportadas: List[Dict[str, Any]] = []
 
 
 class ComparacaoResponse(BaseModel):
