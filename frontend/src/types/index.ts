@@ -219,6 +219,7 @@ export interface NestingResult {
 
 
 export interface SimulacaoCenarioResponse {
+  fingerprint?: string;
   total_custo_mp: number;
   total_fabricacao: number;
   total_preco: number;

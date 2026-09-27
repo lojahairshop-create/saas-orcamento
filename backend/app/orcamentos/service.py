@@ -5,6 +5,7 @@ Camada de serviço para orçamentos – lógica de negócio + persistência.
 import json
 import copy
 import uuid
+import hashlib
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from fastapi import HTTPException
@@ -24,6 +25,51 @@ from app.orcamentos.schemas import (
     CenarioNestingResponse,
     ComparacaoResponse,
 )
+
+def generate_simulation_fingerprint(resultado: dict, usar_nesting: bool, items_dicts: list, config: dict = None) -> str:
+    if config is None: config = {}
+    data = {
+        'usar_nesting': usar_nesting,
+        'total_preco': round(resultado.get('total_preco', 0), 2),
+        'total_custo_mp': round(resultado.get('total_custo_mp', 0), 2),
+        'total_peso': round(resultado.get('total_peso', 0), 2),
+        'ipi_rate': float(config.get('ipi_rate', 0.0)),
+        'tipo_venda': str(config.get('tipo_venda', ''))
+    }
+
+    items = []
+    for it in items_dicts:
+        items.append({
+            'q': it.get('quantidade', 1),
+            'm': it.get('material', ''),
+            'e': float(it.get('espessura', 0)),
+            'w': float(it.get('largura', 0)),
+            'h': float(it.get('comprimento', 0)),
+            'p': float(it.get('perimetro', 0)),
+            'ne': int(it.get('num_entradas', 1)),
+            'ml': float(it.get('margem_lucro', 0.3)),
+            'ce': float(it.get('custo_extra', 0)),
+            'vp': float(it.get('valor_pintura', 0) or it.get('preco_pintura_kg', 0)),
+            'tc': float(it.get('taxa_comissao', 0)),
+            'ops': sorted([f"{op.get('operacao', '')}_{float(op.get('tempo_min', 0))}" for op in it.get('operacoes', [])]) if isinstance(it.get('operacoes'), list) else []
+        })
+    items.sort(key=lambda x: (x['q'], x['m'], x['e'], x['w'], x['h'], x['ml'], x['ce'], x['vp'], x['tc']))
+    data['items'] = items
+
+    if usar_nesting:
+        bins = []
+        for b in resultado.get('bins_utilizados', []):
+            bins.append({
+                'id': str(b.get('id', 'new')),
+                'tipo': b.get('tipo', 'chapa_nova'),
+                'material': b.get('material', ''),
+                'espessura': float(b.get('espessura', 0))
+            })
+        bins.sort(key=lambda x: (x['id'], x['tipo'], x['material'], x['espessura']))
+        data['bins'] = bins
+
+    encoded = json.dumps(data, sort_keys=True).encode('utf-8')
+    return hashlib.sha256(encoded).hexdigest()
 
 engine = CalculoEngine()
 
@@ -143,7 +189,7 @@ async def create_orcamento(
     env_nesting_ativo = os.environ.get("NESTING_2D_HABILITADO", "false").lower() == "true"
     payload_nesting = getattr(data, 'usar_nesting_2d', False)
     usar_nesting_2d = env_nesting_ativo and payload_nesting
-    
+
     config = {
         "estado": data.cliente.estado,
         "tipo_venda": data.tipo_venda,
@@ -155,11 +201,80 @@ async def create_orcamento(
     # Converter itens para dicts
     items_dicts = [_item_create_to_dict(item, data.taxa_comissao) for item in data.itens]
 
-    # Calcular com retry loop para sincronização de retalhos (se Feature Flag ativada)
+    # =========================================================================
+    # VALIDAÇÃO ANTES DA ESCRITA
+    # =========================================================================
+    validation_required = getattr(data, 'comparison_validation_required', False)
+    simulation_fingerprint = getattr(data, 'simulation_fingerprint', None)
+
+    if validation_required and not simulation_fingerprint:
+        raise HTTPException(
+            status_code=422,
+            detail="O fluxo comercial atual exige a simulação. Por favor, compare novamente antes de salvar."
+        )
+
     orc_id_pre = str(uuid.uuid4())
     numero = data.numero.strip() if (data.numero and data.numero.strip()) else _generate_numero_orcamento()
 
-    # Inserir o esqueleto do orçamento ANTES para satisfazer a Foreign Key do RPC
+    if usar_nesting_2d:
+        for attempt in range(3):
+            retalhos_res = supabase.table("estoque_chapas").select("*").eq("status", "disponivel").eq("tipo_registro", "retalho").execute()
+            config["retalhos_disponiveis"] = retalhos_res.data
+
+            resultado = engine.calcular_orcamento(items_dicts, config)
+
+            if attempt == 0:
+                first_resultado = resultado
+                if validation_required:
+                    current_fingerprint = generate_simulation_fingerprint(resultado, True, items_dicts, config)
+                    if current_fingerprint != simulation_fingerprint:
+                        raise HTTPException(
+                            status_code=409,
+                            detail="O cenário selecionado mudou desde a última simulação. Recalcule a comparação antes de salvar."
+                        )
+            else:
+                bins_atuais = [b.get('id') for b in resultado.get("bins_utilizados", [])]
+                bins_originais = [b.get('id') for b in first_resultado.get("bins_utilizados", [])]
+                preco_mudou = abs(resultado["total_preco"] - first_resultado["total_preco"]) > 0.01
+
+                if preco_mudou or bins_atuais != bins_originais:
+                    raise HTTPException(
+                        status_code=409,
+                        detail="O estoque de retalhos mudou enquanto você calculava o orçamento. Por favor, clique em Recalcular e salve novamente."
+                    )
+
+            tem_nesting = any(it.get("chapa_arranjada", False) and not it.get("beneficiamento", False) for it in items_dicts)
+            if not tem_nesting:
+                break
+
+            retalhos_usados_ids = []
+            novos_retalhos = []
+            for bin_info in resultado.get("bins_utilizados", []):
+                if bin_info['tipo'] == 'retalho':
+                    retalhos_usados_ids.append(bin_info['id'])
+                novos = bin_info.get('novos_retalhos_gerados', [])
+                novos_retalhos.extend(novos)
+
+            # Validação passou e temos os arrays finais.
+            break
+
+    else:
+        # Modo Clássico
+        resultado = engine.calcular_orcamento(items_dicts, config)
+
+        if validation_required:
+            current_fingerprint = generate_simulation_fingerprint(resultado, False, items_dicts, config)
+            if current_fingerprint != simulation_fingerprint:
+                raise HTTPException(
+                    status_code=409,
+                    detail="O cenário selecionado mudou desde a última simulação. Recalcule a comparação antes de salvar."
+                )
+
+    # =========================================================================
+    # INSERÇÃO NO BANCO (Nenhum INSERT ou UPDATE ocorre se houver 409 acima)
+    # =========================================================================
+
+    # Inserir o esqueleto do orçamento para Foreign Key
     supabase.table("orcamentos").insert({
         "id": orc_id_pre,
         "numero": numero,
@@ -169,64 +284,26 @@ async def create_orcamento(
         "tipo_venda": data.tipo_venda,
         "created_by": user_id
     }).execute()
-    if usar_nesting_2d:
-        for attempt in range(3):
-            retalhos_res = supabase.table("estoque_chapas").select("*").eq("status", "disponivel").eq("tipo_registro", "retalho").execute()
-            config["retalhos_disponiveis"] = retalhos_res.data
-            
-            resultado = engine.calcular_orcamento(items_dicts, config)
-            
-            if attempt == 0:
-                first_resultado = resultado
-            else:
-                bins_atuais = [b.get('id') for b in resultado.get("bins_utilizados", [])]
-                bins_originais = [b.get('id') for b in first_resultado.get("bins_utilizados", [])]
-                preco_mudou = abs(resultado["total_preco"] - first_resultado["total_preco"]) > 0.01
-                
-                if preco_mudou or bins_atuais != bins_originais:
-                    # O preço ou o arranjo mudou devido à indisponibilidade de retalhos.
-                    supabase.table("orcamentos").delete().eq("id", orc_id_pre).execute()
-                    raise HTTPException(
-                        status_code=409, 
-                        detail="O estoque de retalhos mudou enquanto você calculava o orçamento. Por favor, clique em Recalcular e salve novamente."
-                    )
-            
-            tem_nesting = any(it.get("chapa_arranjada", False) and not it.get("beneficiamento", False) for it in items_dicts)
-            if not tem_nesting:
-                break
-                
-            retalhos_usados_ids = []
-            novos_retalhos = []
-            for bin_info in resultado.get("bins_utilizados", []):
-                if bin_info['tipo'] == 'retalho':
-                    retalhos_usados_ids.append(bin_info['id'])
-                novos = bin_info.get('novos_retalhos_gerados', [])
-                novos_retalhos.extend(novos)
-                
-            try:
-                supabase.rpc("sync_retalhos_orcamento", {
-                    "p_orcamento_id": orc_id_pre,
-                    "p_retalhos_usados_ids": retalhos_usados_ids,
-                    "p_novos_retalhos_json": novos_retalhos,
-                    "p_user_id": user_id
-                }).execute()
-                break
-            except Exception as e:
-                if attempt == 2:
-                    supabase.table("orcamentos").delete().eq("id", orc_id_pre).execute()
-                    raise HTTPException(
-                        status_code=409, 
-                        detail="O estoque de retalhos mudou enquanto você calculava o orçamento. Por favor, clique em Recalcular e salve novamente."
-                    )
-                continue
-    else:
-        # Modo Clássico (Zumbi)
-        resultado = engine.calcular_orcamento(items_dicts, config)
 
-    # Gerar número
-    numero = data.numero.strip() if (data.numero and data.numero.strip()) else _generate_numero_orcamento()
+    if usar_nesting_2d and tem_nesting:
+        # RPC de estoque
+        try:
+            supabase.rpc("sync_retalhos_orcamento", {
+                "p_orcamento_id": orc_id_pre,
+                "p_retalhos_usados_ids": retalhos_usados_ids,
+                "p_novos_retalhos_json": novos_retalhos,
+                "p_user_id": user_id
+            }).execute()
+        except Exception as e:
+            # Se a RPC falhar no backend após o insert, fazemos rollback via delete.
+            # Este não é o cenário de 409 normal, mas uma falha catastrófica de BD.
+            supabase.table("orcamentos").delete().eq("id", orc_id_pre).execute()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Falha ao registrar retalhos: {str(e)}"
+            )
 
-    # Atualizar orçamento
+    # Atualizar orçamento com os dados totais
     orc_data = {
         "numero": numero,
         "status": "rascunho",
@@ -263,10 +340,23 @@ async def create_orcamento(
     items_responses: List[ItemCalculadoResponse] = []
     for i, item_input in enumerate(items_dicts):
         calc = resultado["items_calculados"][i]
+
         operacoes_list = item_input.get("operacoes", [])
-        operacoes_json = (
-            [op.model_dump() if hasattr(op, "model_dump") else op for op in operacoes_list]
-        )
+        operacoes = []
+        for op in operacoes_list:
+            if isinstance(op, dict):
+                operacoes.append({
+                    "operacao": op.get("operacao", ""),
+                    "tempo_min": float(op.get("tempo_min", 0.0))
+                })
+            elif hasattr(op, "model_dump"):
+                d_op = op.model_dump()
+                operacoes.append({
+                    "operacao": d_op.get("operacao", ""),
+                    "tempo_min": float(d_op.get("tempo_min", 0.0))
+                })
+
+        operacoes_json = operacoes
 
         item_db = {
             "orcamento_id": orc_id,
@@ -286,11 +376,6 @@ async def create_orcamento(
             "beneficiamento": item_input.get("beneficiamento", False),
             "chapa_arranjada": item_input.get("chapa_arranjada", False),
             "origem_material": item_input.get("origem_material", "chapa_inteira"),
-            "custo_extra": item_input.get("custo_extra", 0.0),
-            "tempo_corte": item_input.get("tempo_corte", 0.0),
-            "preco_pintura_kg": float(item_input.get("valor_pintura") or item_input.get("preco_pintura_kg") or 0.0),
-            "valor_pintura": float(item_input.get("valor_pintura") or item_input.get("preco_pintura_kg") or 0.0),
-            "valor_final": float(item_input.get("valor_final") or 0.0),
             "vetor_svg": item_input.get("vetor_svg"),
             "velocidade": calc.get("velocidade", 0),
             "peck": calc.get("peck", 0),
@@ -309,15 +394,15 @@ async def create_orcamento(
             "valor_venda_sem_imp": calc.get("valor_venda_sem_imp", 0),
             "preco_unitario_com_imp": calc.get("preco_unitario_com_imp", 0),
             "preco_total": calc.get("preco_total", 0),
-            "icms_valor": calc.get("icms", 0),
-            "ipi_valor": calc.get("ipi", 0),
-            "pis_valor": calc.get("pis", 0),
-            "cofins_valor": calc.get("cofins", 0),
+            "icms": calc.get("icms", 0),
+            "ipi": calc.get("ipi", 0),
+            "pis": calc.get("pis", 0),
+            "cofins": calc.get("cofins", 0),
             "total_tributos": calc.get("total_tributos", 0),
             "total_nf": calc.get("total_nf", 0),
             "comissao": calc.get("comissao", 0),
-            "observacoes": item_input.get("observacoes", ""),
             "operacoes": json.dumps(operacoes_json),
+        "operacoes": json.dumps(operacoes_json),
         }
 
         supabase.table("orcamento_itens").insert(item_db).execute()
@@ -674,7 +759,7 @@ async def update_orcamento(
         env_nesting_ativo = os.environ.get("NESTING_2D_HABILITADO", "false").lower() == "true"
         payload_nesting = getattr(data, 'usar_nesting_2d', False)
         usar_nesting_2d = env_nesting_ativo and payload_nesting
-        
+
         config = {
             "estado": estado,
             "tipo_venda": tipo_venda,
@@ -684,18 +769,18 @@ async def update_orcamento(
         }
 
         items_dicts = [_item_create_to_dict(item, taxa_comissao) for item in data.itens]
-        
+
         if usar_nesting_2d:
             for attempt in range(3):
                 retalhos_res = supabase.table("estoque_chapas").select("*").eq("status", "disponivel").eq("tipo_registro", "retalho").execute()
                 config["retalhos_disponiveis"] = retalhos_res.data
-                
+
                 resultado = engine.calcular_orcamento(items_dicts, config)
-                
+
                 tem_nesting = any(it.get("chapa_arranjada", False) and not it.get("beneficiamento", False) for it in items_dicts)
                 if not tem_nesting:
                     break
-                    
+
                 retalhos_usados_ids = []
                 novos_retalhos = []
                 for bin_info in resultado.get("bins_utilizados", []):
@@ -703,7 +788,7 @@ async def update_orcamento(
                         retalhos_usados_ids.append(bin_info['id'])
                     novos = bin_info.get('novos_retalhos_gerados', [])
                     novos_retalhos.extend(novos)
-                    
+
                 try:
                     supabase.rpc("sync_retalhos_orcamento", {
                         "p_orcamento_id": orcamento_id,
@@ -715,7 +800,7 @@ async def update_orcamento(
                 except Exception as e:
                     if attempt == 2:
                         raise HTTPException(
-                            status_code=409, 
+                            status_code=409,
                             detail="O estoque de retalhos mudou enquanto você calculava o orçamento. Por favor, clique em Recalcular e salve novamente."
                         )
                     continue
@@ -827,10 +912,10 @@ async def update_status(
         .single()
         .execute()
     )
-    
+
     if not orc_res.data:
         raise ValueError("Orçamento não encontrado ou acesso negado.")
-        
+
     old_status = orc_res.data["status"]
 
     # Atualizar o status
@@ -851,7 +936,7 @@ async def update_status(
 
         for item in items:
             origem = item.get("origem_material", "chapa_inteira")
-            
+
             if origem == "cliente":
                 # Material do cliente: não altera o estoque
                 continue
@@ -870,7 +955,7 @@ async def update_status(
                         .gt("quantidade", 0)
                         .execute()
                     )
-                    
+
                     qtd_restante = qtd_chapas_necessarias
                     for sheet in (full_sheets.data or []):
                         if qtd_restante <= 0:
@@ -880,7 +965,7 @@ async def update_status(
                         supabase.table("estoque_chapas").update({"quantidade": new_qty}).eq("id", sheet["id"]).execute()
                         qtd_restante -= deduct
 
-                # Os retalhos gerados e consumidos já são gerenciados pelo Trigger reverter_retalhos_trigger 
+                # Os retalhos gerados e consumidos já são gerenciados pelo Trigger reverter_retalhos_trigger
                 # quando o status do orçamento muda para 'Aprovado'. Nenhuma lógica manual é necessária aqui.ravar aprovação
                     print(f"Erro ao processar retalho para item {item['id']}: {e}")
 
@@ -894,7 +979,7 @@ async def update_status(
                     .eq("created_by", user_id)
                     .execute()
                 )
-                
+
                 if rem_res.data:
                     rem = rem_res.data[0]
                     new_qty = max(0, rem["quantidade"] - 1)
@@ -1030,6 +1115,7 @@ async def simular_comparacao(
     items_classico = copy.deepcopy(items_source)
     resultado_classico = engine.calcular_orcamento(items_classico, config_classico)
 
+    fingerprint_classico = generate_simulation_fingerprint(resultado_classico, False, items_source, config_classico)
     cenario_classico = CenarioClassicoResponse(
         total_custo_mp=resultado_classico["total_custo_mp"],
         total_fabricacao=resultado_classico["total_fabricacao"],
@@ -1038,6 +1124,7 @@ async def simular_comparacao(
         total_tributos=resultado_classico["total_tributos"],
         total_peso=resultado_classico["total_peso"],
         total_comissao=resultado_classico["total_comissao"],
+        fingerprint=fingerprint_classico
     )
 
     # ========================================================================

@@ -57,6 +57,8 @@ function NovoOrcamentoWizardContent() {
   const [simulacaoResult, setSimulacaoResult] = useState<SimulacaoComparacaoResponse | null>(null);
   const [simulacaoLoading, setSimulacaoLoading] = useState(false);
   const [comparacaoStale, setComparacaoStale] = useState(false);
+  const [simulationFingerprint, setSimulationFingerprint] = useState<string | null>(null);
+  const [comparisonValidationRequired, setComparisonValidationRequired] = useState(false);
   const [nestingJsonPreview, setNestingJsonPreview] = useState<any[] | null>(null);
 
   const handleSimularComparacao = async () => {
@@ -90,6 +92,8 @@ function NovoOrcamentoWizardContent() {
 
     setUsarNesting2d(cenario === "nesting");
     setComparacaoStale(false);
+    setSimulationFingerprint(selected.fingerprint || null);
+    setComparisonValidationRequired(true);
 
     setCalculado((prev: any) => ({
       ...prev,
@@ -794,6 +798,11 @@ function NovoOrcamentoWizardContent() {
       return;
     }
 
+    if (comparisonValidationRequired && (comparacaoStale || !simulationFingerprint)) {
+      alert("O cálculo precisa ser comparado novamente antes de salvar.");
+      return;
+    }
+
     const clienteNomeFinal = cliente.nome.trim() || "Cliente Geral";
     const clientePayload = {
       ...cliente,
@@ -814,6 +823,8 @@ function NovoOrcamentoWizardContent() {
         validade,
         observacoes,
         usar_nesting_2d: usarNesting2d,
+        simulation_fingerprint: simulationFingerprint,
+        comparison_validation_required: comparisonValidationRequired,
         itens: itens.map(it => ({
           descricao: it.descricao || "Peça sem descrição",
           material: it.material || "AÇO CARBONO",
@@ -862,8 +873,10 @@ function NovoOrcamentoWizardContent() {
     } catch (err: any) {
       console.error("Erro ao salvar orçamento:", err);
       if (err?.message?.includes("409") || err?.status === 409) {
-        alert("Conflito de Estoque: O retalho que seria usado foi reservado por outro orçamento neste exato momento. Por favor, clique em Recalcular para gerar um novo plano com o estoque restante.");
-      } else {
+          setComparacaoStale(true);
+          setSimulationFingerprint(null);
+          alert(err?.message || "O cálculo mudou desde a comparação. Compare novamente antes de salvar.");
+        } else {
         alert(err?.message || "Erro ao salvar orçamento. Verifique os dados inseridos.");
       }
     } finally {

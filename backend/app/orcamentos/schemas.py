@@ -180,6 +180,8 @@ class OrcamentoCreate(BaseModel):
     validade: Optional[int] = 30
     observacoes: Optional[str] = None
     usar_nesting_2d: Optional[bool] = False
+    comparison_validation_required: Optional[bool] = False
+    simulation_fingerprint: Optional[str] = None
 
 
 class OrcamentoUpdate(BaseModel):
@@ -270,6 +272,7 @@ class CenarioClassicoResponse(BaseModel):
     total_tributos: float = 0.0
     total_peso: float = 0.0
     total_comissao: float = 0.0
+    fingerprint: Optional[str] = None
 
 
 class CenarioNestingResponse(BaseModel):
@@ -296,6 +299,7 @@ class ComparacaoResponse(BaseModel):
     economia_total: float = 0.0
     percentual_economia_material: float = 0.0
     percentual_economia_total: float = 0.0
+    fingerprint: Optional[str] = None
 
 
 class SimulacaoComparacaoResponse(BaseModel):
