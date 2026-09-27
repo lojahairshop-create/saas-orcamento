@@ -273,6 +273,7 @@ class CenarioClassicoResponse(BaseModel):
     total_peso: float = 0.0
     total_comissao: float = 0.0
     fingerprint: Optional[str] = None
+    itens: List[ItemCalculadoResponse] = Field(default_factory=list)
 
 
 class CenarioNestingResponse(BaseModel):
@@ -283,6 +284,8 @@ class CenarioNestingResponse(BaseModel):
     total_tributos: float = 0.0
     total_peso: float = 0.0
     total_comissao: float = 0.0
+    fingerprint: Optional[str] = None
+    itens: List[ItemCalculadoResponse] = Field(default_factory=list)
     nesting_json: Optional[List[Dict[str, Any]]] = None
     chapas_novas: int = 0
     retalhos_utilizados: int = 0

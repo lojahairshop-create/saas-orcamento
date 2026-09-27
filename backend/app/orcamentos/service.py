@@ -51,7 +51,7 @@ def generate_simulation_fingerprint(resultado: dict, usar_nesting: bool, items_d
             'ce': float(it.get('custo_extra', 0)),
             'vp': float(it.get('valor_pintura', 0) or it.get('preco_pintura_kg', 0)),
             'tc': float(it.get('taxa_comissao', 0)),
-            'ops': sorted([f"{op.get('operacao', '')}_{float(op.get('tempo_min', 0))}" for op in it.get('operacoes', [])]) if isinstance(it.get('operacoes'), list) else []
+            'ops': sorted([f"{op.get('nome', op.get('operacao', ''))}_{float(op.get('tempo_min', 0))}" for op in it.get('operacoes', [])]) if isinstance(it.get('operacoes'), list) else []
         })
     items.sort(key=lambda x: (x['q'], x['m'], x['e'], x['w'], x['h'], x['ml'], x['ce'], x['vp'], x['tc']))
     data['items'] = items
@@ -274,34 +274,8 @@ async def create_orcamento(
     # INSERÇÃO NO BANCO (Nenhum INSERT ou UPDATE ocorre se houver 409 acima)
     # =========================================================================
 
-    # Inserir o esqueleto do orçamento para Foreign Key
-    supabase.table("orcamentos").insert({
-        "id": orc_id_pre,
-        "numero": numero,
-        "status": "rascunho",
-        "cliente_nome": data.cliente.nome,
-        "cliente_estado": data.cliente.estado,
-        "tipo_venda": data.tipo_venda,
-        "created_by": user_id
-    }).execute()
-
-    if usar_nesting_2d and tem_nesting:
-        # RPC de estoque
-        try:
-            supabase.rpc("sync_retalhos_orcamento", {
-                "p_orcamento_id": orc_id_pre,
-                "p_retalhos_usados_ids": retalhos_usados_ids,
-                "p_novos_retalhos_json": novos_retalhos,
-                "p_user_id": user_id
-            }).execute()
-        except Exception as e:
-            # Se a RPC falhar no backend após o insert, fazemos rollback via delete.
-            # Este não é o cenário de 409 normal, mas uma falha catastrófica de BD.
-            supabase.table("orcamentos").delete().eq("id", orc_id_pre).execute()
-            raise HTTPException(
-                status_code=500,
-                detail=f"Falha ao registrar retalhos: {str(e)}"
-            )
+    if usar_nesting_2d and validation_required and resultado.get("pecas_nao_suportadas"):
+        raise HTTPException(status_code=422, detail="Arranjo incompleto. Compare novamente ou selecione sem arranjo.")
 
     # Atualizar orçamento com os dados totais
     orc_data = {
@@ -333,8 +307,9 @@ async def create_orcamento(
         "created_by": user_id,
     }
 
-    orc_result = supabase.table("orcamentos").update(orc_data).eq("id", orc_id_pre).execute()
     orc_id = orc_id_pre
+    orc_data["id"] = orc_id
+    item_rows = []
 
     # Inserir itens
     items_responses: List[ItemCalculadoResponse] = []
@@ -342,21 +317,9 @@ async def create_orcamento(
         calc = resultado["items_calculados"][i]
 
         operacoes_list = item_input.get("operacoes", [])
-        operacoes = []
-        for op in operacoes_list:
-            if isinstance(op, dict):
-                operacoes.append({
-                    "operacao": op.get("operacao", ""),
-                    "tempo_min": float(op.get("tempo_min", 0.0))
-                })
-            elif hasattr(op, "model_dump"):
-                d_op = op.model_dump()
-                operacoes.append({
-                    "operacao": d_op.get("operacao", ""),
-                    "tempo_min": float(d_op.get("tempo_min", 0.0))
-                })
-
-        operacoes_json = operacoes
+        operacoes_model = [OperacaoItem(**op) for op in operacoes_list]
+        item_response = _build_item_response(item_input, calc, operacoes_model)
+        operacoes_json = [op.model_dump() for op in operacoes_model]
 
         item_db = {
             "orcamento_id": orc_id,
@@ -394,29 +357,26 @@ async def create_orcamento(
             "valor_venda_sem_imp": calc.get("valor_venda_sem_imp", 0),
             "preco_unitario_com_imp": calc.get("preco_unitario_com_imp", 0),
             "preco_total": calc.get("preco_total", 0),
-            "icms": calc.get("icms", 0),
-            "ipi": calc.get("ipi", 0),
-            "pis": calc.get("pis", 0),
-            "cofins": calc.get("cofins", 0),
+            "icms_valor": calc.get("icms", 0),
+            "ipi_valor": calc.get("ipi", 0),
+            "pis_valor": calc.get("pis", 0),
+            "cofins_valor": calc.get("cofins", 0),
             "total_tributos": calc.get("total_tributos", 0),
             "total_nf": calc.get("total_nf", 0),
             "comissao": calc.get("comissao", 0),
-            "operacoes": json.dumps(operacoes_json),
-        "operacoes": json.dumps(operacoes_json),
+            "operacoes": operacoes_json,
+            "custo_extra": item_response.custo_extra,
+            "tempo_corte": item_response.tempo_corte,
+            "preco_pintura_kg": item_response.preco_pintura_kg,
+            "valor_pintura": item_response.valor_pintura,
+            "valor_final": item_response.valor_final,
+            "observacoes": item_response.observacoes,
         }
 
-        supabase.table("orcamento_itens").insert(item_db).execute()
+        item_rows.append(item_db)
+        items_responses.append(item_response)
 
-        operacoes_model = [
-            OperacaoItem(**(op if isinstance(op, dict) else op.model_dump()))
-            for op in operacoes_list
-            if isinstance(op, dict) or hasattr(op, "model_dump")
-        ]
-        items_responses.append(
-            _build_item_response(item_input, calc, operacoes_model)
-        )
-
-    return OrcamentoResponse(
+    response = OrcamentoResponse(
         id=orc_id,
         numero=numero,
         status="rascunho",
@@ -434,7 +394,34 @@ async def create_orcamento(
         total_nf=resultado["total_nf"],
         total_tributos=resultado["total_tributos"],
         total_comissao=resultado["total_comissao"],
+        total_peso=resultado["total_peso"],
+        total_custo_mp=resultado["total_custo_mp"],
+        total_fabricacao=resultado["total_fabricacao"],
+        nesting_json=resultado.get("bins_utilizados", []),
     )
+
+    try:
+        supabase.table("orcamentos").insert(orc_data).execute()
+        if item_rows:
+            supabase.table("orcamento_itens").insert(item_rows).execute()
+        if usar_nesting_2d and tem_nesting:
+            supabase.rpc("sync_retalhos_orcamento", {
+                "p_orcamento_id": orc_id,
+                "p_retalhos_usados_ids": retalhos_usados_ids,
+                "p_novos_retalhos_json": novos_retalhos,
+                "p_user_id": user_id,
+            }).execute()
+    except Exception as exc:
+        try:
+            supabase.table("orcamentos").delete().eq("id", orc_id).eq("created_by", user_id).execute()
+        except Exception as cleanup_error:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Falha ao salvar e remover o orçamento incompleto {orc_id}. Requer verificação antes de tentar novamente.",
+            ) from cleanup_error
+        raise HTTPException(status_code=500, detail="Falha ao persistir o orçamento; criação cancelada.") from exc
+
+    return response
 
 
 async def get_orcamento(orcamento_id: str, user_id: str) -> OrcamentoResponse:
@@ -519,7 +506,12 @@ async def get_orcamento(orcamento_id: str, user_id: str) -> OrcamentoResponse:
             "operacoes": [op.model_dump() for op in operacoes_model],
         }
 
-        calc = engine.calcular_item(item_dict, config)
+        if orc.get("nesting_json"):
+            calc = dict(item_db)
+            for tax in ("icms", "ipi", "pis", "cofins"):
+                calc[tax] = float(item_db.get(f"{tax}_valor") or 0)
+        else:
+            calc = engine.calcular_item(item_dict, config)
 
         tot_peso += calc.get("peso_total", 0.0)
         tot_custo_mp += calc.get("custo_mp", 0.0)
@@ -1124,7 +1116,8 @@ async def simular_comparacao(
         total_tributos=resultado_classico["total_tributos"],
         total_peso=resultado_classico["total_peso"],
         total_comissao=resultado_classico["total_comissao"],
-        fingerprint=fingerprint_classico
+        fingerprint=fingerprint_classico,
+        itens=[_build_item_response(it, calc, it.get("operacoes", [])) for it, calc in zip(items_source, resultado_classico["items_calculados"])],
     )
 
     # ========================================================================
@@ -1174,6 +1167,8 @@ async def simular_comparacao(
         total_tributos=resultado_nesting["total_tributos"],
         total_peso=resultado_nesting["total_peso"],
         total_comissao=resultado_nesting["total_comissao"],
+        fingerprint=generate_simulation_fingerprint(resultado_nesting, True, items_source, config_nesting),
+        itens=[_build_item_response(it, calc, it.get("operacoes", [])) for it, calc in zip(items_source, resultado_nesting["items_calculados"])],
         nesting_json=bins,
         chapas_novas=chapas_novas,
         retalhos_utilizados=retalhos_utilizados,

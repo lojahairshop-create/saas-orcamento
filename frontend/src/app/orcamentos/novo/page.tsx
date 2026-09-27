@@ -791,6 +791,14 @@ function NovoOrcamentoWizardContent() {
     }
   }, [step, ipiRate, taxaComissao]);
 
+  useEffect(() => {
+    if (simulationFingerprint) {
+      setComparacaoStale(true);
+      setSimulationFingerprint(null);
+      setSimulacaoResult(null);
+    }
+  }, [itens, ipiRate, taxaComissao, tipoVenda, cliente.estado]);
+
   const handleSave = async (status: string) => {
     if (itens.length === 0) {
       alert("Por favor, adicione pelo menos uma peça ao orçamento antes de salvar.");
@@ -1949,6 +1957,17 @@ function NovoOrcamentoWizardContent() {
                   </div>
                   <Layers className={`h-8 w-8 ${usarNesting2d ? 'text-teal-500' : 'text-slate-400'}`} />
                 </div>
+                <Button
+                  variant="outline"
+                  className="w-full mt-3 justify-center border-teal-300 text-teal-700 hover:bg-teal-50"
+                  onClick={() => {
+                    setComparacaoStale(false);
+                    setComparacaoModalOpen(true);
+                  }}
+                  disabled={simulacaoLoading || itens.length === 0}
+                >
+                  {simulacaoLoading ? "Comparando..." : "Comparar Sem Arranjo × Com Arranjo"}
+                </Button>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-600">Total Impostos (Embutidos):</span>
                     <span className="font-medium text-red-400">{formatCurrency(calculado.total_tributos)}</span>
@@ -2163,6 +2182,23 @@ function NovoOrcamentoWizardContent() {
             </div>
           </div>
         )}
+        <NestingComparisonModal
+          isOpen={comparacaoModalOpen}
+          onClose={() => setComparacaoModalOpen(false)}
+          loading={simulacaoLoading}
+          onCompare={handleSimularComparacao}
+          result={simulacaoResult}
+          onSelectScenario={handleSelectScenario}
+          onPreviewNesting={(nestingJson) => {
+            setNestingJsonPreview(nestingJson);
+            setPreviewModalOpen(true);
+          }}
+        />
+        <NestingPreviewModal
+          isOpen={previewModalOpen}
+          onClose={() => setPreviewModalOpen(false)}
+          nestingJson={nestingJsonPreview}
+        />
       </div>
     </AppLayout>
   );
