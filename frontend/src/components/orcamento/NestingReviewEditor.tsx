@@ -24,7 +24,14 @@ export default function NestingReviewEditor({ payload, initial, onClose, onConfi
     try {
       const result = await api.revisarNesting({...payload, modo_cobranca_nesting: mode, layout_revisao: confirm ? bins : null});
       setBins(result.bins_utilizados); setSheetIndex(0); setSelected(null);
-      if (!result.completo) setError('Há peças não posicionadas. Confira as dimensões das peças e das chapas.');
+      if (!result.completo) {
+        const missing = (result.pecas_nao_suportadas || []).slice(0, 5).map((p: any) => {
+          const item = payload.itens[p.id];
+          return `${item?.descricao || `Peça ${Number(p.id) + 1}`} (${p.largura} × ${p.comprimento} mm)`;
+        });
+        const first = payload.itens[0];
+        setError(`Há peças não posicionadas${missing.length ? `: ${missing.join('; ')}` : ''}. Chapa informada: ${first?.chapa_l || 0} × ${first?.chapa_c || 0} mm. Confira as dimensões da peça, da chapa e a margem de corte.`);
+      }
       if (confirm && result.completo) onConfirm(result, mode);
     } catch (e: any) { setError(e.message || 'Não foi possível validar o arranjo.'); }
     finally { setBusy(false); }

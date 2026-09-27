@@ -18,6 +18,10 @@ def calculate_review(items, config, mode, layout=None):
         item.pop('custo_mp_override', None)
     groups = {}
     for i, item in enumerate(items):
+        item['chapa_l'] = float(item.get('chapa_l') or 1200)
+        item['chapa_c'] = float(item.get('chapa_c') or 2400)
+        item['largura'] = float(item.get('largura') or 0)
+        item['comprimento'] = float(item.get('comprimento') or 0)
         key = (item['material'], item['espessura'], item['chapa_l'], item['chapa_c'], item['preco_kg'], item.get('beneficiamento', False))
         groups.setdefault(key, []).append(i)
     bins = copy.deepcopy(layout) if layout is not None else []
@@ -78,6 +82,9 @@ def calculate_review(items, config, mode, layout=None):
         sheet.update(id=f'review-{n}', tipo='chapa_nova', dimensao=list(dim), material=first['material'], espessura=first['espessura'], modo_cobranca=mode, largura_ocupada=occupied_w, comprimento_ocupado=occupied_h,
                      nesting_result=dict(pecas_posicionadas=placements, aproveitamento_percentual=100*area/(dim[0]*dim[1])))
     complete = all(counts[i] == it['quantidade'] for i, it in enumerate(items))
+    if missing and not bins:
+        result = {'bins_utilizados': [], 'pecas_nao_suportadas': missing, 'completo': False}
+        return result
     if any(counts[i] > it['quantidade'] for i, it in enumerate(items)):
         raise HTTPException(422, 'O arranjo contém peças duplicadas.')
     if layout is not None and not complete:

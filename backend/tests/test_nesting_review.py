@@ -21,6 +21,16 @@ def test_automatic_and_manual_have_same_fingerprint():
     assert result['fingerprint'] == verified['fingerprint']
 
 
+def test_oversized_piece_returns_diagnostic_without_empty_bins():
+    items, cfg = inputs()
+    items[0]['largura'] = 1200
+    items[0]['comprimento'] = 2400
+    result = calculate_review(items, cfg, 'retalho_arranjado')
+    assert result['completo'] is False
+    assert result['bins_utilizados'] == []
+    assert result['pecas_nao_suportadas']
+
+
 def test_occupied_rectangle_excludes_translation_and_extra_20mm():
     items, cfg = inputs()
     layout = [dict(dimensao=[1000,2000], nesting_result=dict(pecas_posicionadas=[
