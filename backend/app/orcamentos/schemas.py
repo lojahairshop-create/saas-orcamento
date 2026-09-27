@@ -247,3 +247,56 @@ class BulkUpdateNesting(BaseModel):
     item_ids: List[str]
     fields: ItemUpdateNesting
 
+
+# ---------------------------------------------------------------------------
+# Simulação Comparativa (Clássico × Nesting)
+# ---------------------------------------------------------------------------
+
+class SimulacaoComparacaoRequest(BaseModel):
+    """Payload idêntico ao necessário para calcular um orçamento,
+    porém usado exclusivamente para simulação sem persistência."""
+    cliente: ClienteInfo
+    itens: List[ItemCreate]
+    tipo_venda: str = "pecas"
+    ipi_rate: float = 0.05
+    taxa_comissao: float = 0.03
+
+
+class CenarioClassicoResponse(BaseModel):
+    total_custo_mp: float = 0.0
+    total_fabricacao: float = 0.0
+    total_preco: float = 0.0
+    total_nf: float = 0.0
+    total_tributos: float = 0.0
+    total_peso: float = 0.0
+    total_comissao: float = 0.0
+
+
+class CenarioNestingResponse(BaseModel):
+    total_custo_mp: float = 0.0
+    total_fabricacao: float = 0.0
+    total_preco: float = 0.0
+    total_nf: float = 0.0
+    total_tributos: float = 0.0
+    total_peso: float = 0.0
+    total_comissao: float = 0.0
+    nesting_json: Optional[List[Dict[str, Any]]] = None
+    chapas_novas: int = 0
+    retalhos_utilizados: int = 0
+    aproveitamento_medio: float = 0.0
+    total_bins: int = 0
+    novos_retalhos_gerados: int = 0
+
+
+class ComparacaoResponse(BaseModel):
+    economia_material: float = 0.0
+    economia_total: float = 0.0
+    percentual_economia_material: float = 0.0
+    percentual_economia_total: float = 0.0
+
+
+class SimulacaoComparacaoResponse(BaseModel):
+    classico: CenarioClassicoResponse
+    nesting: CenarioNestingResponse
+    comparacao: ComparacaoResponse
+

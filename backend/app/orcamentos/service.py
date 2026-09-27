@@ -3,6 +3,7 @@ Camada de serviço para orçamentos – lógica de negócio + persistência.
 """
 
 import json
+import copy
 import uuid
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -17,6 +18,11 @@ from app.orcamentos.schemas import (
     ItemCalculadoResponse,
     ClienteInfo,
     OperacaoItem,
+    SimulacaoComparacaoRequest,
+    SimulacaoComparacaoResponse,
+    CenarioClassicoResponse,
+    CenarioNestingResponse,
+    ComparacaoResponse,
 )
 
 engine = CalculoEngine()
@@ -967,3 +973,150 @@ async def get_itens_para_nesting(
 
     return result
 
+
+# ---------------------------------------------------------------------------
+# Simulação Comparativa (Clássico × Nesting) — ZERO escrita no banco
+# ---------------------------------------------------------------------------
+
+async def simular_comparacao(
+    data: SimulacaoComparacaoRequest,
+    user_id: str,
+) -> SimulacaoComparacaoResponse:
+    """
+    Executa DUAS simulações independentes com o mesmo payload:
+      A) Clássico (usar_nesting_2d=False)
+      B) Nesting  (usar_nesting_2d=True)
+
+    Retorna totais de ambos os cenários e métricas de comparação.
+
+    GARANTIAS:
+      - Nenhuma escrita no banco (nenhum INSERT/UPDATE/DELETE/RPC).
+      - Apenas SELECT de custos_operacao e estoque_chapas (retalhos).
+      - Payload original nunca é mutado (deep copy antes de cada execução).
+    """
+    supabase = get_supabase_service_client()
+
+    # ---- Dados compartilhados (somente leitura) ----------------------------
+    custos_res = supabase.table("custos_operacao").select("operacao, custo_hora").execute()
+    custos_op = {c["operacao"]: float(c["custo_hora"]) for c in custos_res.data} if custos_res.data else {}
+
+    # Retalhos disponíveis (SELECT only)
+    retalhos_res = (
+        supabase.table("estoque_chapas")
+        .select("*")
+        .eq("status", "disponivel")
+        .eq("tipo_registro", "retalho")
+        .execute()
+    )
+    retalhos_disponiveis = retalhos_res.data or []
+
+    # ---- Config base -------------------------------------------------------
+    config_base = {
+        "estado": data.cliente.estado,
+        "tipo_venda": data.tipo_venda,
+        "ipi_rate": data.ipi_rate,
+        "custos_operacao": custos_op,
+    }
+
+    # ---- Preparar itens (deep copy para cada cenário) ----------------------
+    items_source = [_item_create_to_dict(item, data.taxa_comissao) for item in data.itens]
+
+    # ========================================================================
+    # CENÁRIO A — CLÁSSICO (sem nesting)
+    # ========================================================================
+    config_classico = copy.deepcopy(config_base)
+    config_classico["usar_nesting_2d"] = False
+
+    items_classico = copy.deepcopy(items_source)
+    resultado_classico = engine.calcular_orcamento(items_classico, config_classico)
+
+    cenario_classico = CenarioClassicoResponse(
+        total_custo_mp=resultado_classico["total_custo_mp"],
+        total_fabricacao=resultado_classico["total_fabricacao"],
+        total_preco=resultado_classico["total_preco"],
+        total_nf=resultado_classico["total_nf"],
+        total_tributos=resultado_classico["total_tributos"],
+        total_peso=resultado_classico["total_peso"],
+        total_comissao=resultado_classico["total_comissao"],
+    )
+
+    # ========================================================================
+    # CENÁRIO B — NESTING (com arranjo 2D)
+    # ========================================================================
+    config_nesting = copy.deepcopy(config_base)
+    config_nesting["usar_nesting_2d"] = True
+    config_nesting["retalhos_disponiveis"] = copy.deepcopy(retalhos_disponiveis)
+
+    items_nesting = copy.deepcopy(items_source)
+    resultado_nesting = engine.calcular_orcamento(items_nesting, config_nesting)
+
+    # ---- Derivar métricas do nesting_json ----------------------------------
+    bins = resultado_nesting.get("bins_utilizados", [])
+    chapas_novas = sum(1 for b in bins if b.get("tipo") == "chapa_nova")
+    retalhos_utilizados = sum(1 for b in bins if b.get("tipo") == "retalho")
+    total_bins = len(bins)
+
+    # Aproveitamento médio ponderado
+    soma_aproveitamento = 0.0
+    count_bins_com_aproveitamento = 0
+    novos_retalhos_count = 0
+
+    for b in bins:
+        nr = b.get("nesting_result", {})
+        aprov = nr.get("aproveitamento_percentual", 0.0)
+        if aprov > 0:
+            soma_aproveitamento += aprov
+            count_bins_com_aproveitamento += 1
+        novos_retalhos_count += len(b.get("novos_retalhos_gerados", []))
+
+    aproveitamento_medio = (
+        soma_aproveitamento / count_bins_com_aproveitamento
+        if count_bins_com_aproveitamento > 0
+        else 0.0
+    )
+
+    cenario_nesting = CenarioNestingResponse(
+        total_custo_mp=resultado_nesting["total_custo_mp"],
+        total_fabricacao=resultado_nesting["total_fabricacao"],
+        total_preco=resultado_nesting["total_preco"],
+        total_nf=resultado_nesting["total_nf"],
+        total_tributos=resultado_nesting["total_tributos"],
+        total_peso=resultado_nesting["total_peso"],
+        total_comissao=resultado_nesting["total_comissao"],
+        nesting_json=bins,
+        chapas_novas=chapas_novas,
+        retalhos_utilizados=retalhos_utilizados,
+        aproveitamento_medio=round(aproveitamento_medio, 2),
+        total_bins=total_bins,
+        novos_retalhos_gerados=novos_retalhos_count,
+    )
+
+    # ========================================================================
+    # COMPARAÇÃO
+    # ========================================================================
+    economia_material = cenario_classico.total_custo_mp - cenario_nesting.total_custo_mp
+    economia_total = cenario_classico.total_preco - cenario_nesting.total_preco
+
+    pct_economia_material = (
+        (economia_material / cenario_classico.total_custo_mp * 100)
+        if cenario_classico.total_custo_mp > 0
+        else 0.0
+    )
+    pct_economia_total = (
+        (economia_total / cenario_classico.total_preco * 100)
+        if cenario_classico.total_preco > 0
+        else 0.0
+    )
+
+    comparacao = ComparacaoResponse(
+        economia_material=round(economia_material, 2),
+        economia_total=round(economia_total, 2),
+        percentual_economia_material=round(pct_economia_material, 2),
+        percentual_economia_total=round(pct_economia_total, 2),
+    )
+
+    return SimulacaoComparacaoResponse(
+        classico=cenario_classico,
+        nesting=cenario_nesting,
+        comparacao=comparacao,
+    )

@@ -111,7 +111,9 @@ class Nesting2DEngine:
         for p in pecas:
             qtd = p.get('quantidade', 1)
             for _ in range(qtd):
-                pecas_individuais.append(copy.deepcopy(p))
+                peca_individual = copy.deepcopy(p)
+                peca_individual['quantidade'] = 1
+                pecas_individuais.append(peca_individual)
                 
         # Ordenar peças por área decrescente (heurística comum para bin packing)
         pecas_individuais.sort(key=lambda p: p['largura'] * p['comprimento'], reverse=True)
@@ -328,9 +330,11 @@ class Nesting2DEngine:
                 
         # 2. Tentar alocar em chapas novas caso ainda restem peças
         chapas_abertas = 0
+        pecas_gigantes = []
         while pecas_restantes:
             chapas_abertas += 1
             res = cls.otimizar_chapa_single_bin(pecas_restantes, chapa_padrao, margem_corte)
+            pecas_restantes = res['pecas_nao_posicionadas']
             
             # Se não alocou NENHUMA peça na chapa virgem, significa que existe alguma peça 
             # MAIOR que a chapa padrão (oversized). Para evitar loop infinito, abortamos essa peça.
@@ -338,7 +342,7 @@ class Nesting2DEngine:
                 # A primeira peça da lista restante é definitivamente grande demais.
                 # Removemos ela para poder tentar o resto.
                 peca_gigante = pecas_restantes.pop(0)
-                # Opcional: registrar que a peça_gigante falhou.
+                pecas_gigantes.append(peca_gigante)
                 continue
                 
             bin_info = {
@@ -349,9 +353,8 @@ class Nesting2DEngine:
                 'nesting_result': res
             }
             bins_utilizados.append(bin_info)
-            pecas_restantes = res['pecas_nao_posicionadas']
             
         return {
             'bins_utilizados': bins_utilizados,
-            'pecas_nao_suportadas': pecas_restantes # Vazio no caso ideal
+            'pecas_nao_suportadas': pecas_restantes + pecas_gigantes
         }

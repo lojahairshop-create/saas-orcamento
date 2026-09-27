@@ -13,6 +13,8 @@ from app.orcamentos.schemas import (
     StatusUpdate,
     ItemUpdateNesting,
     BulkUpdateNesting,
+    SimulacaoComparacaoRequest,
+    SimulacaoComparacaoResponse,
 )
 from app.orcamentos import service
 from app.pdf.generator import PDFGenerator
@@ -71,6 +73,21 @@ async def obter_itens_para_nesting(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Erro ao obter itens para nesting: {str(exc)}",
+        )
+
+
+@router.post("/simular-comparacao", response_model=SimulacaoComparacaoResponse)
+async def simular_comparacao(
+    payload: SimulacaoComparacaoRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Simulação comparativa Clássico × Nesting. Nenhuma escrita no banco."""
+    try:
+        return await service.simular_comparacao(payload, current_user["id"])
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Erro na simulação comparativa: {str(exc)}",
         )
 
 
