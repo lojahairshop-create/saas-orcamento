@@ -12,6 +12,7 @@ from fastapi import HTTPException
 
 from app.database import get_supabase_service_client
 from app.calculo.engine import CalculoEngine
+from app.orcamentos.nesting_review import calculate_review
 from app.orcamentos.schemas import (
     OrcamentoCreate,
     OrcamentoUpdate,
@@ -216,7 +217,14 @@ async def create_orcamento(
     orc_id_pre = str(uuid.uuid4())
     numero = data.numero.strip() if (data.numero and data.numero.strip()) else _generate_numero_orcamento()
 
-    if usar_nesting_2d:
+    if data.modo_cobranca_nesting:
+        resultado = calculate_review(items_dicts, config, data.modo_cobranca_nesting, data.layout_revisao)
+        if not simulation_fingerprint or resultado['fingerprint'] != simulation_fingerprint:
+            raise HTTPException(409, 'O arranjo ou os custos mudaram. Confirme novamente na revisão.')
+        if not resultado['completo']:
+            raise HTTPException(422, 'Arranjo incompleto.')
+        usar_nesting_2d = False
+    elif usar_nesting_2d:
         for attempt in range(3):
             retalhos_res = supabase.table("estoque_chapas").select("*").eq("status", "disponivel").eq("tipo_registro", "retalho").execute()
             config["retalhos_disponiveis"] = retalhos_res.data
@@ -310,6 +318,10 @@ async def create_orcamento(
     orc_id = orc_id_pre
     orc_data["id"] = orc_id
     item_rows = []
+    review_item_ids = [str(uuid.uuid4()) for _ in items_dicts]
+    if data.modo_cobranca_nesting:
+        for sheet in resultado['bins_utilizados']:
+            sheet['source_item_ids'] = review_item_ids
 
     # Inserir itens
     items_responses: List[ItemCalculadoResponse] = []
@@ -322,6 +334,7 @@ async def create_orcamento(
         operacoes_json = [op.model_dump() for op in operacoes_model]
 
         item_db = {
+            "id": review_item_ids[i],
             "orcamento_id": orc_id,
             "descricao": item_input.get("descricao", ""),
             "material": item_input.get("material", ""),
@@ -467,7 +480,9 @@ async def get_orcamento(orcamento_id: str, user_id: str) -> OrcamentoResponse:
 
     taxa_comissao = float(orc.get("taxa_comissao") or 0.0)
 
-    for item_db in items_result.data:
+    saved_order = (orc.get('nesting_json') or [{}])[0].get('source_item_ids', [])
+    order = {item_id: i for i, item_id in enumerate(saved_order)}
+    for item_db in sorted(items_result.data, key=lambda row: order.get(row.get('id'), len(order))):
         operacoes_raw = item_db.get("operacoes", "[]")
         if isinstance(operacoes_raw, str):
             try:
@@ -762,7 +777,13 @@ async def update_orcamento(
 
         items_dicts = [_item_create_to_dict(item, taxa_comissao) for item in data.itens]
 
-        if usar_nesting_2d:
+        if data.modo_cobranca_nesting:
+            resultado = calculate_review(items_dicts, config, data.modo_cobranca_nesting, data.layout_revisao)
+            if not data.simulation_fingerprint or resultado['fingerprint'] != data.simulation_fingerprint:
+                raise HTTPException(409, 'O arranjo ou os custos mudaram. Confirme novamente na revisão.')
+            if not resultado['completo']:
+                raise HTTPException(422, 'Arranjo incompleto.')
+        elif usar_nesting_2d:
             for attempt in range(3):
                 retalhos_res = supabase.table("estoque_chapas").select("*").eq("status", "disponivel").eq("tipo_registro", "retalho").execute()
                 config["retalhos_disponiveis"] = retalhos_res.data
@@ -813,6 +834,11 @@ async def update_orcamento(
             }
         )
 
+        review_item_ids = [str(uuid.uuid4()) for _ in items_dicts]
+        if data.modo_cobranca_nesting:
+            for sheet in resultado['bins_utilizados']:
+                sheet['source_item_ids'] = review_item_ids
+
         # Remover itens antigos e inserir novos
         supabase.table("orcamento_itens").delete().eq(
             "orcamento_id", orcamento_id
@@ -827,6 +853,7 @@ async def update_orcamento(
             ]
 
             item_db = {
+                "id": review_item_ids[i],
                 "orcamento_id": orcamento_id,
                 "descricao": item_input.get("descricao", ""),
                 "material": item_input.get("material", ""),

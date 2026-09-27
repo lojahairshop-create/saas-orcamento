@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/Select";
 import { Table, TableRow, TableCell } from "@/components/ui/Table";
 import DxfUploader from "@/components/orcamento/DxfUploader";
 import { Modal } from "@/components/ui/Modal";
+import NestingReviewEditor from "@/components/orcamento/NestingReviewEditor";
 import NestingComparisonModal from "@/components/orcamento/NestingComparisonModal";
 import NestingPreviewModal from "@/components/orcamento/NestingPreviewModal";
 import { SimulacaoComparacaoResponse } from "@/types";
@@ -49,6 +50,10 @@ function NovoOrcamentoWizardContent() {
   const searchParams = useSearchParams();
   const editId = searchParams.get("id");
   const [step, setStep] = useState(1);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const loadedReview = useRef<any>(null);
+  const [reviewResult, setReviewResult] = useState<any>(null);
+  const [reviewMode, setReviewMode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   // --- Step 1: Cliente Info ---
@@ -372,6 +377,7 @@ function NovoOrcamentoWizardContent() {
           preco_kg: it.preco_kg || 0,
           margem_lucro: it.margem_lucro || 0.3,
           origem_material: it.origem_material || "chapa_inteira",
+          vetor_svg: it.vetor_svg || null,
           beneficiamento: !!it.beneficiamento,
           chapa_arranjada: !!it.chapa_arranjada,
           tempo_corte: it.tempo_corte || 0.0,
@@ -389,6 +395,9 @@ function NovoOrcamentoWizardContent() {
           observacoes: it.observacoes || ""
         }));
 
+        if (data.nesting_json?.[0]?.modo_cobranca) {
+          loadedReview.current = {...data, bins_utilizados: data.nesting_json};
+        }
         setItens(mappedItens);
       } catch (err) {
         console.error("Erro ao carregar orçamento para edição:", err);
@@ -786,18 +795,64 @@ function NovoOrcamentoWizardContent() {
   };
 
   useEffect(() => {
-    if (step === 3 && itens.length > 0) {
+    if (step === 3 && itens.length > 0 && !reviewResult) {
       processarCalculoLocal();
     }
   }, [step, ipiRate, taxaComissao]);
 
   useEffect(() => {
+    if (loadedReview.current) {
+      setReviewResult(loadedReview.current);
+      setReviewMode(loadedReview.current.bins_utilizados[0].modo_cobranca);
+      setCalculado(loadedReview.current);
+      setComparisonValidationRequired(true);
+      setComparacaoStale(true);
+      loadedReview.current = null;
+      return;
+    }
+    setReviewResult(null);
+    setReviewMode(null);
     if (simulationFingerprint) {
       setComparacaoStale(true);
       setSimulationFingerprint(null);
       setSimulacaoResult(null);
     }
   }, [itens, ipiRate, taxaComissao, tipoVenda, cliente.estado]);
+
+  const reviewPayload = () => ({
+    cliente: {...cliente, nome: cliente.nome.trim() || "Cliente Geral"},
+    tipo_venda: tipoVenda, ipi_rate: ipiRate, taxa_comissao: taxaComissao,
+    itens: itens.map(it => ({
+          vetor_svg: it.vetor_svg || null,
+          descricao: it.descricao || "Peça sem descrição",
+          material: it.material || "AÇO CARBONO",
+          tipo_material: it.tipo_material || "",
+          espessura: it.espessura || 0,
+          largura: it.largura || 0,
+          comprimento: it.comprimento || 0,
+          perimetro: it.perimetro || 0,
+          num_entradas: it.num_entradas || 1,
+          quantidade: it.quantidade || 1,
+          chapa_l: it.chapa_l || 1200,
+          chapa_c: it.chapa_c || 2400,
+          preco_kg: it.preco_kg || 0,
+          margem_lucro: it.margem_lucro || 0.30,
+          origem_material: it.origem_material || "chapa_inteira",
+          beneficiamento: !!it.beneficiamento,
+          custo_extra: it.custo_extra || 0,
+          tempo_corte: it.tempo_corte || 0,
+          preco_pintura_kg: it.valor_pintura || it.preco_pintura_kg || 0,
+          valor_pintura: it.valor_pintura || it.preco_pintura_kg || 0,
+          valor_final: it.valor_final || 0,
+          operacoes: [
+            { nome: "DOBRA", tempo_min: it.tempo_dobra || 0 },
+            { nome: "SOLDA", tempo_min: it.tempo_solda || 0 },
+            { nome: "GUILHOTINA", tempo_min: it.tempo_guilhotina || 0 },
+            { nome: "USINAGEM INTERNA", tempo_min: it.tempo_usinagem || 0 },
+            { nome: "MONTAGEM", tempo_min: it.tempo_montagem || 0 },
+          ]
+        }))
+  });
 
   const handleSave = async (status: string) => {
     if (itens.length === 0) {
@@ -830,38 +885,12 @@ function NovoOrcamentoWizardContent() {
         frete,
         validade,
         observacoes,
-        usar_nesting_2d: usarNesting2d,
+        usar_nesting_2d: reviewMode ? false : usarNesting2d,
+        modo_cobranca_nesting: reviewMode,
+        layout_revisao: reviewResult?.bins_utilizados,
         simulation_fingerprint: simulationFingerprint,
         comparison_validation_required: comparisonValidationRequired,
-        itens: itens.map(it => ({
-          descricao: it.descricao || "Peça sem descrição",
-          material: it.material || "AÇO CARBONO",
-          tipo_material: it.tipo_material || "",
-          espessura: it.espessura || 0,
-          largura: it.largura || 0,
-          comprimento: it.comprimento || 0,
-          perimetro: it.perimetro || 0,
-          num_entradas: it.num_entradas || 1,
-          quantidade: it.quantidade || 1,
-          chapa_l: it.chapa_l || 1200,
-          chapa_c: it.chapa_c || 2400,
-          preco_kg: it.preco_kg || 0,
-          margem_lucro: it.margem_lucro || 0.30,
-          origem_material: it.origem_material || "chapa_inteira",
-          beneficiamento: !!it.beneficiamento,
-          custo_extra: it.custo_extra || 0,
-          tempo_corte: it.tempo_corte || 0,
-          preco_pintura_kg: it.valor_pintura || it.preco_pintura_kg || 0,
-          valor_pintura: it.valor_pintura || it.preco_pintura_kg || 0,
-          valor_final: it.valor_final || 0,
-          operacoes: [
-            { nome: "DOBRA", tempo_min: it.tempo_dobra || 0 },
-            { nome: "SOLDA", tempo_min: it.tempo_solda || 0 },
-            { nome: "GUILHOTINA", tempo_min: it.tempo_guilhotina || 0 },
-            { nome: "USINAGEM INTERNA", tempo_min: it.tempo_usinagem || 0 },
-            { nome: "MONTAGEM", tempo_min: it.tempo_montagem || 0 },
-          ]
-        }))
+        itens: reviewPayload().itens
       };
 
       let resultId = editId;
@@ -1037,23 +1066,7 @@ function NovoOrcamentoWizardContent() {
               />
             </div>
 
-            {nestingStatus && (
-              <div className="flex items-center gap-2 mt-6 bg-blue-50/80 border border-blue-200 p-3 rounded-xl">
-                <input
-                  type="checkbox"
-                  id="checkbox-nesting-2d"
-                  checked={usarNesting2d}
-                  onChange={e => setUsarNesting2d(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer h-4 w-4"
-                />
-                <label htmlFor="checkbox-nesting-2d" className="text-sm font-bold text-slate-800 cursor-pointer select-none">
-                  Ativar Otimização de Arranjo 2D
-                  <span className="block text-[11px] text-slate-500 font-normal">
-                    Ao ativar, será gerado o plano de corte (Nesting 2D) de chapas inteiras e retalhos disponíveis após a aprovação comercial.
-                  </span>
-                </label>
-              </div>
-            )}
+
 
             <div className="flex justify-end mt-6">
               <Button
@@ -1452,23 +1465,6 @@ function NovoOrcamentoWizardContent() {
                   Beneficiamento (Material Fornecido Pelo Cliente)
                   <span className="block text-[10px] text-slate-500 font-normal">
                     Ao selecionar essa opção, o custo da matéria-prima será desconsiderado no cálculo (R$ 0,00) e serão cobrados apenas os processos de fabricação.
-                  </span>
-                </label>
-              </div>
-
-              {/* Opção de Chapa Arranjada */}
-              <div className="flex items-center gap-2 mt-3 bg-amber-50/80 border border-amber-200 p-3 rounded-xl">
-                <input
-                  type="checkbox"
-                  id="checkbox-chapa-arranjada"
-                  checked={!!novaPeca.chapa_arranjada}
-                  onChange={e => setNovaPeca({ ...novaPeca, chapa_arranjada: e.target.checked })}
-                  className="rounded border-gray-300 text-amber-600 focus:ring-amber-500 cursor-pointer h-4 w-4"
-                />
-                <label htmlFor="checkbox-chapa-arranjada" className="text-xs font-bold text-slate-800 cursor-pointer select-none">
-                  Cobrar por Chapa Arranjada
-                  <span className="block text-[10px] text-slate-600 font-normal">
-                    Ao marcar esta opção, a matéria-prima será calculada utilizando a largura total da chapa (<strong>{novaPeca.chapa_l || 1200}mm</strong>) e o comprimento da peça + 20mm (<strong>{(novaPeca.comprimento || 0) + 20}mm</strong>). Cada unidade no lote multiplicará por essa faixa inteira.
                   </span>
                 </label>
               </div>
@@ -1898,25 +1894,7 @@ function NovoOrcamentoWizardContent() {
 
             {/* Calculations Breakdown Sidebar */}
             <div className="flex flex-col gap-6">
-              {hasEditedNestingDimensions && usarNesting2d && (
-                <div className="bg-amber-100 border-l-4 border-amber-500 p-4 rounded-r-md">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-amber-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm text-amber-700 font-bold">
-                        Arranjo Desatualizado
-                      </p>
-                      <p className="mt-1 text-xs text-amber-600">
-                        As dimensões das peças mudaram. O cálculo de retalhos atual na pré-visualização é inválido. Clique em Aprovar/Salvar para gerar o novo mapa real de corte.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+
 
               <Card
                 header={
@@ -1952,7 +1930,7 @@ function NovoOrcamentoWizardContent() {
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Cálculo Selecionado</p>
                     <p className={`font-bold text-lg ${usarNesting2d ? 'text-teal-700' : 'text-slate-700'}`}>
-                      {usarNesting2d ? "Com Arranjo (Nesting 2D)" : "Sem Arranjo (Retangular)"}
+                      {reviewMode === "chapa_inteira" ? "Chapa inteira" : reviewMode === "retalho_arranjado" ? "Retalho arranjado" : "Peças — cálculo convencional"}
                     </p>
                   </div>
                   <Layers className={`h-8 w-8 ${usarNesting2d ? 'text-teal-500' : 'text-slate-400'}`} />
@@ -1962,11 +1940,11 @@ function NovoOrcamentoWizardContent() {
                   className="w-full mt-3 justify-center border-teal-300 text-teal-700 hover:bg-teal-50"
                   onClick={() => {
                     setComparacaoStale(false);
-                    setComparacaoModalOpen(true);
+                    setReviewOpen(true);
                   }}
                   disabled={simulacaoLoading || itens.length === 0}
                 >
-                  {simulacaoLoading ? "Comparando..." : "Comparar Sem Arranjo × Com Arranjo"}
+                  {reviewResult ? "Editar nesting / relatório" : "Fazer nesting"}
                 </Button>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-600">Total Impostos (Embutidos):</span>
@@ -2182,6 +2160,20 @@ function NovoOrcamentoWizardContent() {
             </div>
           </div>
         )}
+        {reviewOpen && <NestingReviewEditor payload={reviewPayload()} initial={reviewResult}
+          onUseConventional={() => {
+            setReviewResult(null); setReviewMode(null); setSimulationFingerprint(null);
+            setComparisonValidationRequired(false); setComparacaoStale(false); setUsarNesting2d(false);
+            processarCalculoLocal(itens.map(it => ({...it, chapa_arranjada: false})));
+            setReviewOpen(false);
+          }}
+          onClose={() => setReviewOpen(false)} onConfirm={(result, mode) => {
+            setReviewResult(result); setReviewMode(mode);
+            setSimulationFingerprint(result.fingerprint); setComparisonValidationRequired(true);
+            setComparacaoStale(false); setUsarNesting2d(false);
+            setCalculado({...result, itens: result.items_calculados.map((it: any, i: number) => ({...itens[i], ...it}))});
+            setReviewOpen(false);
+          }} />}
         <NestingComparisonModal
           isOpen={comparacaoModalOpen}
           onClose={() => setComparacaoModalOpen(false)}

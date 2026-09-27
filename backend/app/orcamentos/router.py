@@ -22,6 +22,17 @@ from app.pdf.generator import PDFGenerator
 router = APIRouter()
 
 
+@router.post('/revisao-nesting')
+async def revisao_nesting(payload: OrcamentoCreate, current_user: dict = Depends(get_current_user)):
+    from app.database import get_supabase_service_client
+    from app.orcamentos.nesting_review import calculate_review
+    rows = get_supabase_service_client().table('custos_operacao').select('operacao, custo_hora').execute().data or []
+    config = dict(estado=payload.cliente.estado, tipo_venda=payload.tipo_venda,
+                  ipi_rate=payload.ipi_rate, custos_operacao={r['operacao']: float(r['custo_hora']) for r in rows}, usar_nesting_2d=False)
+    return calculate_review([service._item_create_to_dict(i, payload.taxa_comissao) for i in payload.itens], config,
+                            payload.modo_cobranca_nesting or 'individual', payload.layout_revisao)
+
+
 @router.post("/", response_model=OrcamentoResponse, status_code=status.HTTP_201_CREATED)
 async def criar_orcamento(
     payload: OrcamentoCreate,
@@ -117,6 +128,8 @@ async def atualizar_orcamento(
     """Atualiza e recalcula um orçamento existente."""
     try:
         return await service.update_orcamento(orcamento_id, payload, current_user["id"])
+    except HTTPException:
+        raise
     except ValueError as val_err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -449,6 +449,13 @@ class ApiClient {
     return this.handleResponse<{ habilitado: boolean }>(res);
   }
 
+  async revisarNesting(data: any): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/orcamentos/revisao-nesting`, {
+      method: 'POST', headers: this.getHeaders(), body: JSON.stringify(data),
+    });
+    return this.handleResponse<any>(res);
+  }
+
   // -------------------------------------------------------------------------
   // Dashboard
   // -------------------------------------------------------------------------

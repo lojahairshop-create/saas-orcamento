@@ -3,7 +3,7 @@ Schemas Pydantic para o módulo de orçamentos.
 """
 
 from pydantic import BaseModel, EmailStr, Field
-from typing import List, Optional, Dict, Any, List
+from typing import List, Optional, Dict, Any, Literal
 from datetime import datetime
 from enum import Enum
 
@@ -168,6 +168,8 @@ class ClienteInfo(BaseModel):
 # ---------------------------------------------------------------------------
 
 class OrcamentoCreate(BaseModel):
+    modo_cobranca_nesting: Optional[Literal['individual', 'chapa_inteira', 'retalho_arranjado']] = None
+    layout_revisao: Optional[List[Dict[str, Any]]] = None
     numero: Optional[str] = None
     cliente: ClienteInfo
     itens: List[ItemCreate]
@@ -185,6 +187,9 @@ class OrcamentoCreate(BaseModel):
 
 
 class OrcamentoUpdate(BaseModel):
+    modo_cobranca_nesting: Optional[Literal['individual', 'chapa_inteira', 'retalho_arranjado']] = None
+    layout_revisao: Optional[List[Dict[str, Any]]] = None
+    simulation_fingerprint: Optional[str] = None
     numero: Optional[str] = None
     cliente: Optional[ClienteInfo] = None
     itens: Optional[List[ItemCreate]] = None
