@@ -101,13 +101,16 @@ class ApiClient {
     return this.handleResponse<Orcamento>(res);
   }
 
-  async getOrcamentos(status?: string, page = 1, perPage = 20): Promise<{ items: any[]; total: number; page: number; per_page: number }> {
+  async getOrcamentos(status?: string, page = 1, perPage = 20, search?: string): Promise<{ items: any[]; total: number; page: number; per_page: number }> {
     const query = new URLSearchParams({
       page: page.toString(),
       per_page: perPage.toString(),
     });
     if (status) {
       query.append("status", status);
+    }
+    if (search) {
+      query.append("search", search);
     }
     const res = await fetch(`${API_BASE_URL}/orcamentos/?${query.toString()}`, {
       method: "GET",

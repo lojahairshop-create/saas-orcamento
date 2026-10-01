@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Card } from "@/components/ui/Card";
 import { Table, TableRow, TableCell } from "@/components/ui/Table";
@@ -32,26 +32,44 @@ export default function OrcamentosListPage() {
   const [totalPages, setTotalPages] = useState(1);
   const perPage = 10;
 
+  // Use um estado para debounce da busca e chamadas
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  const latestRequestRef = useRef(0);
+
   async function loadOrcamentos() {
+    const currentRequestId = ++latestRequestRef.current;
     setLoading(true);
     try {
       const data = await api.getOrcamentos(
         statusFilter || undefined,
         page,
-        perPage
+        perPage,
+        debouncedSearchTerm || undefined
       );
+      if (currentRequestId !== latestRequestRef.current) return;
       setOrcamentos(data.items || []);
       setTotalPages(Math.ceil(data.total / perPage) || 1);
     } catch (err) {
+      if (currentRequestId !== latestRequestRef.current) return;
       console.error("Erro ao carregar orçamentos:", err);
     } finally {
-      setLoading(false);
+      if (currentRequestId === latestRequestRef.current) {
+        setLoading(false);
+      }
     }
   }
 
   useEffect(() => {
     loadOrcamentos();
-  }, [statusFilter, page]);
+  }, [statusFilter, page, debouncedSearchTerm]);
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Deseja realmente excluir este orçamento? Esta ação não pode ser desfeita.")) {
@@ -112,7 +130,10 @@ export default function OrcamentosListPage() {
               placeholder="Digite o número ou nome do cliente..."
               icon={<Search className="h-4 w-4" />}
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1);
+                }}
             />
             
             <Select

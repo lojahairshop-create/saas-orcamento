@@ -630,6 +630,7 @@ async def get_orcamento(orcamento_id: str, user_id: str) -> OrcamentoResponse:
 async def list_orcamentos(
     user_id: str,
     status_filter: Optional[str] = None,
+    search: Optional[str] = None,
     page: int = 1,
     per_page: int = 20,
 ) -> dict:
@@ -645,6 +646,13 @@ async def list_orcamentos(
 
     if status_filter:
         query = query.eq("status", status_filter)
+
+    if search:
+        search_clean = search.strip()
+        if search_clean:
+            safe_search = search_clean.replace('"', '\"').replace('%', '\%').replace('_', '\_')
+            postgrest_value = f'"%{safe_search}%"'
+            query = query.or_(f"numero.ilike.{postgrest_value},cliente_nome.ilike.{postgrest_value}")
 
     offset = (page - 1) * per_page
     query = query.range(offset, offset + per_page - 1)

@@ -53,6 +53,7 @@ async def criar_orcamento(
 @router.get("/", response_model=dict)
 async def listar_orçamentos(
     status: Optional[str] = None,
+    search: Optional[str] = None,
     page: int = 1,
     per_page: int = 20,
     current_user: dict = Depends(get_current_user),
@@ -61,6 +62,7 @@ async def listar_orçamentos(
     return await service.list_orcamentos(
         user_id=current_user["id"],
         status_filter=status,
+        search=search,
         page=page,
         per_page=per_page,
     )
