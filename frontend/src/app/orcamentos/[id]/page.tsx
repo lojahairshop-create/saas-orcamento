@@ -33,6 +33,7 @@ export default function OrcamentoDetailPage() {
   const [orcamento, setOrcamento] = useState<Orcamento | null>(null);
   const [loading, setLoading] = useState(true);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [exibirProcessos, setExibirProcessos] = useState(true);
   const [activeTab, setActiveTab] = useState<"resumo" | "nesting">("resumo");
   const [nestingResults, setNestingResults] = useState<any[]>([]);
   const [nestingLoading, setNestingLoading] = useState(false);
@@ -73,7 +74,7 @@ export default function OrcamentoDetailPage() {
     if (!orcamento) return;
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const token = localStorage.getItem("token") || "";
-    const printUrl = `${apiBaseUrl}/orcamentos/${orcamento.id}/html?token=${encodeURIComponent(token)}`;
+    const printUrl = `${apiBaseUrl}/orcamentos/${orcamento.id}/html?token=${encodeURIComponent(token)}&exibir_processos=${exibirProcessos}`;
     window.open(printUrl, "_blank");
   };
 
@@ -120,7 +121,7 @@ export default function OrcamentoDetailPage() {
             <ArrowLeft className="h-4 w-4" /> Voltar para lista
           </Link>
           
-          <div className="flex gap-2">
+          <div className="flex items-start gap-2">
             <Button
               variant="secondary"
               onClick={() => router.push(`/orcamentos/novo?id=${orcamento.id}`)}
@@ -129,13 +130,23 @@ export default function OrcamentoDetailPage() {
               <Edit className="h-4 w-4" /> Editar Orçamento
             </Button>
 
-            <Button
-              variant="secondary"
-              onClick={handleDownloadPdf}
-              className="flex items-center gap-1.5"
-            >
-              <FileDown className="h-4 w-4" /> Exportar PDF
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="secondary"
+                onClick={handleDownloadPdf}
+                className="flex items-center gap-1.5"
+              >
+                <FileDown className="h-4 w-4" /> Exportar PDF
+              </Button>
+              <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={exibirProcessos}
+                  onChange={(event) => setExibirProcessos(event.target.checked)}
+                />
+                Exibir processos
+              </label>
+            </div>
 
             {activeTab === "nesting" && (
               <Button

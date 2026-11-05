@@ -202,6 +202,7 @@ async def exportar_pdf(
 @router.get("/{orcamento_id}/html")
 async def exportar_html(
     orcamento_id: str,
+    exibir_processos: bool = True,
     current_user: dict = Depends(get_current_user),
 ):
     """Gera e retorna o orçamento comercial em HTML com script de impressão automática do navegador."""
@@ -257,6 +258,7 @@ async def exportar_html(
 
         html_rendered = template.render(
             orcamento=orc,
+            exibir_processos=exibir_processos,
             validade_data=validade_str,
             datetime=datetime,
             configs_globais=configs_globais,
